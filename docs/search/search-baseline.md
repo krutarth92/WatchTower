@@ -2,6 +2,11 @@
 
 Status: Task 09 implementation contract, 2026-09-29.
 
+Task 21 restricts this public endpoint to records explicitly marked
+`published`; source-owned records require a published Source. Aliases also
+require a published Actor. See
+[Canonical publication visibility](../design/publication-visibility.md).
+
 ## Boundary
 
 `GET /api/v1/search` provides one bounded, read-only search across actors,
@@ -66,7 +71,7 @@ check with sequential scans disabled confirmed that PostgreSQL can use the actor
 GIN expression index for the same full-text predicate.
 
 The baseline has no typo tolerance, fuzzy matching, synonym expansion,
-language detection, per-user visibility model, highlighting or cursor
+language detection, per-user visibility tiers, highlighting or cursor
 pagination. English stemming may underperform for non-English intelligence and
 technical tokens. Representative production-scale relevance and latency remain
 future measurement work; Task 09 only establishes deterministic behavior.

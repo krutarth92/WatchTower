@@ -116,6 +116,11 @@ class AdvisoryStatus(StrEnum):
     PUBLISHED = "published"
 
 
+class PublicationState(StrEnum):
+    INTERNAL = "internal"
+    PUBLISHED = "published"
+
+
 class AdvisorySectionType(StrEnum):
     WHAT_HAPPENED = "what_happened"
     ACTOR_CONTEXT = "actor_context"
@@ -191,6 +196,11 @@ advisory_status_enum = Enum(
     name="advisory_status",
     values_callable=lambda values: [value.value for value in values],
 )
+publication_state_enum = Enum(
+    PublicationState,
+    name="publication_state",
+    values_callable=lambda values: [value.value for value in values],
+)
 advisory_section_type_enum = Enum(
     AdvisorySectionType,
     name="advisory_section_type",
@@ -208,6 +218,16 @@ class TimestampMixin:
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+
+class PublicationMixin:
+    publication_state: Mapped[PublicationState] = mapped_column(
+        publication_state_enum,
+        nullable=False,
+        default=PublicationState.INTERNAL,
+        server_default=text("'internal'"),
+        index=True,
     )
 
 
@@ -248,7 +268,7 @@ observation_techniques = Table(
 )
 
 
-class Source(IdMixin, TimestampMixin, Base):
+class Source(IdMixin, TimestampMixin, PublicationMixin, Base):
     __tablename__ = "sources"
     __table_args__ = (
         CheckConstraint("btrim(name) <> ''", name="name_not_blank"),
@@ -423,7 +443,7 @@ class IngestionJob(IdMixin, TimestampMixin, Base):
     raw_evidence: Mapped[RawEvidence | None] = orm_relationship(back_populates="ingestion_jobs")
 
 
-class Actor(IdMixin, TimestampMixin, Base):
+class Actor(IdMixin, TimestampMixin, PublicationMixin, Base):
     __tablename__ = "actors"
     __table_args__ = (
         CheckConstraint("btrim(canonical_name) <> ''", name="canonical_name_not_blank"),
@@ -459,7 +479,7 @@ class Actor(IdMixin, TimestampMixin, Base):
     )
 
 
-class Alias(IdMixin, TimestampMixin, Base):
+class Alias(IdMixin, TimestampMixin, PublicationMixin, Base):
     __tablename__ = "aliases"
     __table_args__ = (
         UniqueConstraint("source_id", "normalized_name"),
@@ -583,7 +603,7 @@ class ActorResolutionDecision(IdMixin, Base):
     evidence: Mapped[Evidence | None] = orm_relationship()
 
 
-class Observation(IdMixin, TimestampMixin, Base):
+class Observation(IdMixin, TimestampMixin, PublicationMixin, Base):
     __tablename__ = "observations"
     __table_args__ = (
         UniqueConstraint("source_id", "source_native_id"),
@@ -696,7 +716,7 @@ class NormalizationLedger(IdMixin, TimestampMixin, Base):
     )
 
 
-class Evidence(IdMixin, TimestampMixin, Base):
+class Evidence(IdMixin, TimestampMixin, PublicationMixin, Base):
     __tablename__ = "evidence"
     __table_args__ = (
         CheckConstraint("btrim(citation) <> ''", name="citation_not_blank"),
@@ -814,7 +834,7 @@ class TechnicalArtifact(IdMixin, TimestampMixin, Base):
     )
 
 
-class Behavior(IdMixin, TimestampMixin, Base):
+class Behavior(IdMixin, TimestampMixin, PublicationMixin, Base):
     __tablename__ = "behaviors"
     __table_args__ = (
         CheckConstraint("btrim(name) <> ''", name="name_not_blank"),
@@ -844,7 +864,7 @@ class Behavior(IdMixin, TimestampMixin, Base):
     )
 
 
-class Technique(IdMixin, TimestampMixin, Base):
+class Technique(IdMixin, TimestampMixin, PublicationMixin, Base):
     __tablename__ = "techniques"
     __table_args__ = (
         UniqueConstraint("source_id", "external_id"),
@@ -880,7 +900,7 @@ class Technique(IdMixin, TimestampMixin, Base):
     )
 
 
-class Campaign(IdMixin, TimestampMixin, Base):
+class Campaign(IdMixin, TimestampMixin, PublicationMixin, Base):
     __tablename__ = "campaigns"
     __table_args__ = (
         UniqueConstraint("source_id", "normalized_name"),

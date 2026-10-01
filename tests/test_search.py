@@ -19,6 +19,7 @@ from watchtower.db.models import (
     IntelligenceType,
     Observation,
     Origin,
+    PublicationState,
     Source,
     Technique,
 )
@@ -111,6 +112,19 @@ def seed_search_evaluation(db_session: Session) -> dict[str, Source]:
     actor.observations.append(observed)
     observed.behaviors.append(behavior)
     observed.techniques.append(technique)
+    for record in (
+        alpha,
+        beta,
+        actor,
+        alias,
+        campaign,
+        behavior,
+        technique,
+        observed,
+        distractor,
+        assessment,
+    ):
+        record.publication_state = PublicationState.PUBLISHED
     db_session.add_all(
         [
             alpha,
@@ -216,6 +230,93 @@ def test_search_api_filters_validation_and_response_contract(db_session: Session
     assert payload["data"][0]["source_id"] == str(sources["alpha"].id)
     assert invalid_dates.status_code == 422
     assert unsafe.status_code == 422
+
+
+def test_search_excludes_internal_records(db_session: Session) -> None:
+    source = Source(
+        name="Published Fixture Source",
+        kind="reporting",
+        publication_state=PublicationState.PUBLISHED,
+    )
+    internal_source = Source(name="Internal Search Source", kind="reporting")
+    actor = Actor(
+        canonical_name="Internal Search Actor",
+        normalized_name="internal search actor",
+    )
+    published_actor = Actor(
+        canonical_name="Published Fixture Actor",
+        normalized_name="published fixture actor",
+        publication_state=PublicationState.PUBLISHED,
+    )
+    alias = Alias(
+        source=source,
+        actor=published_actor,
+        name="Internal Search Alias",
+        normalized_name="internal search alias",
+    )
+    campaign = Campaign(
+        source=source,
+        name="Internal Search Campaign",
+        normalized_name="internal search campaign",
+        intelligence_type=IntelligenceType.OBSERVED,
+        origin=Origin.IMPORTED,
+    )
+    behavior = Behavior(
+        name="Internal Search Behavior",
+        normalized_name="internal search behavior",
+    )
+    technique = Technique(
+        source=source,
+        external_id="INTERNAL-SEARCH-TECHNIQUE",
+        name="Internal Search Technique",
+    )
+    observation = Observation(
+        source=source,
+        source_native_id="internal-search-observation",
+        title="Internal Search Finding",
+        summary="A uniquely searchable record that remains private.",
+        observed_at=datetime(2026, 4, 1, tzinfo=UTC),
+        intelligence_type=IntelligenceType.OBSERVED,
+        origin=Origin.IMPORTED,
+    )
+    published_with_internal_source = Observation(
+        source=internal_source,
+        source_native_id="published-with-internal-source",
+        title="Private Provenance Search Finding",
+        summary="A published record backed by an internal source remains private.",
+        observed_at=datetime(2026, 4, 2, tzinfo=UTC),
+        intelligence_type=IntelligenceType.OBSERVED,
+        origin=Origin.IMPORTED,
+        publication_state=PublicationState.PUBLISHED,
+    )
+    db_session.add_all(
+        [
+            source,
+            internal_source,
+            actor,
+            published_actor,
+            alias,
+            campaign,
+            behavior,
+            technique,
+            observation,
+            published_with_internal_source,
+        ]
+    )
+    db_session.flush()
+
+    _, results = SearchService().search(db_session, "Internal Search")
+    _, provenance_results = SearchService().search(db_session, "Private Provenance")
+
+    assert internal_source.publication_state is PublicationState.INTERNAL
+    assert actor.publication_state is PublicationState.INTERNAL
+    assert alias.publication_state is PublicationState.INTERNAL
+    assert campaign.publication_state is PublicationState.INTERNAL
+    assert behavior.publication_state is PublicationState.INTERNAL
+    assert technique.publication_state is PublicationState.INTERNAL
+    assert observation.publication_state is PublicationState.INTERNAL
+    assert results == []
+    assert provenance_results == []
 
 
 def test_search_indexes_exist_and_support_full_text_plan(db_session: Session) -> None:

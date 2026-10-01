@@ -2,6 +2,11 @@
 
 Status: Task 07 implementation contract, 2026-09-28.
 
+Task 21 adds the publication boundary defined in
+[Canonical publication visibility](publication-visibility.md). Every route
+requires a published Actor and filters nested records to explicitly published
+material. Internal Actors use the same not-found response as absent Actors.
+
 ## Public boundary
 
 The first public read surface is rooted at `/api/v1`. It contains read-only
@@ -50,7 +55,7 @@ contains matches. PostgreSQL full-text search remains Task 09.
 
 ## Query behavior and size limits
 
-Actor existence is checked once per route. Observation pages eager-load their
+Published Actor existence is checked once per route. Observation pages eager-load their
 source, evidence sources, behaviors and technique sources with a fixed number of
 queries independent of page length. Association/reference routes use distinct
 set-oriented queries. Aliases and all nested collections have deterministic

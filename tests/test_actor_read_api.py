@@ -18,6 +18,7 @@ from watchtower.db.models import (
     IntelligenceType,
     Observation,
     Origin,
+    PublicationState,
     Source,
     Technique,
 )
@@ -113,6 +114,18 @@ def actor_api(db_session: Session) -> Iterator[ActorApiFixture]:
             (4, datetime(2026, 4, 10, tzinfo=UTC), IntelligenceType.OBSERVED, Origin.IMPORTED),
         )
     ]
+    for record in (
+        source,
+        technique_source,
+        actor,
+        empty_actor,
+        alias,
+        behavior,
+        technique,
+        evidence,
+        *observations,
+    ):
+        record.publication_state = PublicationState.PUBLISHED
     actor.observations.extend(observations)
     observations[-1].evidence.append(evidence)
     observations[-1].behaviors.append(behavior)
@@ -190,6 +203,112 @@ def test_actor_not_found_uses_stable_error(actor_api: ActorApiFixture) -> None:
         }
     }
     assert response.headers["X-Request-ID"] == "missing-actor"
+
+
+def test_internal_actor_is_indistinguishable_from_missing(
+    actor_api: ActorApiFixture,
+) -> None:
+    internal_actor = Actor(
+        canonical_name=f"Internal Actor {uuid4().hex[:8]}",
+        normalized_name=f"internal actor {uuid4().hex}",
+    )
+    actor_api.session.add(internal_actor)
+    actor_api.session.flush()
+
+    detail = actor_api.client.get(f"/api/v1/actors/{internal_actor.id}")
+    search = actor_api.client.get(
+        "/api/v1/actors/search", params={"q": internal_actor.canonical_name}
+    )
+
+    assert internal_actor.publication_state is PublicationState.INTERNAL
+    assert detail.status_code == 404
+    assert detail.json()["error"]["code"] == "actor_not_found"
+    assert search.status_code == 200
+    assert search.json()["data"] == []
+
+
+def test_internal_nested_records_are_omitted(actor_api: ActorApiFixture) -> None:
+    internal_observation = Observation(
+        source_id=actor_api.source_id,
+        source_native_id=f"internal--{uuid4().hex}",
+        title="Internal only observation",
+        summary="This record must not appear in a public actor response.",
+        observed_at=datetime(2026, 5, 10, tzinfo=UTC),
+        intelligence_type=IntelligenceType.OBSERVED,
+        origin=Origin.IMPORTED,
+    )
+    actor = actor_api.session.get(Actor, actor_api.actor_id)
+    assert actor is not None
+    actor.observations.append(internal_observation)
+    internal_source = Source(name=f"Internal source {uuid4().hex}", kind="reporting")
+    actor.observations.append(
+        Observation(
+            source=internal_source,
+            source_native_id=f"published-with-private-source--{uuid4().hex}",
+            title="Published record with internal source",
+            summary="A public-state record must still preserve private provenance.",
+            observed_at=datetime(2026, 5, 11, tzinfo=UTC),
+            intelligence_type=IntelligenceType.OBSERVED,
+            origin=Origin.IMPORTED,
+            publication_state=PublicationState.PUBLISHED,
+        )
+    )
+    actor.aliases.append(
+        Alias(
+            source_id=actor_api.source_id,
+            name="Internal only alias",
+            normalized_name=f"internal only alias {uuid4().hex}",
+        )
+    )
+    published_observation = actor_api.session.get(Observation, actor_api.observation_ids[-1])
+    assert published_observation is not None
+    published_observation.evidence.append(
+        Evidence(
+            source_id=actor_api.source_id,
+            citation="Internal only evidence",
+            origin=Origin.IMPORTED,
+        )
+    )
+    published_observation.behaviors.append(
+        Behavior(
+            name="Internal only behavior",
+            normalized_name=f"internal only behavior {uuid4().hex}",
+        )
+    )
+    published_observation.techniques.append(
+        Technique(
+            source_id=actor_api.source_id,
+            external_id=f"INTERNAL-{uuid4().hex}",
+            name="Internal only technique",
+        )
+    )
+    actor_api.session.flush()
+
+    timeline = actor_api.client.get(f"/api/v1/actors/{actor_api.actor_id}/timeline")
+    aliases = actor_api.client.get(f"/api/v1/actors/{actor_api.actor_id}/aliases")
+    associations = actor_api.client.get(f"/api/v1/actors/{actor_api.actor_id}/associations")
+    references = actor_api.client.get(f"/api/v1/actors/{actor_api.actor_id}/references")
+
+    assert {
+        timeline.status_code,
+        aliases.status_code,
+        associations.status_code,
+        references.status_code,
+    } == {200}
+    assert "Internal only" not in str(timeline.json())
+    assert "Published record with internal source" not in {
+        item["title"] for item in timeline.json()["data"]
+    }
+    assert "Internal only evidence" not in {
+        item["citation"] for item in references.json()["data"]["evidence"]
+    }
+    assert "Internal only alias" not in {item["name"] for item in aliases.json()["data"]["items"]}
+    assert "Internal only behavior" not in {
+        item["name"] for item in associations.json()["data"]["behaviors"]
+    }
+    assert "Internal only technique" not in {
+        item["name"] for item in associations.json()["data"]["techniques"]
+    }
 
 
 def test_alias_search_and_source_preservation(actor_api: ActorApiFixture) -> None:

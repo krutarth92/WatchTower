@@ -38,6 +38,7 @@ from watchtower.db.models import (
     Campaign,
     IntelligenceType,
     Observation,
+    PublicationState,
     Source,
     Technique,
     actor_observations,
@@ -126,28 +127,38 @@ class SearchService:
         branches: list[Select[Any]] = []
 
         if SearchEntityType.ACTOR in selected and not restrict_to_intelligence:
-            source_condition = None
+            actor_filters = [Actor.publication_state == PublicationState.PUBLISHED]
             if source_id is not None:
-                source_condition = or_(
-                    exists(
-                        select(literal(1)).where(
-                            Alias.actor_id == Actor.id,
-                            Alias.source_id == source_id,
-                        )
-                    ),
-                    exists(
-                        select(literal(1))
-                        .select_from(
-                            actor_observations.join(
-                                Observation,
-                                Observation.id == actor_observations.c.observation_id,
+                actor_filters.append(
+                    or_(
+                        exists(
+                            select(literal(1)).where(
+                                Alias.actor_id == Actor.id,
+                                Alias.source_id == source_id,
+                                Alias.publication_state == PublicationState.PUBLISHED,
+                                Alias.source.has(
+                                    Source.publication_state == PublicationState.PUBLISHED
+                                ),
                             )
-                        )
-                        .where(
-                            actor_observations.c.actor_id == Actor.id,
-                            Observation.source_id == source_id,
-                        )
-                    ),
+                        ),
+                        exists(
+                            select(literal(1))
+                            .select_from(
+                                actor_observations.join(
+                                    Observation,
+                                    Observation.id == actor_observations.c.observation_id,
+                                )
+                            )
+                            .where(
+                                actor_observations.c.actor_id == Actor.id,
+                                Observation.source_id == source_id,
+                                Observation.publication_state == PublicationState.PUBLISHED,
+                                Observation.source.has(
+                                    Source.publication_state == PublicationState.PUBLISHED
+                                ),
+                            )
+                        ),
+                    )
                 )
             branches.append(
                 self._branch(
@@ -157,7 +168,7 @@ class SearchService:
                     Actor.description,
                     exact=Actor.normalized_name == normalized_query,
                     tsquery=tsquery,
-                    source_condition=source_condition,
+                    source_condition=and_(*actor_filters),
                 )
             )
 
@@ -172,14 +183,20 @@ class SearchService:
                     tsquery=tsquery,
                     source_id=Alias.source_id,
                     actor_id=Alias.actor_id,
-                    source_condition=(
-                        Alias.source_id == source_id if source_id is not None else None
+                    source_condition=and_(
+                        Alias.publication_state == PublicationState.PUBLISHED,
+                        Alias.actor.has(Actor.publication_state == PublicationState.PUBLISHED),
+                        Alias.source.has(Source.publication_state == PublicationState.PUBLISHED),
+                        Alias.source_id == source_id if source_id is not None else literal(True),
                     ),
                 )
             )
 
         if SearchEntityType.CAMPAIGN in selected:
-            campaign_filters = []
+            campaign_filters = [
+                Campaign.publication_state == PublicationState.PUBLISHED,
+                Campaign.source.has(Source.publication_state == PublicationState.PUBLISHED),
+            ]
             if source_id is not None:
                 campaign_filters.append(Campaign.source_id == source_id)
             if intelligence_type is not None:
@@ -209,19 +226,25 @@ class SearchService:
             )
 
         if SearchEntityType.BEHAVIOR in selected and not restrict_to_intelligence:
-            behavior_source = None
+            behavior_filters = [Behavior.publication_state == PublicationState.PUBLISHED]
             if source_id is not None:
-                behavior_source = exists(
-                    select(literal(1))
-                    .select_from(
-                        observation_behaviors.join(
-                            Observation,
-                            Observation.id == observation_behaviors.c.observation_id,
+                behavior_filters.append(
+                    exists(
+                        select(literal(1))
+                        .select_from(
+                            observation_behaviors.join(
+                                Observation,
+                                Observation.id == observation_behaviors.c.observation_id,
+                            )
                         )
-                    )
-                    .where(
-                        observation_behaviors.c.behavior_id == Behavior.id,
-                        Observation.source_id == source_id,
+                        .where(
+                            observation_behaviors.c.behavior_id == Behavior.id,
+                            Observation.source_id == source_id,
+                            Observation.publication_state == PublicationState.PUBLISHED,
+                            Observation.source.has(
+                                Source.publication_state == PublicationState.PUBLISHED
+                            ),
+                        )
                     )
                 )
             branches.append(
@@ -232,7 +255,7 @@ class SearchService:
                     Behavior.description,
                     exact=Behavior.normalized_name == normalized_query,
                     tsquery=tsquery,
-                    source_condition=behavior_source,
+                    source_condition=and_(*behavior_filters),
                 )
             )
 
@@ -251,14 +274,23 @@ class SearchService:
                     tsquery=tsquery,
                     source_id=Technique.source_id,
                     external_id=Technique.external_id,
-                    source_condition=(
-                        Technique.source_id == source_id if source_id is not None else None
+                    source_condition=and_(
+                        Technique.publication_state == PublicationState.PUBLISHED,
+                        Technique.source.has(
+                            Source.publication_state == PublicationState.PUBLISHED
+                        ),
+                        Technique.source_id == source_id
+                        if source_id is not None
+                        else literal(True),
                     ),
                 )
             )
 
         if SearchEntityType.OBSERVATION in selected:
-            observation_filters = []
+            observation_filters = [
+                Observation.publication_state == PublicationState.PUBLISHED,
+                Observation.source.has(Source.publication_state == PublicationState.PUBLISHED),
+            ]
             if source_id is not None:
                 observation_filters.append(Observation.source_id == source_id)
             if intelligence_type is not None:
@@ -293,7 +325,10 @@ class SearchService:
                     exact=func.lower(Source.name) == clean_query.casefold(),
                     tsquery=tsquery,
                     source_id=Source.id,
-                    source_condition=Source.id == source_id if source_id is not None else None,
+                    source_condition=and_(
+                        Source.publication_state == PublicationState.PUBLISHED,
+                        Source.id == source_id if source_id is not None else literal(True),
+                    ),
                 )
             )
 

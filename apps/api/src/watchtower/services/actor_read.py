@@ -28,6 +28,7 @@ from watchtower.db.models import (
     Evidence,
     IntelligenceType,
     Observation,
+    PublicationState,
     Source,
     Technique,
     actor_observations,
@@ -108,10 +109,30 @@ def evidence_read(evidence: Evidence) -> EvidenceRead:
 
 
 def observation_read(observation: Observation) -> ObservationRead:
-    evidence = sorted(observation.evidence, key=lambda item: (item.citation, str(item.id)))
-    behaviors = sorted(observation.behaviors, key=lambda item: (item.name, str(item.id)))
+    evidence = sorted(
+        (
+            item
+            for item in observation.evidence
+            if item.publication_state == PublicationState.PUBLISHED
+            and item.source.publication_state == PublicationState.PUBLISHED
+        ),
+        key=lambda item: (item.citation, str(item.id)),
+    )
+    behaviors = sorted(
+        (
+            item
+            for item in observation.behaviors
+            if item.publication_state == PublicationState.PUBLISHED
+        ),
+        key=lambda item: (item.name, str(item.id)),
+    )
     techniques = sorted(
-        observation.techniques,
+        (
+            item
+            for item in observation.techniques
+            if item.publication_state == PublicationState.PUBLISHED
+            and item.source.publication_state == PublicationState.PUBLISHED
+        ),
         key=lambda item: (item.external_id, str(item.id)),
     )
     return ObservationRead(
@@ -138,7 +159,12 @@ def observation_read(observation: Observation) -> ObservationRead:
 
 class ActorReadService:
     def require_actor(self, session: Session, actor_id: UUID) -> Actor:
-        actor = session.get(Actor, actor_id)
+        actor = session.scalar(
+            select(Actor).where(
+                Actor.id == actor_id,
+                Actor.publication_state == PublicationState.PUBLISHED,
+            )
+        )
         if actor is None:
             raise ApiError(404, "actor_not_found", "Actor was not found.")
         return actor
@@ -162,8 +188,18 @@ class ActorReadService:
         )
         ranked = session.execute(
             select(Actor.id, func.min(match_rank).label("match_rank"))
-            .outerjoin(Alias, Alias.actor_id == Actor.id)
-            .where(or_(canonical_contains, alias_contains))
+            .outerjoin(
+                Alias,
+                and_(
+                    Alias.actor_id == Actor.id,
+                    Alias.publication_state == PublicationState.PUBLISHED,
+                    Alias.source.has(Source.publication_state == PublicationState.PUBLISHED),
+                ),
+            )
+            .where(
+                Actor.publication_state == PublicationState.PUBLISHED,
+                or_(canonical_contains, alias_contains),
+            )
             .group_by(Actor.id)
             .order_by("match_rank", Actor.normalized_name, Actor.id)
             .limit(SEARCH_LIMIT)
@@ -173,7 +209,12 @@ class ActorReadService:
             return []
         actors = {
             actor.id: actor
-            for actor in session.scalars(select(Actor).where(Actor.id.in_(actor_ids))).all()
+            for actor in session.scalars(
+                select(Actor).where(
+                    Actor.id.in_(actor_ids),
+                    Actor.publication_state == PublicationState.PUBLISHED,
+                )
+            ).all()
         }
         alias_rank = func.row_number().over(
             partition_by=Alias.actor_id,
@@ -185,7 +226,12 @@ class ActorReadService:
                 Alias.name.label("name"),
                 alias_rank.label("alias_rank"),
             )
-            .where(Alias.actor_id.in_(actor_ids), alias_contains)
+            .where(
+                Alias.actor_id.in_(actor_ids),
+                alias_contains,
+                Alias.publication_state == PublicationState.PUBLISHED,
+                Alias.source.has(Source.publication_state == PublicationState.PUBLISHED),
+            )
             .subquery()
         )
         alias_rows = session.execute(
@@ -220,7 +266,11 @@ class ActorReadService:
         self.require_actor(session, actor_id)
         aliases = session.scalars(
             select(Alias)
-            .where(Alias.actor_id == actor_id)
+            .where(
+                Alias.actor_id == actor_id,
+                Alias.publication_state == PublicationState.PUBLISHED,
+                Alias.source.has(Source.publication_state == PublicationState.PUBLISHED),
+            )
             .options(joinedload(Alias.source))
             .order_by(Alias.normalized_name, Alias.id)
             .limit(MAX_ALIASES + 1)
@@ -244,12 +294,32 @@ class ActorReadService:
         statement: Select[tuple[Observation]] = (
             select(Observation)
             .join(actor_observations, actor_observations.c.observation_id == Observation.id)
-            .where(actor_observations.c.actor_id == actor_id)
+            .where(
+                actor_observations.c.actor_id == actor_id,
+                Observation.publication_state == PublicationState.PUBLISHED,
+                Observation.source.has(Source.publication_state == PublicationState.PUBLISHED),
+            )
             .options(
                 joinedload(Observation.source),
-                selectinload(Observation.evidence).joinedload(Evidence.source),
-                selectinload(Observation.behaviors),
-                selectinload(Observation.techniques).joinedload(Technique.source),
+                selectinload(
+                    Observation.evidence.and_(
+                        Evidence.publication_state == PublicationState.PUBLISHED,
+                        Evidence.source.has(Source.publication_state == PublicationState.PUBLISHED),
+                    )
+                ).joinedload(Evidence.source),
+                selectinload(
+                    Observation.behaviors.and_(
+                        Behavior.publication_state == PublicationState.PUBLISHED
+                    )
+                ),
+                selectinload(
+                    Observation.techniques.and_(
+                        Technique.publication_state == PublicationState.PUBLISHED,
+                        Technique.source.has(
+                            Source.publication_state == PublicationState.PUBLISHED
+                        ),
+                    )
+                ).joinedload(Technique.source),
             )
         )
         if date_from is not None:
@@ -298,7 +368,13 @@ class ActorReadService:
                 actor_observations,
                 actor_observations.c.observation_id == observation_behaviors.c.observation_id,
             )
-            .where(actor_observations.c.actor_id == actor_id)
+            .join(Observation, Observation.id == observation_behaviors.c.observation_id)
+            .where(
+                actor_observations.c.actor_id == actor_id,
+                Observation.publication_state == PublicationState.PUBLISHED,
+                Observation.source.has(Source.publication_state == PublicationState.PUBLISHED),
+                Behavior.publication_state == PublicationState.PUBLISHED,
+            )
             .distinct()
             .order_by(Behavior.normalized_name, Behavior.id)
             .limit(MAX_ASSOCIATIONS + 1)
@@ -313,7 +389,14 @@ class ActorReadService:
                 actor_observations,
                 actor_observations.c.observation_id == observation_techniques.c.observation_id,
             )
-            .where(actor_observations.c.actor_id == actor_id)
+            .join(Observation, Observation.id == observation_techniques.c.observation_id)
+            .where(
+                actor_observations.c.actor_id == actor_id,
+                Observation.publication_state == PublicationState.PUBLISHED,
+                Observation.source.has(Source.publication_state == PublicationState.PUBLISHED),
+                Technique.publication_state == PublicationState.PUBLISHED,
+                Technique.source.has(Source.publication_state == PublicationState.PUBLISHED),
+            )
             .options(joinedload(Technique.source))
             .distinct()
             .order_by(Technique.external_id, Technique.id)
@@ -333,7 +416,11 @@ class ActorReadService:
         observation_source_ids = (
             select(Observation.source_id)
             .join(actor_observations, actor_observations.c.observation_id == Observation.id)
-            .where(actor_observations.c.actor_id == actor_id)
+            .where(
+                actor_observations.c.actor_id == actor_id,
+                Observation.publication_state == PublicationState.PUBLISHED,
+                Observation.source.has(Source.publication_state == PublicationState.PUBLISHED),
+            )
         )
         evidence_source_ids = (
             select(Evidence.source_id)
@@ -345,12 +432,22 @@ class ActorReadService:
                 actor_observations,
                 actor_observations.c.observation_id == observation_evidence.c.observation_id,
             )
-            .where(actor_observations.c.actor_id == actor_id)
+            .join(Observation, Observation.id == observation_evidence.c.observation_id)
+            .where(
+                actor_observations.c.actor_id == actor_id,
+                Observation.publication_state == PublicationState.PUBLISHED,
+                Observation.source.has(Source.publication_state == PublicationState.PUBLISHED),
+                Evidence.publication_state == PublicationState.PUBLISHED,
+                Evidence.source.has(Source.publication_state == PublicationState.PUBLISHED),
+            )
         )
         all_source_ids = union(observation_source_ids, evidence_source_ids)
         sources = session.scalars(
             select(Source)
-            .where(Source.id.in_(all_source_ids))
+            .where(
+                Source.id.in_(all_source_ids),
+                Source.publication_state == PublicationState.PUBLISHED,
+            )
             .order_by(Source.name, Source.id)
             .limit(MAX_SOURCE_REFERENCES + 1)
         ).all()
@@ -364,7 +461,14 @@ class ActorReadService:
                 actor_observations,
                 actor_observations.c.observation_id == observation_evidence.c.observation_id,
             )
-            .where(actor_observations.c.actor_id == actor_id)
+            .join(Observation, Observation.id == observation_evidence.c.observation_id)
+            .where(
+                actor_observations.c.actor_id == actor_id,
+                Observation.publication_state == PublicationState.PUBLISHED,
+                Observation.source.has(Source.publication_state == PublicationState.PUBLISHED),
+                Evidence.publication_state == PublicationState.PUBLISHED,
+                Evidence.source.has(Source.publication_state == PublicationState.PUBLISHED),
+            )
             .options(joinedload(Evidence.source))
             .distinct()
             .order_by(Evidence.citation, Evidence.id)
