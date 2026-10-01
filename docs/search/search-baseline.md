@@ -50,11 +50,18 @@ The response exposes the entity type and ID, display title, bounded summary,
 source/actor references where applicable, observation time, intelligence type,
 origin, match kind and numeric score. It does not synthesize snippets or claims.
 
-The endpoint returns at most 100 results and defaults to 25. Repeated
+The endpoint returns at most 100 results per page and defaults to 25. Repeated
 `entity_type` parameters select entity categories. `source_id` applies directly
 to source-owned rows and relationally to actors/behaviors through their linked
 aliases or observations. `intelligence_type`, `date_from` and `date_to` narrow
 results to observations and campaigns; campaign dates use interval overlap.
+
+`next_cursor` is null on the final page. Otherwise it is an opaque, bounded
+cursor over the exact score, entity-type priority, case-folded title and UUID
+of the last returned result. Each page fetches `limit + 1` rows without a count
+query. A cursor fingerprint binds the cleaned query, selected entity types,
+source, intelligence type and date filters. Malformed, altered or cross-scope
+cursors return the standard 422 `validation_error` response.
 
 ## Evaluation and limitations
 
@@ -71,7 +78,7 @@ check with sequential scans disabled confirmed that PostgreSQL can use the actor
 GIN expression index for the same full-text predicate.
 
 The baseline has no typo tolerance, fuzzy matching, synonym expansion,
-language detection, per-user visibility tiers, highlighting or cursor
-pagination. English stemming may underperform for non-English intelligence and
+language detection, per-user visibility tiers or highlighting. English
+stemming may underperform for non-English intelligence and
 technical tokens. Representative production-scale relevance and latency remain
 future measurement work; Task 09 only establishes deterministic behavior.

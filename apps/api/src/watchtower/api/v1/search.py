@@ -32,10 +32,11 @@ def search(
     date_from: datetime | None = None,
     date_to: datetime | None = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 25,
+    cursor: Annotated[str | None, Query(max_length=4096)] = None,
 ) -> SearchResponse:
     _validate_dates(date_from, date_to)
     try:
-        clean_query, results = service.search(
+        clean_query, results, next_cursor = service.search(
             session,
             q,
             entity_types=set(entity_type) if entity_type else None,
@@ -44,10 +45,16 @@ def search(
             date_from=date_from,
             date_to=date_to,
             limit=limit,
+            cursor=cursor,
         )
     except SearchQueryError as error:
         raise ApiError(422, "validation_error", str(error)) from None
-    return SearchResponse(query=clean_query, data=results, limit=limit)
+    return SearchResponse(
+        query=clean_query,
+        data=results,
+        limit=limit,
+        next_cursor=next_cursor,
+    )
 
 
 def _validate_dates(date_from: datetime | None, date_to: datetime | None) -> None:

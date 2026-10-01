@@ -3,6 +3,7 @@ from collections.abc import Iterator
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
@@ -162,7 +163,7 @@ def test_curated_search_evaluation_and_stable_ranking(db_session: Session) -> No
             IntelligenceType(case["intelligence_type"]) if "intelligence_type" in case else None
         )
         date_from = datetime.fromisoformat(case["date_from"]) if "date_from" in case else None
-        _, results = service.search(
+        _, results, _ = service.search(
             db_session,
             case["query"],
             entity_types=entity_types,
@@ -175,7 +176,7 @@ def test_curated_search_evaluation_and_stable_ranking(db_session: Session) -> No
         assert results[0].entity_type.value == case["expected_type"], case["name"]
         assert results[0].title == case["expected_title"], case["name"]
 
-        _, repeated = service.search(
+        _, repeated, _ = service.search(
             db_session,
             case["query"],
             entity_types=entity_types,
@@ -186,7 +187,7 @@ def test_curated_search_evaluation_and_stable_ranking(db_session: Session) -> No
         )
         assert [item.id for item in repeated] == [item.id for item in results]
 
-    _, exact_results = service.search(db_session, "Sandworm Team")
+    _, exact_results, _ = service.search(db_session, "Sandworm Team")
     assert exact_results[0].match_kind is SearchMatchKind.EXACT
     assert exact_results[0].score >= 100
 
@@ -225,6 +226,7 @@ def test_search_api_filters_validation_and_response_contract(db_session: Session
     payload = response.json()
     assert payload["query"] == "credential phishing"
     assert payload["limit"] == 10
+    assert payload["next_cursor"] is None
     assert payload["data"][0]["entity_type"] == "observation"
     assert payload["data"][0]["title"] == "Credential phishing activity"
     assert payload["data"][0]["source_id"] == str(sources["alpha"].id)
@@ -305,8 +307,8 @@ def test_search_excludes_internal_records(db_session: Session) -> None:
     )
     db_session.flush()
 
-    _, results = SearchService().search(db_session, "Internal Search")
-    _, provenance_results = SearchService().search(db_session, "Private Provenance")
+    _, results, _ = SearchService().search(db_session, "Internal Search")
+    _, provenance_results, _ = SearchService().search(db_session, "Private Provenance")
 
     assert internal_source.publication_state is PublicationState.INTERNAL
     assert actor.publication_state is PublicationState.INTERNAL
@@ -317,6 +319,116 @@ def test_search_excludes_internal_records(db_session: Session) -> None:
     assert observation.publication_state is PublicationState.INTERNAL
     assert results == []
     assert provenance_results == []
+
+
+def test_search_cursor_has_no_gaps_or_duplicates_across_sort_ties(
+    db_session: Session,
+) -> None:
+    sources = [
+        Source(
+            name=name,
+            kind="report",
+            publication_state=PublicationState.PUBLISHED,
+        )
+        for name in (
+            "Pagination Alpha",
+            "Pagination Bravo",
+            "Pagination Charlie",
+            "Pagination Cross Type",
+            "Pagination Fixture",
+            "pagination fixture",
+            "Pagination Zulu",
+        )
+    ]
+    actor = Actor(
+        canonical_name="Pagination Cross Type",
+        normalized_name="pagination cross type",
+        publication_state=PublicationState.PUBLISHED,
+    )
+    behavior = Behavior(
+        name="Pagination Cross Type",
+        normalized_name="pagination cross type",
+        publication_state=PublicationState.PUBLISHED,
+    )
+    db_session.add_all([*sources, actor, behavior])
+    db_session.flush()
+    service = SearchService()
+    selected = {
+        SearchEntityType.ACTOR,
+        SearchEntityType.BEHAVIOR,
+        SearchEntityType.SOURCE,
+    }
+
+    _, expected, expected_cursor = service.search(
+        db_session,
+        "pagination",
+        entity_types=selected,
+        limit=100,
+    )
+    assert expected_cursor is None
+    assert len(expected) == len(sources) + 2
+
+    result_ids = []
+    cursor = None
+    while True:
+        _, page, cursor = service.search(
+            db_session,
+            "pagination",
+            entity_types=selected,
+            limit=2,
+            cursor=cursor,
+        )
+        result_ids.extend(item.id for item in page)
+        if cursor is None:
+            break
+
+    expected_ids = [item.id for item in expected]
+    assert result_ids == expected_ids
+    assert len(result_ids) == len(set(result_ids))
+
+    tied_ids = [item.id for item in expected if item.title.casefold() == "pagination fixture"]
+    assert tied_ids == sorted(tied_ids)
+    assert [
+        item.entity_type for item in expected if item.title.casefold() == "pagination cross type"
+    ] == [SearchEntityType.ACTOR, SearchEntityType.BEHAVIOR, SearchEntityType.SOURCE]
+
+
+def test_search_api_cursor_rejects_tampering_and_filter_reuse(db_session: Session) -> None:
+    seed_search_evaluation(db_session)
+    app = create_app(Settings())  # pyright: ignore[reportCallIssue]
+
+    def override_session() -> Iterator[Session]:
+        yield db_session
+
+    app.dependency_overrides[get_session] = override_session
+    params: dict[str, str | int] = {"q": "task09", "entity_type": "source", "limit": 1}
+    with TestClient(app) as client:
+        first = client.get("/api/v1/search", params=params)
+        assert first.status_code == 200
+        cursor = first.json()["next_cursor"]
+        assert isinstance(cursor, str)
+        second = client.get("/api/v1/search", params={**params, "cursor": cursor})
+        tampered = f"{cursor[:-1]}{'a' if cursor[-1] != 'a' else 'b'}"
+        invalid = client.get("/api/v1/search", params={**params, "cursor": tampered})
+        mismatched = [
+            client.get("/api/v1/search", params={**changed, "cursor": cursor})
+            for changed in (
+                {**params, "q": "different"},
+                {**params, "entity_type": "actor"},
+                {**params, "source_id": str(uuid4())},
+                {**params, "intelligence_type": "observed"},
+                {**params, "date_from": "2026-01-01T00:00:00Z"},
+                {**params, "date_to": "2026-12-31T00:00:00Z"},
+            )
+        ]
+
+    assert second.status_code == 200
+    assert second.json()["next_cursor"] is None
+    assert second.json()["data"][0]["id"] != first.json()["data"][0]["id"]
+    assert invalid.status_code == 422
+    assert invalid.json()["error"]["code"] == "validation_error"
+    assert all(response.status_code == 422 for response in mismatched)
+    assert all(response.json()["error"]["code"] == "validation_error" for response in mismatched)
 
 
 def test_search_indexes_exist_and_support_full_text_plan(db_session: Session) -> None:

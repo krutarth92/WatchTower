@@ -43,3 +43,4 @@ class SearchResponse(BaseModel):
     query: str
     data: list[SearchResultRead]
     limit: int
+    next_cursor: str | None

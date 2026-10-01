@@ -1,7 +1,12 @@
 """Deterministic PostgreSQL full-text search across approved V1 entities."""
 
+import base64
+import hashlib
+import hmac
+import json
+import math
 import re
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -57,6 +62,7 @@ ENTITY_ORDER = {
     SearchEntityType.OBSERVATION: 5,
     SearchEntityType.SOURCE: 6,
 }
+MAX_CURSOR_LENGTH = 4096
 
 SEARCH_DOCUMENTS = {
     SearchEntityType.SOURCE: (
@@ -116,10 +122,20 @@ class SearchService:
         date_from: datetime | None = None,
         date_to: datetime | None = None,
         limit: int = 25,
-    ) -> tuple[str, list[SearchResultRead]]:
+        cursor: str | None = None,
+    ) -> tuple[str, list[SearchResultRead], str | None]:
         clean_query = self._clean_query(query_text)
         normalized_query = normalize_actor_name(clean_query)
         selected = entity_types or set(SearchEntityType)
+        cursor_scope = self._cursor_scope(
+            clean_query,
+            selected,
+            source_id,
+            intelligence_type,
+            date_from,
+            date_to,
+        )
+        cursor_values = self._decode_cursor(cursor, cursor_scope) if cursor else None
         tsquery = func.websearch_to_tsquery(ENGLISH, clean_query)
         restrict_to_intelligence = any(
             value is not None for value in (intelligence_type, date_from, date_to)
@@ -333,7 +349,7 @@ class SearchService:
             )
 
         if not branches:
-            return clean_query, []
+            return clean_query, [], None
         combined = union_all(*branches).subquery("search_results")
         entity_order = case(
             *[
@@ -342,18 +358,57 @@ class SearchService:
             ],
             else_=len(ENTITY_ORDER),
         )
-        statement = (
-            select(combined)
-            .order_by(
-                combined.c.score.desc(),
-                entity_order,
-                func.lower(combined.c.title),
-                combined.c.id,
-            )
-            .limit(limit)
+        sort_title = func.lower(combined.c.title)
+        statement = select(
+            combined,
+            entity_order.label("_entity_order"),
+            sort_title.label("_sort_title"),
         )
+        if cursor_values is not None:
+            cursor_score, cursor_entity_order, cursor_title, cursor_id = cursor_values
+            statement = statement.where(
+                or_(
+                    combined.c.score < cursor_score,
+                    and_(
+                        combined.c.score == cursor_score,
+                        entity_order > cursor_entity_order,
+                    ),
+                    and_(
+                        combined.c.score == cursor_score,
+                        entity_order == cursor_entity_order,
+                        sort_title > cursor_title,
+                    ),
+                    and_(
+                        combined.c.score == cursor_score,
+                        entity_order == cursor_entity_order,
+                        sort_title == cursor_title,
+                        combined.c.id > cursor_id,
+                    ),
+                )
+            )
+        statement = statement.order_by(
+            combined.c.score.desc(),
+            entity_order,
+            sort_title,
+            combined.c.id,
+        ).limit(limit + 1)
         rows = session.execute(statement).mappings().all()
-        return clean_query, [SearchResultRead.model_validate(dict(row)) for row in rows]
+        page_rows = rows[:limit]
+        next_cursor = None
+        if len(rows) > limit and page_rows:
+            last = page_rows[-1]
+            next_cursor = self._encode_cursor(
+                float(last["score"]),
+                int(last["_entity_order"]),
+                str(last["_sort_title"]),
+                UUID(str(last["id"])),
+                cursor_scope,
+            )
+        return (
+            clean_query,
+            [SearchResultRead.model_validate(dict(row)) for row in page_rows],
+            next_cursor,
+        )
 
     @staticmethod
     def _branch(
@@ -415,3 +470,98 @@ class SearchService:
         if not 2 <= len(cleaned) <= 200 or CONTROL_CHARACTER.search(value):
             raise SearchQueryError("Search query must contain 2–200 safe characters")
         return cleaned
+
+    @staticmethod
+    def _cursor_scope(
+        clean_query: str,
+        entity_types: set[SearchEntityType],
+        source_id: UUID | None,
+        intelligence_type: IntelligenceType | None,
+        date_from: datetime | None,
+        date_to: datetime | None,
+    ) -> str:
+        scope = {
+            "query": clean_query,
+            "entity_types": sorted(item.value for item in entity_types),
+            "source_id": str(source_id) if source_id else None,
+            "intelligence_type": intelligence_type.value if intelligence_type else None,
+            "date_from": _datetime_text(date_from),
+            "date_to": _datetime_text(date_to),
+        }
+        encoded = json.dumps(scope, sort_keys=True, separators=(",", ":")).encode()
+        return hashlib.sha256(encoded).hexdigest()
+
+    @staticmethod
+    def _encode_cursor(
+        score: float,
+        entity_order: int,
+        title: str,
+        entity_id: UUID,
+        scope: str,
+    ) -> str:
+        payload = json.dumps(
+            {
+                "v": 1,
+                "score": score.hex(),
+                "entity_order": entity_order,
+                "title": title,
+                "id": str(entity_id),
+                "scope": scope,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode()
+        checksum = hashlib.sha256(payload).hexdigest()
+        token = base64.urlsafe_b64encode(payload).decode().rstrip("=")
+        return f"{token}.{checksum}"
+
+    @staticmethod
+    def _decode_cursor(cursor: str, expected_scope: str) -> tuple[float, int, str, UUID]:
+        try:
+            if len(cursor) > MAX_CURSOR_LENGTH:
+                raise ValueError
+            token, checksum = cursor.split(".", maxsplit=1)
+            padding = "=" * (-len(token) % 4)
+            payload = base64.urlsafe_b64decode(f"{token}{padding}")
+            if not hmac.compare_digest(hashlib.sha256(payload).hexdigest(), checksum):
+                raise ValueError
+            values = json.loads(payload)
+            if not isinstance(values, dict) or set(values) != {
+                "v",
+                "score",
+                "entity_order",
+                "title",
+                "id",
+                "scope",
+            }:
+                raise ValueError
+            if values["v"] != 1 or values["scope"] != expected_scope:
+                raise ValueError
+            score_value = values["score"]
+            id_value = values["id"]
+            if not isinstance(score_value, str) or not isinstance(id_value, str):
+                raise ValueError
+            score = float.fromhex(score_value)
+            entity_order = values["entity_order"]
+            title = values["title"]
+            entity_id = UUID(id_value)
+            if (
+                not math.isfinite(score)
+                or isinstance(entity_order, bool)
+                or not isinstance(entity_order, int)
+                or not 0 <= entity_order < len(ENTITY_ORDER)
+                or not isinstance(title, str)
+                or not title
+                or len(title) > 500
+            ):
+                raise ValueError
+        except (TypeError, ValueError, OverflowError, KeyError, json.JSONDecodeError):
+            raise SearchQueryError("The pagination cursor is invalid for this request.") from None
+        return score, entity_order, title, entity_id
+
+
+def _datetime_text(value: datetime | None) -> str | None:
+    if value is None:
+        return None
+    return value.astimezone(UTC).isoformat()
