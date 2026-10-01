@@ -1,6 +1,6 @@
 # Task 20: universal GitHub checks
 
-Status: implementation complete; enforcement verification active.
+Status: complete, verified and approved.
 Date: 2026-10-01.
 Source: user request to run fair, consistent checks whenever code is pushed to
 GitHub.
@@ -64,12 +64,25 @@ deploy infrastructure or weaken a failing security/dependency result.
   targets the default branch and requires those three GitHub Actions checks.
   It has no bypass actor, does not require stale-branch updates, and adds no
   reviewer, signature, linear-history, deletion or force-push rule.
-- The completion record is being pushed first to
-  `codex/task-20-github-checks`. After that branch passes all three checks, the
-  identical checked commit will be fast-forwarded to `main` to verify the rule.
+- Commit `f9f15b3` was pushed first to `codex/task-20-github-checks`. Hosted CI
+  run
+  [#12](https://github.com/krutarth92/WatchTower/actions/runs/36850297262)
+  passed Backend checks in 46 seconds, Python dependency audit in 26 seconds,
+  and Container build and scan in 45 seconds. The identical checked commit then
+  fast-forwarded successfully to protected `main`, proving that the ruleset
+  accepts a commit only after the configured checks report success.
+
+## Acceptance record
+
+- Every-branch push, pull-request and manual triggers: **pass**.
+- Same checks for maintainers, contributors and dependency automation: **pass**.
+- Exact published commit passed all three hosted jobs: **pass**.
+- Active default-branch rule requires exactly those three jobs: **pass**.
+- Checked-branch commit accepted by protected `main`: **pass**.
+- No application behavior, dependency or deployment change: **pass**.
 
 ## Human review checkpoint
 
-Stop after the workflow and supported GitHub enforcement are configured and
-verified. Present the trigger, required checks, hosted run and any repository
-plan limitation before beginning another task.
+The user requested the next task and authorized continuation. Task 20 was then
+completed and verified through the protected-branch flow above. Begin the next
+remediation only after reinspecting this record and the matching remote state.
