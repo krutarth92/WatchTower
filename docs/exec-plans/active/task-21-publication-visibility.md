@@ -1,6 +1,6 @@
 # Task 21: canonical publication visibility
 
-Status: complete; review checkpoint active.
+Status: complete, verified and approved; Task 22 started.
 Date: 2026-10-01.
 Source: V1 readiness gap G02.
 
@@ -60,3 +60,7 @@ An authenticated, attributable editorial workflow remains a later bounded task.
 Stop after all validation and hosted CI pass. Present the selected contract,
 privacy behavior, migration impact and remaining editorial-workflow dependency
 for review before starting another readiness task.
+
+The user requested the next task after reviewing the completion report. Before
+Task 22 began, the clean `main` state, migration head/drift, Ruff result, focused
+privacy suite and successful protected-main run #18 were reverified.

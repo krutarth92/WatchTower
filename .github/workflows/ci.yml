@@ -123,3 +123,33 @@ jobs:
           exit-code: "1"
           ignore-unfixed: true
           severity: HIGH,CRITICAL
+
+      - name: Generate CycloneDX SBOM
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: watchtower:${{ github.sha }}
+          format: cyclonedx
+          output: watchtower-sbom.cdx.json
+
+      - name: Verify SBOM evidence
+        run: |
+          jq -e '
+            .bomFormat == "CycloneDX" and
+            (.specVersion | type == "string") and
+            (.components | type == "array" and length > 0)
+          ' watchtower-sbom.cdx.json >/dev/null
+          sha256sum watchtower-sbom.cdx.json > watchtower-sbom.cdx.json.sha256
+          docker image inspect --format='{{.Id}}' watchtower:${{ github.sha }} \
+            > watchtower-image-id.txt
+          grep -Eq '^sha256:[0-9a-f]{64}$' watchtower-image-id.txt
+
+      - name: Retain SBOM evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: watchtower-sbom-${{ github.sha }}
+          path: |
+            watchtower-sbom.cdx.json
+            watchtower-sbom.cdx.json.sha256
+            watchtower-image-id.txt
+          if-no-files-found: error
+          retention-days: 30
