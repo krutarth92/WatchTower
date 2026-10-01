@@ -1,6 +1,6 @@
 # Task 20: universal GitHub checks
 
-Status: active.
+Status: implementation complete; enforcement verification active.
 Date: 2026-10-01.
 Source: user request to run fair, consistent checks whenever code is pushed to
 GitHub.
@@ -48,6 +48,25 @@ deploy infrastructure or weaken a failing security/dependency result.
 - The GitHub enforcement result is recorded accurately; an unavailable setting
   is reported as blocked rather than passed.
 - Local and remote `main` match and the working tree is clean.
+
+## Validation record
+
+- Parsed `.github/workflows/ci.yml` locally and confirmed `push`,
+  `pull_request` and `workflow_dispatch` are enabled without a branch filter.
+  `git diff --check` passed.
+- Commit `151d0de` (`ci: run checks on every branch push`) was pushed normally.
+  Hosted CI run
+  [#11](https://github.com/krutarth92/WatchTower/actions/runs/36822064571)
+  passed Backend checks in 43 seconds, Python dependency audit in 21 seconds,
+  and Container build and scan in 39 seconds.
+- Active ruleset
+  [Require WATCHTOWER CI on main](https://github.com/krutarth92/WatchTower/settings/rules/24292023)
+  targets the default branch and requires those three GitHub Actions checks.
+  It has no bypass actor, does not require stale-branch updates, and adds no
+  reviewer, signature, linear-history, deletion or force-push rule.
+- The completion record is being pushed first to
+  `codex/task-20-github-checks`. After that branch passes all three checks, the
+  identical checked commit will be fast-forwarded to `main` to verify the rule.
 
 ## Human review checkpoint
 
