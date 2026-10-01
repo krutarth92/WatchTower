@@ -1,6 +1,6 @@
 # Task 24: deterministic search cursor pagination
 
-Status: implementation complete; hosted validation pending.
+Status: complete; review checkpoint active.
 Date: 2026-10-01.
 Source: remaining V1 readiness gap G12.
 
@@ -58,7 +58,10 @@ matching, a new index or a database migration.
 - PASS: uv lock check resolved the unchanged 63-package lock.
 - PASS: Alembic has one current head, `4c7d9e2a1b5f`, and reports no model drift;
   this task intentionally adds no migration.
-- Pending: exact-commit protected-branch GitHub checks.
+- PASS: hosted CI run
+  [#29](https://github.com/krutarth92/WatchTower/actions/runs/36898432274)
+  passed Backend checks, Python dependency audit and Container build and scan
+  on implementation commit `03782c9a0370155c1dff7ce7a3b7de8eb918ca63`.
 
 ## Human review checkpoint
 
