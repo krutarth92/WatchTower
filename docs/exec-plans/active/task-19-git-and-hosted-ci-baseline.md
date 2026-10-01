@@ -1,6 +1,6 @@
 # Task 19: Git and hosted-CI baseline
 
-Status: complete and awaiting human review.
+Status: complete, verified and approved.
 Date: 2026-10-01.
 Source: V1 readiness gaps G01 and the hosted-run portion of G08.
 
@@ -83,8 +83,12 @@ enable staging deployment.
 - Hosted run [#9](https://github.com/krutarth92/WatchTower/actions/runs/36821521653)
   passed: Backend checks in 49 seconds, Python dependency audit in 22 seconds,
   and Container build and scan in 51 seconds. The run exposed one unsupported
-  `disable-pip` input; this final cleanup removes it and requires a repeat green
-  run before the task is reported complete.
+  `disable-pip` input; the final cleanup removed it.
+- Final hosted run
+  [#10](https://github.com/krutarth92/WatchTower/actions/runs/36821809824)
+  passed for commit `65b6466`: Backend checks in 52 seconds, Python dependency
+  audit in 17 seconds and Container build and scan in 31 seconds. Only GitHub's
+  scheduled `ubuntu-latest` image-migration notices remained.
 
 ## Acceptance record
 
@@ -100,6 +104,6 @@ enable staging deployment.
 
 ## Human review checkpoint
 
-Review the published repository, clean README, commits and hosted run. Do not
-start the next remediation task until this task is approved and its latest
-documentation-only cleanup commit has a green hosted CI run.
+The user requested the next GitHub-checks task after final hosted run #10 passed,
+satisfying this checkpoint. The next task must retain the same three checks and
+verify them on the changed trigger policy.
