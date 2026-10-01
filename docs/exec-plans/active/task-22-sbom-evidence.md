@@ -1,6 +1,6 @@
 # Task 22: retained container SBOM evidence
 
-Status: implementation validation in progress.
+Status: complete; review checkpoint active.
 Date: 2026-10-01.
 Source: remaining V1 readiness gap G08.
 
@@ -55,7 +55,18 @@ attestation policy remain a later release decision.
 - PASS: repository Ruff, formatting and Pyright checks; `git diff --check`.
 - PASS: reviewed the artifact allowlist; it contains only SBOM JSON, its
   SHA-256 checksum and the Docker image content ID.
-- PENDING: hosted CI jobs and artifact inspection.
+- PASS: hosted CI run
+  [#19](https://github.com/krutarth92/WatchTower/actions/runs/36872704605)
+  passed Backend checks, Python dependency audit and Container build and scan
+  on implementation commit `97f9ed7`.
+- PASS: GitHub retained artifact
+  `watchtower-sbom-97f9ed7b0c94374789c300d39741349963d8e818` for 30 days.
+  Its compressed size is 17,754 bytes and GitHub artifact digest is
+  `sha256:8340e69f5c8b8790d08ed5bc6e4812599270ce0aa3d7ad9ebf1ddb754a8713f2`.
+- PASS: authenticated download contained exactly the three allowed files. The
+  checksum file matched the SBOM (`42219a786b4cc3a5d15c89fe7de498c095ad357d2b73a12786db744720f8fae9`),
+  the JSON was CycloneDX 1.6 with 157 components, and the image ID was a valid
+  SHA-256 identifier.
 
 ## Human review checkpoint
 
