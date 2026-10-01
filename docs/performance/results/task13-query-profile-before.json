@@ -1,0 +1,554 @@
+{
+  "actor_id": "223a1db1-06e6-569b-9cdf-61423febc8ce",
+  "scenarios": [
+    {
+      "database_time_ms": 3.57,
+      "name": "actor_lookup",
+      "plans": [
+        {
+          "execution_time_ms": 0.041,
+          "nodes": [
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 1,
+              "Actual Total Time": 0.029,
+              "Index Name": "pk_actors",
+              "Node Type": "Index Scan",
+              "Relation Name": "actors",
+              "Shared Hit Blocks": 3,
+              "Shared Read Blocks": 0
+            }
+          ],
+          "planning_time_ms": 0.056
+        }
+      ],
+      "statement_count": 1
+    },
+    {
+      "database_time_ms": 13.972,
+      "name": "timeline_100",
+      "plans": [
+        {
+          "execution_time_ms": 0.025,
+          "nodes": [
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 1,
+              "Actual Total Time": 0.01,
+              "Index Name": "pk_actors",
+              "Node Type": "Index Scan",
+              "Relation Name": "actors",
+              "Shared Hit Blocks": 3,
+              "Shared Read Blocks": 0
+            }
+          ],
+          "planning_time_ms": 0.042
+        },
+        {
+          "execution_time_ms": 0.644,
+          "nodes": [
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 100,
+              "Actual Total Time": 0.617,
+              "Node Type": "Limit",
+              "Shared Hit Blocks": 83,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 100,
+              "Actual Total Time": 0.611,
+              "Node Type": "Sort",
+              "Shared Hit Blocks": 83,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 100,
+              "Actual Total Time": 0.497,
+              "Node Type": "Nested Loop",
+              "Shared Hit Blocks": 83,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 100,
+              "Actual Total Time": 0.449,
+              "Node Type": "Hash Join",
+              "Shared Hit Blocks": 81,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 2099,
+              "Actual Total Time": 0.129,
+              "Node Type": "Seq Scan",
+              "Relation Name": "observations",
+              "Shared Hit Blocks": 77,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 100,
+              "Actual Total Time": 0.043,
+              "Node Type": "Hash",
+              "Shared Hit Blocks": 4,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 100,
+              "Actual Total Time": 0.03,
+              "Index Name": "pk_actor_observations",
+              "Node Type": "Index Only Scan",
+              "Relation Name": "actor_observations",
+              "Shared Hit Blocks": 4,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 100,
+              "Actual Rows": 1,
+              "Actual Total Time": 0.0,
+              "Node Type": "Memoize",
+              "Shared Hit Blocks": 2,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 1,
+              "Actual Total Time": 0.005,
+              "Index Name": "pk_sources",
+              "Node Type": "Index Scan",
+              "Relation Name": "sources",
+              "Shared Hit Blocks": 2,
+              "Shared Read Blocks": 0
+            }
+          ],
+          "planning_time_ms": 0.228
+        },
+        {
+          "execution_time_ms": 0.224,
+          "nodes": [
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 100,
+              "Actual Total Time": 0.191,
+              "Node Type": "Hash Join",
+              "Shared Hit Blocks": 20,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 100,
+              "Actual Total Time": 0.159,
+              "Node Type": "Hash Join",
+              "Shared Hit Blocks": 19,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 100,
+              "Actual Total Time": 0.123,
+              "Node Type": "Hash Join",
+              "Shared Hit Blocks": 18,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 100,
+              "Actual Total Time": 0.08,
+              "Index Name": "pk_observations",
+              "Node Type": "Index Only Scan",
+              "Relation Name": "observations",
+              "Shared Hit Blocks": 17,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 100,
+              "Actual Total Time": 0.018,
+              "Node Type": "Hash",
+              "Shared Hit Blocks": 1,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 100,
+              "Actual Total Time": 0.007,
+              "Node Type": "Seq Scan",
+              "Relation Name": "observation_evidence",
+              "Shared Hit Blocks": 1,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 10,
+              "Actual Total Time": 0.01,
+              "Node Type": "Hash",
+              "Shared Hit Blocks": 1,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 10,
+              "Actual Total Time": 0.005,
+              "Node Type": "Seq Scan",
+              "Relation Name": "evidence",
+              "Shared Hit Blocks": 1,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 1,
+              "Actual Total Time": 0.007,
+              "Node Type": "Hash",
+              "Shared Hit Blocks": 1,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 1,
+              "Actual Total Time": 0.003,
+              "Node Type": "Seq Scan",
+              "Relation Name": "sources",
+              "Shared Hit Blocks": 1,
+              "Shared Read Blocks": 0
+            }
+          ],
+          "planning_time_ms": 0.29
+        },
+        {
+          "execution_time_ms": 0.208,
+          "nodes": [
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 100,
+              "Actual Total Time": 0.192,
+              "Node Type": "Nested Loop",
+              "Shared Hit Blocks": 219,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 100,
+              "Actual Total Time": 0.107,
+              "Node Type": "Hash Join",
+              "Shared Hit Blocks": 19,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 100,
+              "Actual Total Time": 0.07,
+              "Index Name": "pk_observations",
+              "Node Type": "Index Only Scan",
+              "Relation Name": "observations",
+              "Shared Hit Blocks": 17,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 100,
+              "Actual Total Time": 0.018,
+              "Node Type": "Hash",
+              "Shared Hit Blocks": 2,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 100,
+              "Actual Total Time": 0.01,
+              "Node Type": "Seq Scan",
+              "Relation Name": "observation_behaviors",
+              "Shared Hit Blocks": 2,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 100,
+              "Actual Rows": 1,
+              "Actual Total Time": 0.001,
+              "Index Name": "pk_behaviors",
+              "Node Type": "Index Scan",
+              "Relation Name": "behaviors",
+              "Shared Hit Blocks": 200,
+              "Shared Read Blocks": 0
+            }
+          ],
+          "planning_time_ms": 0.2
+        },
+        {
+          "execution_time_ms": 0.26,
+          "nodes": [
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 100,
+              "Actual Total Time": 0.239,
+              "Node Type": "Hash Join",
+              "Shared Hit Blocks": 219,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 100,
+              "Actual Total Time": 0.207,
+              "Node Type": "Nested Loop",
+              "Shared Hit Blocks": 218,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 100,
+              "Actual Total Time": 0.114,
+              "Node Type": "Hash Join",
+              "Shared Hit Blocks": 18,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 100,
+              "Actual Total Time": 0.073,
+              "Index Name": "pk_observations",
+              "Node Type": "Index Only Scan",
+              "Relation Name": "observations",
+              "Shared Hit Blocks": 17,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 100,
+              "Actual Total Time": 0.023,
+              "Node Type": "Hash",
+              "Shared Hit Blocks": 1,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 100,
+              "Actual Total Time": 0.009,
+              "Node Type": "Seq Scan",
+              "Relation Name": "observation_techniques",
+              "Shared Hit Blocks": 1,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 100,
+              "Actual Rows": 1,
+              "Actual Total Time": 0.001,
+              "Index Name": "pk_techniques",
+              "Node Type": "Index Scan",
+              "Relation Name": "techniques",
+              "Shared Hit Blocks": 200,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 1,
+              "Actual Total Time": 0.005,
+              "Node Type": "Hash",
+              "Shared Hit Blocks": 1,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 1,
+              "Actual Total Time": 0.003,
+              "Node Type": "Seq Scan",
+              "Relation Name": "sources",
+              "Shared Hit Blocks": 1,
+              "Shared Read Blocks": 0
+            }
+          ],
+          "planning_time_ms": 0.241
+        }
+      ],
+      "statement_count": 5
+    },
+    {
+      "database_time_ms": 103.472,
+      "name": "search_25",
+      "plans": [
+        {
+          "execution_time_ms": 95.8,
+          "nodes": [
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 25,
+              "Actual Total Time": 95.529,
+              "Node Type": "Limit",
+              "Shared Hit Blocks": 112,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 25,
+              "Actual Total Time": 95.526,
+              "Node Type": "Sort",
+              "Shared Hit Blocks": 112,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 2101,
+              "Actual Total Time": 92.972,
+              "Node Type": "Result",
+              "Shared Hit Blocks": 112,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 2101,
+              "Actual Total Time": 91.534,
+              "Node Type": "Append",
+              "Shared Hit Blocks": 112,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 1,
+              "Actual Total Time": 0.161,
+              "Node Type": "Bitmap Heap Scan",
+              "Relation Name": "actors",
+              "Shared Hit Blocks": 8,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 0,
+              "Actual Total Time": 0.026,
+              "Node Type": "BitmapOr",
+              "Shared Hit Blocks": 7,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 0,
+              "Actual Total Time": 0.01,
+              "Index Name": "uq_actors_normalized_name",
+              "Node Type": "Bitmap Index Scan",
+              "Shared Hit Blocks": 2,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 1,
+              "Actual Total Time": 0.015,
+              "Index Name": "ix_actors_search_document",
+              "Node Type": "Bitmap Index Scan",
+              "Shared Hit Blocks": 5,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 1,
+              "Actual Total Time": 0.076,
+              "Node Type": "Bitmap Heap Scan",
+              "Relation Name": "aliases",
+              "Shared Hit Blocks": 8,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 0,
+              "Actual Total Time": 0.015,
+              "Node Type": "BitmapOr",
+              "Shared Hit Blocks": 7,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 0,
+              "Actual Total Time": 0.007,
+              "Index Name": "ix_aliases_normalized_name",
+              "Node Type": "Bitmap Index Scan",
+              "Shared Hit Blocks": 2,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 1,
+              "Actual Total Time": 0.008,
+              "Index Name": "ix_aliases_search_document",
+              "Node Type": "Bitmap Index Scan",
+              "Shared Hit Blocks": 5,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 0,
+              "Actual Total Time": 0.036,
+              "Node Type": "Bitmap Heap Scan",
+              "Relation Name": "campaigns",
+              "Shared Hit Blocks": 15,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 0,
+              "Actual Total Time": 0.031,
+              "Node Type": "BitmapOr",
+              "Shared Hit Blocks": 15,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 0,
+              "Actual Total Time": 0.023,
+              "Index Name": "uq_campaigns_source_id",
+              "Node Type": "Bitmap Index Scan",
+              "Shared Hit Blocks": 10,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 0,
+              "Actual Total Time": 0.007,
+              "Index Name": "ix_campaigns_search_document",
+              "Node Type": "Bitmap Index Scan",
+              "Shared Hit Blocks": 5,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 0,
+              "Actual Total Time": 0.335,
+              "Node Type": "Seq Scan",
+              "Relation Name": "behaviors",
+              "Shared Hit Blocks": 2,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 0,
+              "Actual Total Time": 0.338,
+              "Node Type": "Seq Scan",
+              "Relation Name": "techniques",
+              "Shared Hit Blocks": 1,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 2099,
+              "Actual Total Time": 90.361,
+              "Node Type": "Seq Scan",
+              "Relation Name": "observations",
+              "Shared Hit Blocks": 77,
+              "Shared Read Blocks": 0
+            },
+            {
+              "Actual Loops": 1,
+              "Actual Rows": 0,
+              "Actual Total Time": 0.042,
+              "Node Type": "Seq Scan",
+              "Relation Name": "sources",
+              "Shared Hit Blocks": 1,
+              "Shared Read Blocks": 0
+            }
+          ],
+          "planning_time_ms": 0.786
+        }
+      ],
+      "statement_count": 1
+    }
+  ]
+}

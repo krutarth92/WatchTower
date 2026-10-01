@@ -1,0 +1,34 @@
+[
+  {
+    "name": "actor evidence recall",
+    "question": "What evidence supports credential phishing?",
+    "actor": "alpha",
+    "expected_evidence": "credential",
+    "expected_intent": "evidence_support"
+  },
+  {
+    "name": "behavior change time filter",
+    "question": "What changed in PowerShell behavior?",
+    "actor": "alpha",
+    "date_from": "2026-02-01T00:00:00+00:00",
+    "date_to": "2026-04-01T00:00:00+00:00",
+    "expected_evidence": "assessment",
+    "excluded_evidence": "credential",
+    "expected_intent": "behavior_change"
+  },
+  {
+    "name": "actor isolation",
+    "question": "What do we know about PowerShell activity?",
+    "actor": "beta",
+    "expected_evidence": "beta_powershell",
+    "excluded_evidence": "assessment",
+    "expected_intent": "actor_overview"
+  },
+  {
+    "name": "insufficient evidence",
+    "question": "What evidence supports quantum tunneling?",
+    "actor": "alpha",
+    "expected_status": "insufficient_evidence",
+    "expected_intent": "evidence_support"
+  }
+]

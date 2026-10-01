@@ -1,0 +1,44 @@
+# Local instruction bundle and accompanying guides
+/Instructions/
+/HOW_TO_USE_WITH_CODEX.md
+
+# Python environments and generated files
+.venv/
+.tools/
+.uv-cache/
+.venv-clean/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyright/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Local configuration and runtime data
+.env
+.env.*
+!.env.example
+!.env.deploy.example
+*.log
+/data/
+/storage/
+/.deploy/
+
+# Frontend generated files
+node_modules/
+.svelte-kit/
+coverage/
+
+# Editor and operating system files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,127 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_DB: watchtower_test
+          POSTGRES_USER: watchtower
+          POSTGRES_PASSWORD: ci-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U watchtower -d watchtower_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      WATCHTOWER_DATABASE_URL: postgresql+psycopg://watchtower:ci-only-password@127.0.0.1:5432/watchtower_test
+      WATCHTOWER_TEST_DATABASE_URL: postgresql+psycopg://watchtower:ci-only-password@127.0.0.1:5432/watchtower_test
+      WATCHTOWER_REDIS_URL: redis://127.0.0.1:6379/0
+      WATCHTOWER_ENVIRONMENT: test
+      WATCHTOWER_RAW_STORAGE_PATH: ${{ runner.temp }}/watchtower-raw
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          version: "0.12.19"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install locked dependencies
+        run: uv sync --locked
+
+      - name: Ruff lint
+        run: uv run --locked ruff check .
+
+      - name: Ruff formatting
+        run: uv run --locked ruff format --check .
+
+      - name: Pyright
+        run: uv run --locked pyright
+
+      - name: Apply migrations
+        run: uv run --locked alembic upgrade head
+
+      - name: Check migration state
+        run: |
+          uv run --locked alembic heads
+          uv run --locked alembic current
+          uv run --locked alembic check
+
+      - name: Run database-backed tests
+        run: uv run --locked pytest
+
+      - name: Build Python distributions
+        run: uv build
+
+  dependency-audit:
+    name: Python dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Audit locked runtime requirements
+        uses: pypa/gh-action-pip-audit@1220774d901786e6f652ae159f7b6bc8fea6d266 # v1.1.0
+        with:
+          inputs: requirements.txt
+          no-deps: true
+          disable-pip: true
+          ignore-vulns: PYSEC-2026-2447 GHSA-w8v5-vhqr-4h9v
+
+  container:
+    name: Container build and scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Build backend image
+        run: docker build --tag watchtower:${{ github.sha }} .
+
+      - name: Smoke-test installed application
+        run: >-
+          docker run --rm --entrypoint python watchtower:${{ github.sha }}
+          -c "import watchtower; from watchtower.main import create_app; print(watchtower.__name__, create_app.__name__)"
+
+      - name: Scan backend image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: watchtower:${{ github.sha }}
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL

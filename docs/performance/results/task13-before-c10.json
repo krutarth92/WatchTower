@@ -1,0 +1,83 @@
+{
+  "accept_encoding": "gzip",
+  "actor_id": "223a1db1-06e6-569b-9cdf-61423febc8ce",
+  "base_url": "http://127.0.0.1:8000",
+  "query": "benchmark beacon",
+  "scenarios": [
+    {
+      "concurrency": 10,
+      "content_encoding_counts": {
+        "identity": 100
+      },
+      "elapsed_seconds": 0.662,
+      "latency_ms": {
+        "max": 184.823,
+        "mean": 61.343,
+        "p50": 52.914,
+        "p95": 115.102
+      },
+      "name": "actor_lookup",
+      "path": "/api/v1/actors/223a1db1-06e6-569b-9cdf-61423febc8ce",
+      "requests": 100,
+      "requests_per_second": 151.14,
+      "status_counts": {
+        "200": 100
+      },
+      "transfer_bytes": {
+        "max": 173,
+        "mean": 173,
+        "min": 173
+      }
+    },
+    {
+      "concurrency": 10,
+      "content_encoding_counts": {
+        "identity": 100
+      },
+      "elapsed_seconds": 3.575,
+      "latency_ms": {
+        "max": 528.194,
+        "mean": 349.619,
+        "p50": 353.181,
+        "p95": 471.408
+      },
+      "name": "timeline_100",
+      "path": "/api/v1/actors/223a1db1-06e6-569b-9cdf-61423febc8ce/timeline?limit=100",
+      "requests": 100,
+      "requests_per_second": 27.97,
+      "status_counts": {
+        "200": 100
+      },
+      "transfer_bytes": {
+        "max": 176850,
+        "mean": 176850,
+        "min": 176850
+      }
+    },
+    {
+      "concurrency": 10,
+      "content_encoding_counts": {
+        "identity": 100
+      },
+      "elapsed_seconds": 2.76,
+      "latency_ms": {
+        "max": 412.715,
+        "mean": 264.182,
+        "p50": 253.841,
+        "p95": 340.133
+      },
+      "name": "search_25",
+      "path": "/api/v1/search?q=benchmark+beacon&limit=25",
+      "requests": 100,
+      "requests_per_second": 36.23,
+      "status_counts": {
+        "200": 100
+      },
+      "transfer_bytes": {
+        "max": 10423,
+        "mean": 10423,
+        "min": 10423
+      }
+    }
+  ]
+}

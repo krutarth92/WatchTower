@@ -1,0 +1,52 @@
+[build-system]
+requires = ["hatchling>=1.26,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "watchtower"
+version = "0.1.0"
+description = "Adversary-first threat intelligence backend"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "fastapi>=0.115,<1.0",
+    "uvicorn[standard]>=0.30,<1.0",
+    "pydantic>=2.9,<3.0",
+    "pydantic-settings>=2.5,<3.0",
+    "SQLAlchemy>=2.0,<2.1",
+    "alembic>=1.13,<2.0",
+    "httpx>=0.27,<1",
+    "psycopg[binary]>=3.2,<4.0",
+    "dramatiq[redis]>=2.2,<3.0",
+    "pgvector>=0.4,<1.0",
+    "pysigma>=1.0,<2.0",
+    "stix2>=3.0,<4.0",
+]
+
+[dependency-groups]
+dev = ["pytest>=8.3,<9", "ruff>=0.6,<1", "pyright>=1.1,<2"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["apps/api/src/watchtower"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["apps/api/src"]
+
+[tool.ruff.lint.isort]
+known-third-party = ["alembic"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-markers"
+testpaths = ["tests"]
+markers = ["integration: requires an explicitly configured PostgreSQL test database"]
+
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "standard"
+venvPath = "."
+venv = ".venv"
+include = ["apps/api/src", "tests", "alembic"]

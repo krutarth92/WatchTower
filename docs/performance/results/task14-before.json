@@ -1,0 +1,109 @@
+{
+  "bundle_parse_validate": {
+    "objects_per_second": 221180.22,
+    "total_ms": 1.13
+  },
+  "deduplication_replay": {
+    "objects_per_second": 134.87,
+    "stages": {
+      "deduplicate": {
+        "calls": 250,
+        "mean_ms": 2.104004,
+        "objects_per_second": 475.28,
+        "total_ms": 526.001
+      },
+      "normalize": {
+        "calls": 250,
+        "mean_ms": 0.040455,
+        "objects_per_second": 24718.7,
+        "total_ms": 10.114
+      },
+      "parse": {
+        "calls": 250,
+        "mean_ms": 0.041048,
+        "objects_per_second": 24361.49,
+        "total_ms": 10.262
+      },
+      "persist": {
+        "calls": 250,
+        "mean_ms": 0.000948,
+        "objects_per_second": 1055297.99,
+        "total_ms": 0.237
+      },
+      "validate": {
+        "calls": 250,
+        "mean_ms": 2.102417,
+        "objects_per_second": 475.64,
+        "total_ms": 525.604
+      }
+    },
+    "total_ms": 1853.593
+  },
+  "entity_resolution": {
+    "exact_linked": true,
+    "exact_match_ms": 19.329,
+    "in_job_path": false,
+    "no_match_candidates": 0,
+    "no_match_scan_ms": 76.668
+  },
+  "external_enrichment": {
+    "live_network_measured": false,
+    "mock_fetch_ms": 0.711
+  },
+  "first_pass": {
+    "objects_per_second": 110.13,
+    "stages": {
+      "deduplicate": {
+        "calls": 250,
+        "mean_ms": 1.926949,
+        "objects_per_second": 518.96,
+        "total_ms": 481.737
+      },
+      "normalize": {
+        "calls": 250,
+        "mean_ms": 0.041543,
+        "objects_per_second": 24071.33,
+        "total_ms": 10.386
+      },
+      "parse": {
+        "calls": 250,
+        "mean_ms": 0.042332,
+        "objects_per_second": 23622.79,
+        "total_ms": 10.583
+      },
+      "persist": {
+        "calls": 250,
+        "mean_ms": 3.670987,
+        "objects_per_second": 272.41,
+        "total_ms": 917.747
+      },
+      "validate": {
+        "calls": 250,
+        "mean_ms": 0.077358,
+        "objects_per_second": 12926.98,
+        "total_ms": 19.339
+      }
+    },
+    "total_ms": 2270.016
+  },
+  "inactive_stages": {
+    "ai_calls": "disabled and absent from deterministic ingestion",
+    "embeddings": "implemented storage/retrieval boundary; no configured ingestion provider"
+  },
+  "intake": {
+    "bytes_per_second": 8598398.74,
+    "total_ms": 12.803
+  },
+  "redis_dramatiq": {
+    "enqueue_ms": 702.895,
+    "messages": 1000,
+    "messages_per_second": 1422.69,
+    "observed_queue_depth": 1000
+  },
+  "workload": {
+    "bundle_bytes": 110081,
+    "objects": 250,
+    "redis_messages": 1000,
+    "resolution_actors": 1000
+  }
+}

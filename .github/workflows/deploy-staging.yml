@@ -1,0 +1,49 @@
+name: Deploy staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type deploy-staging to deploy this exact commit
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: watchtower-staging-deployment
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Private staging deployment
+    if: inputs.confirmation == 'deploy-staging'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: staging
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Configure pinned SSH host identity
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.STAGING_SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.STAGING_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -d -m 0700 "$HOME/.ssh"
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$HOME/.ssh/watchtower_staging"
+          chmod 0600 "$HOME/.ssh/watchtower_staging"
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 0600 "$HOME/.ssh/known_hosts"
+
+      - name: Deploy exact commit
+        env:
+          SSH_HOST: ${{ secrets.STAGING_SSH_HOST }}
+          SSH_USER: ${{ secrets.STAGING_SSH_USER }}
+        run: >-
+          ssh -o BatchMode=yes -o IdentitiesOnly=yes
+          -i "$HOME/.ssh/watchtower_staging"
+          -- "$SSH_USER@$SSH_HOST"
+          "bash -s -- '$GITHUB_SHA'" < scripts/deploy_staging.sh

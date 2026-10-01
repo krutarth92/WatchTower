@@ -1,0 +1,112 @@
+name: ${COMPOSE_PROJECT_NAME:-watchtower-staging}
+
+x-watchtower-app: &watchtower-app
+  image: watchtower:${WATCHTOWER_IMAGE_TAG:?Set WATCHTOWER_IMAGE_TAG in .env.deploy}
+  build:
+    context: .
+    dockerfile: Dockerfile
+  env_file:
+    - ${WATCHTOWER_ENV_FILE:-.env.deploy}
+  read_only: true
+  init: true
+  tmpfs:
+    - /tmp:size=64m,mode=1777
+  networks:
+    - backend
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env.deploy}
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env.deploy}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.deploy}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  migrate:
+    <<: *watchtower-app
+    command: ["alembic", "upgrade", "head"]
+    healthcheck:
+      disable: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    <<: *watchtower-app
+    command:
+      - uvicorn
+      - watchtower.main:create_app
+      - --factory
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --no-proxy-headers
+    ports:
+      - "127.0.0.1:${WATCHTOWER_BIND_PORT:-8000}:8000"
+    networks:
+      - backend
+      - ingress
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  worker:
+    <<: *watchtower-app
+    command: ["python", "-m", "watchtower.workers.run"]
+    healthcheck:
+      disable: true
+    volumes:
+      - raw_storage:/var/lib/watchtower/raw
+    networks:
+      - backend
+      - egress
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+networks:
+  backend:
+    internal: true
+  ingress:
+  egress:
+
+volumes:
+  postgres_data:
+  redis_data:
+  raw_storage:

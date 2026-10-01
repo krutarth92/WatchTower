@@ -1,0 +1,77 @@
+[
+  {
+    "name": "exact actor lookup",
+    "query": "Sandworm Team",
+    "expected_type": "actor",
+    "expected_title": "Sandworm Team"
+  },
+  {
+    "name": "source alias lookup",
+    "query": "Voodoo Bear",
+    "expected_type": "alias",
+    "expected_title": "Voodoo Bear"
+  },
+  {
+    "name": "campaign lookup",
+    "query": "Northern Gale Campaign",
+    "entity_types": ["campaign"],
+    "expected_type": "campaign",
+    "expected_title": "Northern Gale Campaign"
+  },
+  {
+    "name": "behavior lookup",
+    "query": "PowerShell Scripting",
+    "entity_types": ["behavior"],
+    "expected_type": "behavior",
+    "expected_title": "PowerShell Scripting"
+  },
+  {
+    "name": "technique external identifier",
+    "query": "T1059.001",
+    "expected_type": "technique",
+    "expected_title": "PowerShell"
+  },
+  {
+    "name": "observation keyword query",
+    "query": "credential phishing",
+    "entity_types": ["observation"],
+    "expected_type": "observation",
+    "expected_title": "Credential phishing activity"
+  },
+  {
+    "name": "quoted phrase query",
+    "query": "\"credential harvesting operation\"",
+    "expected_type": "observation",
+    "expected_title": "Credential phishing activity"
+  },
+  {
+    "name": "source metadata query",
+    "query": "blackenergy archive",
+    "entity_types": ["source"],
+    "expected_type": "source",
+    "expected_title": "Task09 Alpha Intelligence"
+  },
+  {
+    "name": "source filter",
+    "query": "campaign",
+    "entity_types": ["campaign"],
+    "source_key": "beta",
+    "expected_type": "campaign",
+    "expected_title": "Northern Gale Campaign"
+  },
+  {
+    "name": "intelligence type filter",
+    "query": "credential risk",
+    "intelligence_type": "assessed",
+    "expected_type": "observation",
+    "expected_title": "Credential risk assessment"
+  },
+  {
+    "name": "date filter",
+    "query": "credential",
+    "entity_types": ["observation"],
+    "date_from": "2026-02-01T00:00:00+00:00",
+    "expected_type": "observation",
+    "expected_title": "Credential risk assessment"
+  }
+]
