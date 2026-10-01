@@ -1,6 +1,6 @@
 # Task 22: retained container SBOM evidence
 
-Status: complete; review checkpoint active.
+Status: complete, verified and approved; Task 23 started.
 Date: 2026-10-01.
 Source: remaining V1 readiness gap G08.
 
@@ -73,3 +73,14 @@ attestation policy remain a later release decision.
 Stop after the protected-branch run passes and the retained artifact is
 verified. Present the artifact contents, retention, remaining provenance limit
 and exact hosted run before beginning another task.
+
+The user's next-task request satisfied this checkpoint. Before Task 23 began,
+local `main` and `origin/main` were both rechecked at full commit
+`63b3e7490c8945bee7f6d173ff9b1bb4822a1103` with a clean tree. The final
+workflow still had the three required jobs, the verified CycloneDX generation
+and the 30-day commit-specific artifact upload, and `git diff --check` passed.
+Hosted main run
+[#21](https://github.com/krutarth92/WatchTower/actions/runs/36873669533)
+passed Backend checks, Python dependency audit and Container build and scan on
+that exact commit, with the expected SBOM artifact present. Task 22 therefore
+passed transition verification.

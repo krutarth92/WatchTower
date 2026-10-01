@@ -1,7 +1,7 @@
 # WATCHTOWER V1 readiness audit
 
 Status: complete, verified and approved; remediation status updated through
-Task 22.
+Task 23.
 Date: 2026-10-01.
 Scope: approved backend/API V1 in `docs/product-specs/v1-scope.md`.
 
@@ -51,7 +51,7 @@ off until its data/provider/budget decision is made.
 | STIX export | **Complete** | The documented actor-centered STIX 2.1 subset is deterministic, conservative, operator-only and validates with the official library. Unsupported semantics are deliberately omitted rather than guessed. |
 | Async jobs | **Complete** | Durable PostgreSQL state, UUID-only Redis messages, idempotent submission, leases, bounded retry/backoff, restart recovery, backpressure and queue metrics are implemented and tested. Redis is transport rather than the source of truth. |
 | Living advisories | **Complete** | Draft privacy, immutable published revisions, typed sections, evidence/entity links and sequenced timestamped updates are implemented and tested. Earlier published revisions remain intentionally durable. |
-| Tests | **Complete** | The current suite contains 88 passing tests covering the database, API, workers, security boundaries, evaluations and migrations. The suite runs against PostgreSQL; Ruff, formatting and Pyright pass. One upstream Starlette TestClient deprecation warning remains. |
+| Tests | **Complete** | The current suite contains 88 passing tests covering the database, API, workers, security boundaries, evaluations and migrations. The suite runs against PostgreSQL with every warning treated as an error; Ruff, formatting and Pyright pass. Starlette TestClient uses its supported `httpx2` backend. |
 | Security | **Partial** | Application controls include strict input boundaries, stable errors, constant-time operator token comparison, safe fixed-source fetching, publication filtering, log redaction and security headers. Identity-aware operator authorization, edge TLS/rate limits, private production services, egress control and operational incident ownership remain release gates. |
 | CI/CD | **Partial** | Protected `main` requires branch-neutral hosted backend, dependency-audit and container checks. Actions are commit-pinned; CI performs locked install, lint, type/migration/tests, package build, dependency audit, image build/smoke/Trivy scan, and retains a verified commit-specific CycloneDX SBOM for 30 days. Durable image publication/attestation and staging environment validation remain open. |
 | Deployment | **Blocked** | A careful private Ubuntu EC2 staging runbook and SHA-based deployment/rollback script exist. No approved/available staging host, secrets, identity provider, production network/storage design, backup service or monitoring environment is evidenced. The runbook explicitly forbids public exposure. |
@@ -78,7 +78,7 @@ Result count: **12 complete, 8 partial, 0 missing, 1 blocked**.
 | G12 | Search/API | Search is capped at 100 results without cursor pagination. | Broad queries cannot enumerate a stable complete result set. | Add a deterministic cursor over score/type/title/UUID and regression tests for no gaps/duplicates, without changing ranking. | Stable visibility contract from G02. | **P2** |
 | G13 | Advisory policy | Published revisions have no withdrawal/redaction state and remain readable forever. | Later legal or source-policy removal cannot be represented without an unsafe destructive edit. | Approve and model an audited withdrawal state with explicit public behavior; preserve revision history for authorized review. | Editorial/legal policy. | **P2** |
 | G14 | Authoritative docs | `docs/design/system-workflow-reference.md` is absent. | Future work may diverge from an unknown authoritative workflow. | Supply the document or record an explicit decision that the approved V1 scope and current design set replace it. | Project owner. | **P2** |
-| G15 | Test tooling | Starlette emits a TestClient/httpx deprecation warning. | A future dependency update may break API tests. | Follow the upstream migration path or compatible version update and require a warning-free test run. | Upstream FastAPI/Starlette/httpx compatibility. | **P3** |
+| G15 | Test tooling | Remediated by Task 23: `httpx2` is locked as a development dependency, Starlette TestClient selects it, and pytest makes all warnings fatal. Production connectors retain their separate `httpx` runtime dependency. | Future dependency incompatibilities now fail the suite rather than appearing as non-blocking warnings. | Keep the two client roles explicit and review dependency updates through the locked CI suite. | Upstream FastAPI/Starlette/httpx2 compatibility. | **Complete** |
 
 ## Recommended final task list
 
@@ -94,7 +94,8 @@ separate review checkpoint.
 6. **P2 — Decide optional product policies**: search enumeration (G12), live
    RAG (G11), advisory withdrawal (G13), and the missing workflow authority
    (G14).
-7. **P3 — Remove the test-client deprecation**: G15.
+
+G15 is complete as of Task 23 and is no longer in the remaining task list.
 
 ## Validation evidence
 

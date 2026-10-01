@@ -1,5 +1,6 @@
 from collections.abc import Iterator
-from uuid import uuid4
+from typing import TypedDict
+from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
@@ -21,8 +22,17 @@ from watchtower.main import create_app
 pytestmark = pytest.mark.integration
 
 
+class AdvisoryFixture(TypedDict):
+    slug: str
+    headers: dict[str, str]
+    actor_id: UUID
+    campaign_id: UUID
+    technique_id: UUID
+    evidence_id: UUID
+
+
 @pytest.fixture
-def advisory_api(db_session: Session) -> Iterator[tuple[TestClient, dict[str, object]]]:
+def advisory_api(db_session: Session) -> Iterator[tuple[TestClient, AdvisoryFixture]]:
     token = uuid4().hex
     source = Source(name=f"Advisory source {token}", kind="report")
     actor = Actor(
@@ -71,7 +81,7 @@ def advisory_api(db_session: Session) -> Iterator[tuple[TestClient, dict[str, ob
         )
 
 
-def _revision_payload(fixture: dict[str, object], title: str) -> dict[str, object]:
+def _revision_payload(fixture: AdvisoryFixture, title: str) -> dict[str, object]:
     return {
         "title": title,
         "summary": f"{title} summary",
@@ -96,7 +106,7 @@ def _revision_payload(fixture: dict[str, object], title: str) -> dict[str, objec
 
 
 def test_living_advisory_history_links_updates_and_public_reads(
-    advisory_api: tuple[TestClient, dict[str, object]],
+    advisory_api: tuple[TestClient, AdvisoryFixture],
 ) -> None:
     client, fixture = advisory_api
     create_payload = {
@@ -182,7 +192,7 @@ def test_living_advisory_history_links_updates_and_public_reads(
 
 
 def test_operator_auth_and_advisory_validation(
-    advisory_api: tuple[TestClient, dict[str, object]],
+    advisory_api: tuple[TestClient, AdvisoryFixture],
 ) -> None:
     client, fixture = advisory_api
     payload = {"slug": fixture["slug"], **_revision_payload(fixture, "Auth check")}

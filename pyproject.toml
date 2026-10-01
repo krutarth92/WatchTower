@@ -23,7 +23,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["pytest>=8.3,<9", "ruff>=0.6,<1", "pyright>=1.1,<2"]
+dev = ["httpx2>=2.0,<3", "pytest>=8.3,<9", "ruff>=0.6,<1", "pyright>=1.1,<2"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["apps/api/src/watchtower"]
@@ -42,6 +42,7 @@ select = ["E", "F", "I", "UP", "B"]
 [tool.pytest.ini_options]
 addopts = "-ra --strict-markers"
 testpaths = ["tests"]
+filterwarnings = ["error"]
 markers = ["integration: requires an explicitly configured PostgreSQL test database"]
 
 [tool.pyright]
