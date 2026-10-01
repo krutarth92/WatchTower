@@ -1,7 +1,7 @@
 # Task 00: repository discovery and bootstrap plan
 
-Date: 2026-10-01. Status: Tasks 00–20 verified and approved; Task 21 local
-validation complete and hosted CI pending.
+Date: 2026-10-01. Status: Tasks 00–20 verified and approved; Task 21 verified
+with its review checkpoint active.
 See [Task 01 results](task-01-backend-foundation.md).
 Scope reference: [V1 proposal](../../product-specs/v1-scope.md).
 

@@ -1,6 +1,6 @@
 # Task 21: canonical publication visibility
 
-Status: local validation complete; hosted CI pending.
+Status: complete; review checkpoint active.
 Date: 2026-10-01.
 Source: V1 readiness gap G02.
 
@@ -50,7 +50,10 @@ An authenticated, attributable editorial workflow remains a later bounded task.
 - PASS: migration downgrade to `0218f83cad8e` and upgrade back to head.
 - PASS: full suite, 88 tests; one known TestClient/httpx deprecation warning.
 - PASS: repository Ruff, formatting and Pyright checks.
-- PENDING: hosted protected-branch CI.
+- PASS: hosted CI run
+  [#16](https://github.com/krutarth92/WatchTower/actions/runs/36859340017)
+  on implementation commit `6b8c240`: Backend checks, Python dependency audit
+  and Container build and scan all completed successfully.
 
 ## Human review checkpoint
 
