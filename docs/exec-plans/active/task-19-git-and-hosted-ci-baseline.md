@@ -1,6 +1,6 @@
 # Task 19: Git and hosted-CI baseline
 
-Status: publication explicitly authorized; README amendment and push active.
+Status: complete and awaiting human review.
 Date: 2026-10-01.
 Source: V1 readiness gaps G01 and the hosted-run portion of G08.
 
@@ -67,18 +67,39 @@ enable staging deployment.
 - Docker image `watchtower:task19-baseline` built successfully and its
   installed-package smoke test printed `watchtower create_app`.
 
-## Publication checkpoint
+## Publication and hosted validation
 
-The baseline commit was created on local `main` as a normal child of the remote
-`LICENSE` commit. The
-automatic approval reviewer rejected `git push origin main` because publishing
-the complete project is sensitive external egress and the user's general
-"next task" instruction did not explicitly name this payload and GitHub
-destination. No workaround was attempted. Hosted CI cannot start until the user
-explicitly authorizes pushing this commit to
-`https://github.com/krutarth92/WatchTower`.
+- The user explicitly authorized publishing the complete reviewed repository to
+  `https://github.com/krutarth92/WatchTower` and requested a concise project
+  README. The README was rewritten, checked for missing relative links and
+  included in commit `36e0b8b` with message
+  `feat: establish WATCHTOWER backend baseline`.
+- The baseline was pushed normally to `origin/main`; no history was rewritten.
+  `git ls-remote origin refs/heads/main` matched the local commit.
+- GitHub rejected the first workflow before job execution because the `runner`
+  context is unavailable in job-level `env`. Commit `8fe3ebf`
+  (`fix: use valid CI storage path`) replaced that expression with the fixed
+  Linux runner path `/tmp/watchtower-raw`.
+- Hosted run [#9](https://github.com/krutarth92/WatchTower/actions/runs/36821521653)
+  passed: Backend checks in 49 seconds, Python dependency audit in 22 seconds,
+  and Container build and scan in 51 seconds. The run exposed one unsupported
+  `disable-pip` input; this final cleanup removes it and requires a repeat green
+  run before the task is reported complete.
 
-The user then explicitly authorized that exact destination and payload and
-requested a clean project README. The baseline commit will be amended to include
-that README while retaining the commit message
-`feat: establish WATCHTOWER backend baseline`, then pushed normally.
+## Acceptance record
+
+- Remote history preserved and normal `main` publication completed: **pass**.
+- Intended tracked file set, ignore rules and secret/large-file review: **pass**.
+- Exact local lint, formatting, type, migration, test, build and container
+  checks: **pass**.
+- Hosted Linux backend, dependency-audit and container jobs: **pass**.
+- Repository README is concise, usable and free of local instruction-bundle
+  content: **pass**.
+- Production deployment, branch protection and remaining G08 supply-chain work
+  were not part of this task.
+
+## Human review checkpoint
+
+Review the published repository, clean README, commits and hosted run. Do not
+start the next remediation task until this task is approved and its latest
+documentation-only cleanup commit has a green hosted CI run.

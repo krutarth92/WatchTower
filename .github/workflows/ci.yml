@@ -98,7 +98,6 @@ jobs:
         with:
           inputs: requirements.txt
           no-deps: true
-          disable-pip: true
           ignore-vulns: PYSEC-2026-2447 GHSA-w8v5-vhqr-4h9v
 
   container:

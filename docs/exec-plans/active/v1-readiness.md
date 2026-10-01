@@ -1,6 +1,7 @@
 # WATCHTOWER V1 readiness audit
 
-Status: complete, verified and approved; Git/hosted-CI remediation started.
+Status: complete, verified and approved; Git/hosted-CI remediation completed
+and awaiting review.
 Date: 2026-10-01.
 Scope: approved backend/API V1 in `docs/product-specs/v1-scope.md`.
 
@@ -135,6 +136,16 @@ Audit-specific checks:
   **pass**.
 
 ## Transition verification
+
+### Post-audit remediation update (2026-10-01)
+
+G01 is complete: the reviewed repository is tracked on `main`, preserves the
+pre-existing remote `LICENSE` history, and is published at
+`https://github.com/krutarth92/WatchTower`. Hosted CI run
+[#9](https://github.com/krutarth92/WatchTower/actions/runs/36821521653) passed
+the backend, dependency-audit and container jobs. This resolves the hosted-run
+portion of G08. Branch protection, SBOM retention and image provenance remain
+open under G08, so the audit's production-readiness verdict is unchanged.
 
 The user approved the audit on 2026-10-01. Before remediation began, the report
 was inspected in full and checked for all required sections, 21 classified audit
