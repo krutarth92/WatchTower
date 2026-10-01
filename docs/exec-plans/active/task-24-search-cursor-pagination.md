@@ -62,6 +62,15 @@ matching, a new index or a database migration.
   [#29](https://github.com/krutarth92/WatchTower/actions/runs/36898432274)
   passed Backend checks, Python dependency audit and Container build and scan
   on implementation commit `03782c9a0370155c1dff7ce7a3b7de8eb918ca63`.
+- PASS: branch CI run
+  [#30](https://github.com/krutarth92/WatchTower/actions/runs/36898668711)
+  passed the same three jobs on evidence commit
+  `48100f4c77cef5ca35415221444bee7fe227149c`.
+- PASS: protected-main CI run
+  [#31](https://github.com/krutarth92/WatchTower/actions/runs/36898912413)
+  passed Backend checks, Python dependency audit and Container build and scan
+  on `48100f4c77cef5ca35415221444bee7fe227149c`; the run retained its SBOM
+  artifact.
 
 ## Human review checkpoint
 
