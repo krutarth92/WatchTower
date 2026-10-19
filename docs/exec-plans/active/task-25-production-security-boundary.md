@@ -1,6 +1,6 @@
 # Task 25: production security boundary
 
-Status: application boundary implemented and locally verified; hosted CI and deployment evidence pending.
+Status: application boundary implemented and branch-verified; protected-main and deployment evidence pending.
 Date: 2026-10-19.
 Source: V1 readiness gaps G03 and G04.
 
@@ -143,6 +143,7 @@ the branch and protected-main checks pass.
 | Alembic heads/current/check | PASS: sole/current head `4c7d9e2a1b5f`; no drift |
 | OpenAPI security contract | PASS: bearer and static-header alternatives declared |
 | Local Docker build and installed-package smoke import | PASS: `watchtower:task25`, PyJWT 2.15.1 |
+| Branch CI #50 | PASS: backend, dependency audit, container build/Trivy scan, SBOM evidence |
 | `git diff --check` | PASS |
 
 The complete suite initially found one test-isolation defect: earlier logging
@@ -159,7 +160,11 @@ metadata, installs available base-image security updates noninteractively and
 removes the apt lists before application installation. A local rebuild confirms
 `libpcre2-8-0` `10.42-1+deb12u2`, `perl-base` `5.36.0-7+deb12u4`, OpenSSL
 `3.0.22-1~deb12u1`, and a successful application/PyJWT smoke import. The
-successor hosted run remains pending.
+successor hosted run
+[#50](https://github.com/krutarth92/WatchTower/actions/runs/39197256407)
+passed the backend, Python dependency-audit and container build/Trivy scan jobs.
+It retained the unexpired commit-specific
+`watchtower-sbom-c5e5d028baa88743399d5d3c613bed170170ffaf` artifact.
 
 AWS acceptance evidence remains a deployment prerequisite and is not reported
 as complete.
