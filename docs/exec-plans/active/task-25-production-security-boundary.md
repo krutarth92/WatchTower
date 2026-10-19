@@ -1,6 +1,6 @@
 # Task 25: production security boundary
 
-Status: application boundary implemented and branch-verified; protected-main and deployment evidence pending.
+Status: complete and verified; AWS deployment evidence remains a release prerequisite.
 Date: 2026-10-19.
 Source: V1 readiness gaps G03 and G04.
 
@@ -125,8 +125,9 @@ application. No AWS resources were provisioned.
 ## Approval checkpoint
 
 Satisfied before implementation by the user's instruction to continue to the
-next task. Task 25 remains at its post-implementation review checkpoint until
-the branch and protected-main checks pass.
+next task. The implementation, branch checks and protected-main checks passed.
+The task remains subject to the user's completed-task review before Task 26 may
+start.
 
 ## Validation record
 
@@ -144,6 +145,7 @@ the branch and protected-main checks pass.
 | OpenAPI security contract | PASS: bearer and static-header alternatives declared |
 | Local Docker build and installed-package smoke import | PASS: `watchtower:task25`, PyJWT 2.15.1 |
 | Branch CI #50 | PASS: backend, dependency audit, container build/Trivy scan, SBOM evidence |
+| Protected-main CI #52 | PASS: backend, dependency audit, container build/Trivy scan, SBOM evidence |
 | `git diff --check` | PASS |
 
 The complete suite initially found one test-isolation defect: earlier logging
@@ -166,5 +168,45 @@ passed the backend, Python dependency-audit and container build/Trivy scan jobs.
 It retained the unexpired commit-specific
 `watchtower-sbom-c5e5d028baa88743399d5d3c613bed170170ffaf` artifact.
 
+The exact reviewed commit `40e05d72b90bcc82c014d12bb555d36b63ad4de5`
+was fast-forwarded to protected `main`. Protected-main run
+[#52](https://github.com/krutarth92/WatchTower/actions/runs/39200492332)
+passed all three jobs and retained the unexpired commit-specific
+`watchtower-sbom-40e05d72b90bcc82c014d12bb555d36b63ad4de5` artifact.
+
 AWS acceptance evidence remains a deployment prerequisite and is not reported
 as complete.
+
+## Transition verification before Jira project setup (2026-10-19)
+
+Outcome: **PASS for the Task 25 implementation revision.** Jira backlog creation
+has not started, in accordance with `AGENTS.md`.
+
+- Inspected the task acceptance/review requirements, V1 readiness register,
+  approved scope, actual authentication/configuration/advisory application diff,
+  CI workflow and dependency declarations.
+- `git status --short`: clean before the final verification record.
+- `git branch --show-current`: `codex/task-25-production-security-boundary`;
+  local HEAD `40e05d7` records branch validation after implementation `fc9fb27`
+  and container fix `c5e5d02`.
+- `git push origin HEAD:main`: protected `main` advanced to the exact reviewed
+  Task 25 revision `40e05d72b90bcc82c014d12bb555d36b63ad4de5` after explicit user authorization.
+- Protected-main CI
+  [#52](https://github.com/krutarth92/WatchTower/actions/runs/39200492332):
+  PASS for backend checks, Python dependency audit and container build/Trivy
+  scan, with the commit-specific SBOM retained.
+- `.venv\Scripts\ruff.exe check .`: PASS.
+- `.venv\Scripts\ruff.exe format --check .`: PASS, 138 files formatted.
+- `git diff --check`: PASS before adding this record.
+- `gh` is unavailable on PATH; hosted status was verified through the GitHub
+  Actions API and linked run rather than inferred from earlier completion text.
+- The complete database suite, Pyright, migrations, audit and container scan
+  results are recorded above for the implementation revision. This closure-only
+  documentation change does not affect application behavior.
+- Jira read-only discovery confirmed site `kb-ai-projects.atlassian.net`,
+  target project WatchOver (`SCRUM`), zero existing issues, and support for
+  Epic, Story, Task, Subtask, Bug and Feature. No Jira issues were created.
+
+Task 25 is transition-complete after this closure record passes the protected
+workflow. AWS provisioning remains a separate deployment prerequisite; Jira
+setup does not authorize it.
