@@ -1,3 +1,4 @@
+import os
 import re
 from pathlib import Path
 from typing import Literal
@@ -9,6 +10,8 @@ from sqlalchemy.engine import make_url
 from sqlalchemy.exc import ArgumentError
 
 SAFE_AUTH_VALUE = re.compile(r"^[A-Za-z0-9._:@/-]{1,255}$")
+SAFE_S3_BUCKET = re.compile(r"^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$")
+SAFE_AWS_REGION = re.compile(r"^[a-z]{2}(?:-gov)?-[a-z]+-\d$")
 
 
 class Settings(BaseSettings):
@@ -29,8 +32,14 @@ class Settings(BaseSettings):
     response_gzip_compresslevel: int = Field(default=5, ge=1, le=9)
     api_slow_request_ms: int = Field(default=500, ge=50, le=60000)
     max_request_body_bytes: int = Field(default=64 * 1024, ge=1024, le=10 * 1024 * 1024)
+    raw_storage_backend: Literal["local", "s3"] = "local"
     raw_storage_path: Path = Path("storage/raw")
     max_raw_evidence_bytes: int = Field(default=10 * 1024 * 1024, ge=1024, le=100 * 1024 * 1024)
+    s3_bucket: str | None = None
+    s3_region: str | None = None
+    s3_kms_key_id: str | None = None
+    s3_endpoint_url: str | None = None
+    s3_request_timeout_seconds: int = Field(default=5, ge=1, le=30)
     redis_url: SecretStr = SecretStr("redis://127.0.0.1:6379/0")
     operator_auth_mode: Literal["static", "oidc"] = "static"
     operator_token: SecretStr | None = None
@@ -69,6 +78,46 @@ class Settings(BaseSettings):
         if url.drivername != "postgresql+psycopg" or not url.host or not url.database:
             raise ValueError("Use postgresql+psycopg with a host and database name")
         return value
+
+    @field_validator("s3_bucket")
+    @classmethod
+    def validate_s3_bucket(cls, value: str | None) -> str | None:
+        if value is not None and not SAFE_S3_BUCKET.fullmatch(value):
+            raise ValueError("S3 bucket must be a valid 3-63 character DNS bucket name")
+        return value
+
+    @field_validator("s3_region")
+    @classmethod
+    def validate_s3_region(cls, value: str | None) -> str | None:
+        if value is not None and not SAFE_AWS_REGION.fullmatch(value):
+            raise ValueError("S3 region must be a valid AWS region identifier")
+        return value
+
+    @field_validator("s3_kms_key_id")
+    @classmethod
+    def validate_s3_kms_key_id(cls, value: str | None) -> str | None:
+        if value is not None and (
+            not value.strip() or len(value) > 2048 or any(char.isspace() for char in value)
+        ):
+            raise ValueError("S3 KMS key ID must be non-empty and contain no whitespace")
+        return value
+
+    @field_validator("s3_endpoint_url")
+    @classmethod
+    def validate_s3_endpoint_url(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        parsed = urlsplit(value)
+        if (
+            parsed.scheme not in {"http", "https"}
+            or not parsed.hostname
+            or parsed.username is not None
+            or parsed.password is not None
+            or parsed.query
+            or parsed.fragment
+        ):
+            raise ValueError("S3 endpoint must be an HTTP(S) URL without credentials or fragments")
+        return value.rstrip("/")
 
     @field_validator("redis_url")
     @classmethod
@@ -144,7 +193,16 @@ class Settings(BaseSettings):
             )
         if self.oidc_operator_group == self.oidc_publisher_group:
             raise ValueError("OIDC operator and publisher groups must be different")
+        if self.raw_storage_backend == "s3" and not all(
+            (self.s3_bucket, self.s3_region, self.s3_kms_key_id)
+        ):
+            raise ValueError(
+                "S3 object storage requires WATCHTOWER_S3_BUCKET, WATCHTOWER_S3_REGION "
+                "and WATCHTOWER_S3_KMS_KEY_ID"
+            )
         if self.environment == "production":
+            if os.environ.get("AWS_ACCESS_KEY_ID") or os.environ.get("AWS_SECRET_ACCESS_KEY"):
+                raise ValueError("Production forbids static AWS access-key environment credentials")
             if self.operator_auth_mode != "oidc":
                 raise ValueError("Production requires WATCHTOWER_OPERATOR_AUTH_MODE=oidc")
             if self.operator_token is not None:
@@ -157,4 +215,13 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "Production requires an explicit WATCHTOWER_PROXY_TRUSTED_HOSTS allowlist"
                 )
+            if self.raw_storage_backend != "s3":
+                raise ValueError("Production requires WATCHTOWER_RAW_STORAGE_BACKEND=s3")
+            if self.s3_endpoint_url is not None:
+                raise ValueError("Production uses the regional AWS S3 endpoint")
+            database_url = make_url(self.database_url.get_secret_value())
+            if database_url.query.get("sslmode") != "verify-full":
+                raise ValueError("Production database connections require sslmode=verify-full")
+            if not database_url.query.get("sslrootcert"):
+                raise ValueError("Production database connections require sslrootcert")
         return self

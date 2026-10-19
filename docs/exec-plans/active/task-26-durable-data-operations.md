@@ -1,7 +1,8 @@
 # Task 26: durable evidence and data operations
 
-Status: architecture proposal ready for owner approval; implementation and AWS
-provisioning have not started.
+Status: repository implementation complete locally; exact-commit hosted CI is
+pending. AWS provisioning and external restore evidence remain out of scope
+until separately authorized.
 Date: 2026-10-19.
 Source: V1 readiness gaps G05 and G06.
 
@@ -115,7 +116,7 @@ Backup recovery point to a new versioned private bucket, validate it against the
 restored database, then switch configuration. Redis is rebuilt because durable
 job state lives in PostgreSQL.
 
-## Proposed repository implementation after approval
+## Approved repository implementation
 
 1. Add `S3ObjectStore` and one storage factory. Preserve key validation and the
    current put-if-absent/collision contract. Use conditional S3 writes, checksum
@@ -163,6 +164,37 @@ Approval authorizes repository code, tests, templates and documentation only.
 It does not authorize creating billable AWS resources, enabling an irreversible
 compliance lock, deleting evidence or deploying production.
 
+The owner approved Task 26 and then directed work to move forward on
+2026-10-19. Repository code, tests, validation-only templates and documentation
+are authorized under the boundary above. AWS resources, production deployment,
+evidence deletion and compliance-mode locks remain unauthorized.
+
+## Jira record
+
+The connected Jira project contains epic
+[`SCRUM-1`](https://kb-ai-projects.atlassian.net/browse/SCRUM-1) with Tasks
+`SCRUM-2` through `SCRUM-9`. Readback verified all eight tasks are in the
+backlog, in `To Do`, and parent-linked to the epic. Sprint 1 remains future and
+unstarted. Jira is accessed through the connected Atlassian integration; the
+repository's ignored `.env` token is not used by this application.
+
+## Implementation record
+
+- Added the production `S3ObjectStore`, centralized storage factory, shared key
+  validation, bounded reads/listing, conditional KMS-encrypted writes and stable
+  sanitized storage failures.
+- Added fail-closed production storage and verified-TLS database settings. The
+  worker now constructs its object store from settings and the AWS SDK default
+  credential chain.
+- Added a read-only, bounded-concurrency integrity command for missing, altered
+  and orphaned raw objects.
+- Added validation-only CloudFormation for private S3/KMS, encrypted Multi-AZ
+  RDS PostgreSQL 17, 35-day PITR, daily 90-day AWS Backup retention and a
+  governance-locked vault, plus runtime/migration role grants.
+- Added deterministic adapter/configuration, infrastructure and PostgreSQL
+  integrity tests. The external S3 integration path remains environment-gated;
+  no endpoint or AWS resources were authorized for this task.
+
 ## Proposal validation record
 
 - Inspected the current `ObjectStore`, `LocalObjectStore`, raw-evidence intake,
@@ -176,8 +208,47 @@ compliance lock, deleting evidence or deploying production.
   [#59](https://github.com/krutarth92/WatchTower/actions/runs/39234360256):
   PASS for backend checks, Python dependency audit and container build/Trivy
   scan at proposal commit `0063e7a210930570e636cd77c864532f8fa67851`.
+- Final proposal CI
+  [#60](https://github.com/krutarth92/WatchTower/actions/runs/39234559859):
+  PASS at recorded proposal commit
+  `bffbd4f`.
 - Application tests were not repeated locally because this proposal changes
   documentation only. The hosted workflow repeated every required check.
+
+## Local implementation validation
+
+- `.venv\Scripts\ruff.exe check .`: PASS.
+- `.venv\Scripts\ruff.exe format --check .`: PASS; 148 files formatted.
+- `.venv\Scripts\pyright.exe`: PASS with 0 errors and 0 warnings.
+- PostgreSQL/Redis Docker services: healthy.
+- `.venv\Scripts\pytest.exe -p no:cacheprovider -q`: **110 passed, 1
+  skipped**. The skip is the explicitly environment-gated disposable S3 test;
+  no endpoint or bucket was provisioned or authorized, so this external check
+  is not reported as passed.
+- Alembic `heads` and `current`: `4c7d9e2a1b5f (head)`; `alembic check`: no new
+  upgrade operations.
+- `.tools\bin\uv.exe lock --check`: PASS; 73 packages resolved.
+- `.tools\bin\uv.exe build`: PASS for source and wheel distributions.
+- `cfn-lint infra/aws/data-services.template.json`: PASS; JSON parsing and the
+  repository control assertions also pass.
+- `pip-audit --no-deps --disable-pip`: no known vulnerabilities, with the two
+  documented audit exceptions ignored. The first Windows installation-based
+  attempt was blocked by the absence of MSVC for a temporary cffi build and was
+  rerun in fully pinned, no-install mode; the failed attempt is not counted.
+- `watchtower-audit-evidence`: exit 0 with a clean local report. The local
+  database contained zero raw-evidence references, so this validates command
+  execution only; tests cover valid, missing, altered, orphaned and listing-
+  failure behavior against PostgreSQL.
+- `docker build --tag watchtower:task26 .`: PASS; the resulting image imported
+  boto3 and the installed WATCHTOWER application successfully as its non-root
+  runtime user.
+- `git diff --check`: PASS. Secret-pattern review found only the intentional
+  production rejection of AWS access-key environment variable names and its
+  test; `.env`, environments, generated distributions and local storage remain
+  ignored and untracked.
+- Local Trivy is unavailable. The required container scan and exact-commit
+  dependency audit remain pending in hosted CI and must not be marked passed
+  until that run completes.
 
 ## Primary references checked
 

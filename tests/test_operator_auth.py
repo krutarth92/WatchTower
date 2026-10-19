@@ -62,13 +62,30 @@ def rsa_key() -> rsa.RSAPrivateKey:
 
 
 def oidc_settings(**overrides: object) -> Settings:
+    production = overrides.get("environment") == "production"
     values: dict[str, object] = {
-        "database_url": SecretStr("postgresql+psycopg://user:secret@localhost/watchtower"),
+        "database_url": SecretStr(
+            "postgresql+psycopg://user:secret@localhost/watchtower"
+            + (
+                "?sslmode=verify-full&sslrootcert=/etc/ssl/certs/rds-global-bundle.pem"
+                if production
+                else ""
+            )
+        ),
         "operator_auth_mode": "oidc",
         "oidc_issuer": ISSUER,
         "oidc_jwks_url": JWKS_URL,
         "oidc_client_id": CLIENT_ID,
     }
+    if production:
+        values.update(
+            {
+                "raw_storage_backend": "s3",
+                "s3_bucket": "watchtower-raw-example",
+                "s3_region": "ap-south-1",
+                "s3_kms_key_id": "alias/watchtower-raw",
+            }
+        )
     values.update(overrides)
     return Settings(_env_file=None, **values)  # pyright: ignore[reportCallIssue]
 

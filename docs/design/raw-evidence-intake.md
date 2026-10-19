@@ -60,9 +60,13 @@ losing concurrent write cannot overwrite different content.
 
 ## Object storage
 
-The `ObjectStore` protocol exposes put-if-absent, read and existence operations
-using portable POSIX-style keys. This is the S3-compatible boundary: a future S3
-adapter can implement the protocol without changing connector or intake code.
+The `ObjectStore` protocol exposes put-if-absent, read, existence and key-listing operations
+using portable POSIX-style keys. `S3ObjectStore` implements this boundary for
+private, KMS-encrypted production storage, while `LocalObjectStore` remains the
+development and single-host staging adapter. The S3 implementation uses
+conditional writes to preserve the same immutable, idempotent contract across
+multiple workers. A future storage adapter can implement the protocol without
+changing connector or intake code.
 
 The development `LocalObjectStore` writes beneath a configured root. It rejects
 absolute paths, traversal, backslashes, unsafe path segments and oversized data.

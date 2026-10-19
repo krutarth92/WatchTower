@@ -199,6 +199,13 @@ volume is appropriate only for this single-host baseline. Keep the deployment
 private until the production blockers in `docs/security/threat-model.md` and the
 deployment runbook are resolved.
 
+Production selects the `s3` raw-storage backend and uses the AWS SDK default
+credential chain from the instance or task role. Do not place AWS access keys in
+application settings. The production database URL must include
+`sslmode=verify-full` and a readable `sslrootcert` path. The validation-only AWS
+baseline is in `infra/aws/data-services.template.json`; recovery and integrity
+procedures are in `docs/operations/durable-data-recovery.md`.
+
 ## Configuration
 
 | Variable | Default / requirement |
@@ -216,8 +223,14 @@ deployment runbook are resolved.
 | WATCHTOWER_RESPONSE_GZIP_COMPRESSLEVEL | 5, range 1–9 |
 | WATCHTOWER_API_SLOW_REQUEST_MS | 500 milliseconds, range 50–60000 |
 | WATCHTOWER_MAX_REQUEST_BODY_BYTES | 65536 bytes, range 1 KiB–10 MiB |
+| WATCHTOWER_RAW_STORAGE_BACKEND | `local`; production requires `s3` |
 | WATCHTOWER_RAW_STORAGE_PATH | storage/raw |
 | WATCHTOWER_MAX_RAW_EVIDENCE_BYTES | 10485760 (10 MiB), range 1 KiB–100 MiB |
+| WATCHTOWER_S3_BUCKET | Required with the `s3` backend; private DNS-compatible bucket name |
+| WATCHTOWER_S3_REGION | Required with the `s3` backend; AWS region such as `ap-south-1` |
+| WATCHTOWER_S3_KMS_KEY_ID | Required with the `s3` backend; customer-managed KMS key ID or ARN |
+| WATCHTOWER_S3_ENDPOINT_URL | Optional non-production test endpoint; forbidden in production |
+| WATCHTOWER_S3_REQUEST_TIMEOUT_SECONDS | 5 seconds for connect/read operations, range 1–30 |
 | WATCHTOWER_REDIS_URL | redis://127.0.0.1:6379/0 |
 | WATCHTOWER_OPERATOR_AUTH_MODE | `static` for local/private staging; production requires `oidc` |
 | WATCHTOWER_OPERATOR_TOKEN | Optional local/private token of at least 32 characters; forbidden in production |
@@ -281,11 +294,22 @@ local development service. Run `uv run --locked alembic current` and
 first domain migration; always run `alembic upgrade head` after syncing changes.
 Sessions roll back uncommitted work on close; write services must commit explicitly.
 
-Task 03's connector-facing intake stores immutable raw objects below
-`WATCHTOWER_RAW_STORAGE_PATH`; `/storage/` is ignored by Git. Object keys are
-content-addressed and source-scoped. The local adapter is for development and
-tests; deployment must configure an S3-compatible implementation before relying
-on multiple API/worker hosts. Intake defaults to a 10 MiB per-object limit.
+Task 03's connector-facing intake stores immutable raw objects. Local mode uses
+`WATCHTOWER_RAW_STORAGE_PATH`; `/storage/` is ignored by Git. Production mode
+uses the private S3 adapter and requires bucket, region, and KMS-key settings.
+Object keys are content-addressed and source-scoped, writes are conditional, and
+matching retries are idempotent. Intake defaults to a 10 MiB per-object limit.
+
+Run the read-only integrity audit after configuring the database and selected
+object store:
+
+```powershell
+uv run --locked watchtower-audit-evidence
+```
+
+It prints one JSON report and exits zero only when every referenced object has
+the expected digest and size and there are no orphaned `raw/` keys. It never
+repairs or deletes data.
 
 ## Dependency maintenance
 

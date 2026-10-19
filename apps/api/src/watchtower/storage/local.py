@@ -1,19 +1,17 @@
 import os
-import re
 import tempfile
-from pathlib import Path, PurePosixPath
+from collections.abc import Iterator
+from pathlib import Path
 
 from watchtower.storage.base import (
     ObjectCollisionError,
+    ObjectNotFoundError,
     StoredObject,
     StoredObjectTooLargeError,
+    UnsafeObjectKeyError,
+    validate_object_key,
+    validate_object_prefix,
 )
-
-SAFE_SEGMENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
-
-
-class UnsafeObjectKeyError(ValueError):
-    """Object key could escape or cannot be represented safely."""
 
 
 class LocalObjectStore:
@@ -50,7 +48,10 @@ class LocalObjectStore:
 
     def get(self, key: str) -> bytes:
         target = self._resolve(key)
-        content = target.read_bytes()
+        try:
+            content = target.read_bytes()
+        except FileNotFoundError:
+            raise ObjectNotFoundError("Object does not exist") from None
         if len(content) > self._max_bytes:
             raise StoredObjectTooLargeError(
                 f"Stored object has {len(content)} bytes; limit is {self._max_bytes}"
@@ -61,14 +62,19 @@ class LocalObjectStore:
         target = self._resolve(key)
         return target.is_file()
 
+    def iter_keys(self, prefix: str = "") -> Iterator[str]:
+        normalized_prefix = validate_object_prefix(prefix)
+        search_root = self._root
+        if normalized_prefix:
+            search_root = self._resolve(normalized_prefix.rstrip("/"))
+        if not search_root.exists():
+            return
+        for path in sorted(search_root.rglob("*")):
+            if path.is_file():
+                yield path.relative_to(self._root).as_posix()
+
     def _resolve(self, key: str) -> Path:
-        if "\\" in key:
-            raise UnsafeObjectKeyError("Object keys must use forward slashes")
-        pure = PurePosixPath(key)
-        if pure.is_absolute() or not pure.parts:
-            raise UnsafeObjectKeyError("Object keys must be relative")
-        if any(part in {"", ".", ".."} or not SAFE_SEGMENT.fullmatch(part) for part in pure.parts):
-            raise UnsafeObjectKeyError("Object key contains an unsafe path segment")
+        pure = validate_object_key(key)
         target = self._root.joinpath(*pure.parts).resolve()
         if not target.is_relative_to(self._root):
             raise UnsafeObjectKeyError("Object key escapes the storage root")

@@ -23,7 +23,7 @@ from watchtower.ingestion.mitre_attack_normalization import (
 )
 from watchtower.ingestion.normalization import NormalizationPipeline
 from watchtower.ingestion.raw_evidence import RawEvidenceIntake
-from watchtower.storage.local import LocalObjectStore
+from watchtower.storage.factory import build_object_store
 
 
 class ApprovedIngestionProcessor:
@@ -33,10 +33,7 @@ class ApprovedIngestionProcessor:
     def process(self, session: Session, claim: JobClaim) -> UUID | None:
         if claim.job_kind is not IngestionJobKind.MITRE_ATTACK_REFRESH:
             raise PermanentIngestionError("The ingestion job kind is not supported.")
-        store = LocalObjectStore(
-            self._settings.raw_storage_path,
-            self._settings.max_raw_evidence_bytes,
-        )
+        store = build_object_store(self._settings)
         intake = RawEvidenceIntake(store, self._settings.max_raw_evidence_bytes)
         pipeline = NormalizationPipeline(
             session,

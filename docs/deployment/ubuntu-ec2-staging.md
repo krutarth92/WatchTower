@@ -37,9 +37,11 @@ Create `/opt/watchtower` as a Git checkout owned by the deployment account. Copy
 replace every placeholder. Never commit or paste that file into CI logs.
 
 The example uses local Docker volumes. Before production, replace raw storage
-with an approved private S3-compatible `ObjectStore` implementation and decide
-retention, encryption, backup, and access policy. A multi-host worker deployment
-must not use this local volume.
+with the private `S3ObjectStore`, KMS key, Object Lock policy, and managed
+database baseline in `infra/aws/data-services.template.json`. A multi-host
+worker deployment must not use this local volume. The template and recovery
+runbook are repository controls only; they do not prove a deployed backup or
+successful restore rehearsal.
 
 ## Configuration
 
@@ -54,6 +56,7 @@ must not use this local volume.
 | `WATCHTOWER_REDIS_URL` | Runtime URL using Compose host `redis` |
 | `WATCHTOWER_OPERATOR_AUTH_MODE` | `static` for this private SSH-tunnel staging pattern |
 | `WATCHTOWER_OPERATOR_TOKEN` | Random staging token of at least 32 characters |
+| `WATCHTOWER_RAW_STORAGE_BACKEND` | `local` for this single-host staging pattern |
 | `WATCHTOWER_RAW_STORAGE_PATH` | `/var/lib/watchtower/raw` inside the worker |
 | `WATCHTOWER_ENVIRONMENT` | `staging` |
 

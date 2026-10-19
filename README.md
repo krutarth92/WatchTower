@@ -14,6 +14,10 @@ The backend is suitable for local development and private staging evaluation.
 The [V1 readiness audit](docs/exec-plans/active/v1-readiness.md) lists the
 remaining controls required before an internet-facing production release.
 
+Production data templates define private S3 evidence storage, encrypted
+Multi-AZ RDS PostgreSQL, and governed backups. They are validation-only until
+an AWS deployment and restore rehearsal are separately authorized.
+
 Frontend implementation is outside the current backend V1 scope.
 
 ## Quick start
@@ -93,6 +97,7 @@ audits dependencies, and scans the container for high-severity vulnerabilities.
 - [Intelligence data model](docs/design/intelligence-data-model.md)
 - [Security threat model](docs/security/threat-model.md)
 - [Production security boundary](docs/security/production-boundary.md)
+- [Durable data recovery](docs/operations/durable-data-recovery.md)
 - [Private staging deployment](docs/deployment/ubuntu-ec2-staging.md)
 - [Living intelligence contract](docs/design/living-intelligence-advisories.md)
 

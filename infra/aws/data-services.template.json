@@ -1,0 +1,390 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Validation-only WATCHTOWER durable evidence and PostgreSQL baseline.",
+  "Parameters": {
+    "VpcId": { "Type": "AWS::EC2::VPC::Id" },
+    "PrivateSubnetIds": { "Type": "List<AWS::EC2::Subnet::Id>" },
+    "ApplicationSecurityGroupId": { "Type": "AWS::EC2::SecurityGroup::Id" },
+    "MigrationSecurityGroupId": { "Type": "AWS::EC2::SecurityGroup::Id" },
+    "DatabaseName": {
+      "Type": "String",
+      "Default": "watchtower",
+      "AllowedPattern": "^[a-zA-Z][a-zA-Z0-9_]{0,62}$"
+    },
+    "PostgresEngineVersion": {
+      "Type": "String",
+      "AllowedPattern": "^17\\.[0-9]+$",
+      "Description": "An approved PostgreSQL 17 minor version available in the deployment Region."
+    },
+    "DatabaseInstanceClass": { "Type": "String", "Default": "db.t4g.small" },
+    "RdsCaCertificateIdentifier": {
+      "Type": "String",
+      "Default": "rds-ca-rsa2048-g1"
+    },
+    "ObjectLockDays": { "Type": "Number", "Default": 365, "MinValue": 365 },
+    "BackupRetentionDays": { "Type": "Number", "Default": 90, "MinValue": 90 }
+  },
+  "Resources": {
+    "RawEvidenceKey": {
+      "Type": "AWS::KMS::Key",
+      "Properties": {
+        "Description": "WATCHTOWER raw-evidence encryption key",
+        "EnableKeyRotation": true,
+        "KeyPolicy": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "EnableAccountIAM",
+              "Effect": "Allow",
+              "Principal": { "AWS": { "Fn::Sub": "arn:${AWS::Partition}:iam::${AWS::AccountId}:root" } },
+              "Action": "kms:*",
+              "Resource": "*"
+            }
+          ]
+        }
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "RawEvidenceKeyAlias": {
+      "Type": "AWS::KMS::Alias",
+      "Properties": {
+        "AliasName": "alias/watchtower-raw-evidence",
+        "TargetKeyId": { "Ref": "RawEvidenceKey" }
+      }
+    },
+    "RawEvidenceBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "BucketKeyEnabled": true,
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "aws:kms",
+                "KMSMasterKeyID": { "Fn::GetAtt": ["RawEvidenceKey", "Arn"] }
+              }
+            }
+          ]
+        },
+        "ObjectLockEnabled": true,
+        "ObjectLockConfiguration": {
+          "ObjectLockEnabled": "Enabled",
+          "Rule": {
+            "DefaultRetention": {
+              "Mode": "GOVERNANCE",
+              "Days": { "Ref": "ObjectLockDays" }
+            }
+          }
+        },
+        "OwnershipControls": {
+          "Rules": [{ "ObjectOwnership": "BucketOwnerEnforced" }]
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true
+        },
+        "Tags": [
+          { "Key": "watchtower-backup", "Value": "true" },
+          { "Key": "watchtower-data-class", "Value": "raw-evidence" }
+        ],
+        "VersioningConfiguration": { "Status": "Enabled" }
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "RawEvidenceBucketPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": { "Ref": "RawEvidenceBucket" },
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "DenyInsecureTransport",
+              "Effect": "Deny",
+              "Principal": "*",
+              "Action": "s3:*",
+              "Resource": [
+                { "Fn::GetAtt": ["RawEvidenceBucket", "Arn"] },
+                { "Fn::Sub": "${RawEvidenceBucket.Arn}/*" }
+              ],
+              "Condition": { "Bool": { "aws:SecureTransport": "false" } }
+            },
+            {
+              "Sid": "DenyMissingOrIncorrectEncryption",
+              "Effect": "Deny",
+              "Principal": "*",
+              "Action": "s3:PutObject",
+              "Resource": { "Fn::Sub": "${RawEvidenceBucket.Arn}/raw/*" },
+              "Condition": {
+                "StringNotEquals": {
+                  "s3:x-amz-server-side-encryption": "aws:kms"
+                }
+              }
+            },
+            {
+              "Sid": "DenyIncorrectEncryptionKey",
+              "Effect": "Deny",
+              "Principal": "*",
+              "Action": "s3:PutObject",
+              "Resource": { "Fn::Sub": "${RawEvidenceBucket.Arn}/raw/*" },
+              "Condition": {
+                "StringNotEquals": {
+                  "s3:x-amz-server-side-encryption-aws-kms-key-id": { "Fn::GetAtt": ["RawEvidenceKey", "Arn"] }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "RawEvidenceRuntimeRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": { "Service": "ec2.amazonaws.com" },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "RawEvidenceReadWriteWithoutDelete",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": ["s3:GetObject", "s3:PutObject"],
+                  "Resource": { "Fn::Sub": "${RawEvidenceBucket.Arn}/raw/*" }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": ["s3:ListBucket"],
+                  "Resource": { "Fn::GetAtt": ["RawEvidenceBucket", "Arn"] },
+                  "Condition": { "StringLike": { "s3:prefix": ["raw", "raw/*"] } }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": ["kms:Decrypt", "kms:DescribeKey", "kms:Encrypt", "kms:GenerateDataKey"],
+                  "Resource": { "Fn::GetAtt": ["RawEvidenceKey", "Arn"] }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "DatabaseKey": {
+      "Type": "AWS::KMS::Key",
+      "Properties": {
+        "Description": "WATCHTOWER RDS encryption key",
+        "EnableKeyRotation": true,
+        "KeyPolicy": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": { "AWS": { "Fn::Sub": "arn:${AWS::Partition}:iam::${AWS::AccountId}:root" } },
+              "Action": "kms:*",
+              "Resource": "*"
+            }
+          ]
+        }
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "DatabaseSubnetGroup": {
+      "Type": "AWS::RDS::DBSubnetGroup",
+      "Properties": {
+        "DBSubnetGroupDescription": "WATCHTOWER private database subnets",
+        "SubnetIds": { "Ref": "PrivateSubnetIds" }
+      }
+    },
+    "DatabaseSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "WATCHTOWER private PostgreSQL ingress",
+        "SecurityGroupEgress": [],
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 5432,
+            "ToPort": 5432,
+            "SourceSecurityGroupId": { "Ref": "ApplicationSecurityGroupId" }
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 5432,
+            "ToPort": 5432,
+            "SourceSecurityGroupId": { "Ref": "MigrationSecurityGroupId" }
+          }
+        ],
+        "VpcId": { "Ref": "VpcId" }
+      }
+    },
+    "DatabaseParameterGroup": {
+      "Type": "AWS::RDS::DBParameterGroup",
+      "Properties": {
+        "Description": "WATCHTOWER PostgreSQL 17 TLS enforcement",
+        "Family": "postgres17",
+        "Parameters": { "rds.force_ssl": "1" }
+      }
+    },
+    "DatabaseSecret": {
+      "Type": "AWS::SecretsManager::Secret",
+      "Properties": {
+        "Description": "WATCHTOWER migration owner credentials",
+        "GenerateSecretString": {
+          "SecretStringTemplate": "{\"username\":\"watchtower_migration\"}",
+          "GenerateStringKey": "password",
+          "ExcludeCharacters": "@/\\\"' "
+        }
+      }
+    },
+    "DatabaseRuntimeSecret": {
+      "Type": "AWS::SecretsManager::Secret",
+      "Properties": {
+        "Description": "WATCHTOWER runtime database credentials",
+        "GenerateSecretString": {
+          "SecretStringTemplate": "{\"username\":\"watchtower_runtime\"}",
+          "GenerateStringKey": "password",
+          "ExcludeCharacters": "@/\\\"' "
+        }
+      }
+    },
+    "Database": {
+      "Type": "AWS::RDS::DBInstance",
+      "Properties": {
+        "AllocatedStorage": "100",
+        "AutoMinorVersionUpgrade": true,
+        "BackupRetentionPeriod": 35,
+        "CACertificateIdentifier": { "Ref": "RdsCaCertificateIdentifier" },
+        "CopyTagsToSnapshot": true,
+        "DBInstanceClass": { "Ref": "DatabaseInstanceClass" },
+        "DBName": { "Ref": "DatabaseName" },
+        "DBParameterGroupName": { "Ref": "DatabaseParameterGroup" },
+        "DBSubnetGroupName": { "Ref": "DatabaseSubnetGroup" },
+        "DeletionProtection": true,
+        "EnableCloudwatchLogsExports": ["postgresql", "upgrade"],
+        "Engine": "postgres",
+        "EngineVersion": { "Ref": "PostgresEngineVersion" },
+        "KmsKeyId": { "Fn::GetAtt": ["DatabaseKey", "Arn"] },
+        "MasterUsername": { "Fn::Sub": "{{resolve:secretsmanager:${DatabaseSecret}:SecretString:username}}" },
+        "MasterUserPassword": { "Fn::Sub": "{{resolve:secretsmanager:${DatabaseSecret}:SecretString:password}}" },
+        "MultiAZ": true,
+        "PubliclyAccessible": false,
+        "StorageEncrypted": true,
+        "StorageType": "gp3",
+        "Tags": [{ "Key": "watchtower-backup", "Value": "true" }],
+        "VPCSecurityGroups": [{ "Ref": "DatabaseSecurityGroup" }]
+      },
+      "DeletionPolicy": "Snapshot",
+      "UpdateReplacePolicy": "Snapshot"
+    },
+    "BackupVaultKey": {
+      "Type": "AWS::KMS::Key",
+      "Properties": {
+        "Description": "WATCHTOWER backup-vault encryption key",
+        "EnableKeyRotation": true,
+        "KeyPolicy": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": { "AWS": { "Fn::Sub": "arn:${AWS::Partition}:iam::${AWS::AccountId}:root" } },
+              "Action": "kms:*",
+              "Resource": "*"
+            }
+          ]
+        }
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "BackupVault": {
+      "Type": "AWS::Backup::BackupVault",
+      "Properties": {
+        "BackupVaultName": "watchtower-durable-data",
+        "EncryptionKeyArn": { "Fn::GetAtt": ["BackupVaultKey", "Arn"] },
+        "LockConfiguration": {
+          "MinRetentionDays": { "Ref": "BackupRetentionDays" },
+          "MaxRetentionDays": { "Ref": "BackupRetentionDays" }
+        }
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "BackupServiceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": { "Service": "backup.amazonaws.com" },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          { "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForBackup" },
+          { "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/AWSBackupServiceRolePolicyForS3Backup" }
+        ]
+      }
+    },
+    "BackupPlan": {
+      "Type": "AWS::Backup::BackupPlan",
+      "Properties": {
+        "BackupPlan": {
+          "BackupPlanName": "watchtower-durable-data",
+          "BackupPlanRule": [
+            {
+              "RuleName": "daily-90-day-retention",
+              "ScheduleExpression": "cron(0 3 * * ? *)",
+              "StartWindowMinutes": 60,
+              "CompletionWindowMinutes": 720,
+              "TargetBackupVault": { "Ref": "BackupVault" },
+              "Lifecycle": { "DeleteAfterDays": { "Ref": "BackupRetentionDays" } }
+            }
+          ]
+        }
+      }
+    },
+    "BackupSelection": {
+      "Type": "AWS::Backup::BackupSelection",
+      "Properties": {
+        "BackupPlanId": { "Ref": "BackupPlan" },
+        "BackupSelection": {
+          "IamRoleArn": { "Fn::GetAtt": ["BackupServiceRole", "Arn"] },
+          "ListOfTags": [
+            {
+              "ConditionType": "STRINGEQUALS",
+              "ConditionKey": "watchtower-backup",
+              "ConditionValue": "true"
+            }
+          ],
+          "SelectionName": "watchtower-tagged-data"
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "RawEvidenceBucketName": { "Value": { "Ref": "RawEvidenceBucket" } },
+    "RawEvidenceKmsKeyArn": { "Value": { "Fn::GetAtt": ["RawEvidenceKey", "Arn"] } },
+    "RawEvidenceRuntimeRoleArn": { "Value": { "Fn::GetAtt": ["RawEvidenceRuntimeRole", "Arn"] } },
+    "DatabaseEndpoint": { "Value": { "Fn::GetAtt": ["Database", "Endpoint.Address"] } },
+    "DatabaseSecretArn": { "Value": { "Ref": "DatabaseSecret" } },
+    "DatabaseRuntimeSecretArn": { "Value": { "Ref": "DatabaseRuntimeSecret" } },
+    "BackupVaultName": { "Value": { "Ref": "BackupVault" } }
+  }
+}

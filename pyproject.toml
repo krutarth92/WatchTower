@@ -16,12 +16,16 @@ dependencies = [
     "alembic>=1.13,<2.0",
     "httpx>=0.27,<1",
     "PyJWT[crypto]>=2.10,<3.0",
+    "boto3>=1.35,<2.0",
     "psycopg[binary]>=3.2,<4.0",
     "dramatiq[redis]>=2.2,<3.0",
     "pgvector>=0.4,<1.0",
     "pysigma>=1.0,<2.0",
     "stix2>=3.0,<4.0",
 ]
+
+[project.scripts]
+watchtower-audit-evidence = "watchtower.operations.evidence_integrity:main"
 
 [dependency-groups]
 dev = ["httpx2>=2.0,<3", "pytest>=8.3,<9", "ruff>=0.6,<1", "pyright>=1.1,<2"]
