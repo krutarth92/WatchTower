@@ -1,8 +1,8 @@
 # Task 26: durable evidence and data operations
 
-Status: repository implementation complete locally; exact-commit hosted CI is
-pending. AWS provisioning and external restore evidence remain out of scope
-until separately authorized.
+Status: repository implementation and code-commit validation complete. AWS
+provisioning and external restore evidence remain out of scope until separately
+authorized, so G05 and G06 are not operationally complete.
 Date: 2026-10-19.
 Source: V1 readiness gaps G05 and G06.
 
@@ -246,9 +246,15 @@ repository's ignored `.env` token is not used by this application.
   production rejection of AWS access-key environment variable names and its
   test; `.env`, environments, generated distributions and local storage remain
   ignored and untracked.
-- Local Trivy is unavailable. The required container scan and exact-commit
-  dependency audit remain pending in hosted CI and must not be marked passed
-  until that run completes.
+- Local Trivy is unavailable. Hosted CI
+  [#61](https://github.com/krutarth92/WatchTower/actions/runs/39238234419)
+  passed backend checks, Python dependency audit, and container build/Trivy/SBOM
+  for exact implementation commit
+  `9d007db388258fa44069e43bbead899b642ae4b0`.
+
+Repository acceptance is complete except for the explicitly environment-gated
+disposable S3 test. That check and the real restore rehearsal require external
+resources and remain open. No AWS service was created, changed, or deployed.
 
 ## Primary references checked
 
