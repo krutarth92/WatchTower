@@ -163,6 +163,22 @@ Approval authorizes repository code, tests, templates and documentation only.
 It does not authorize creating billable AWS resources, enabling an irreversible
 compliance lock, deleting evidence or deploying production.
 
+## Proposal validation record
+
+- Inspected the current `ObjectStore`, `LocalObjectStore`, raw-evidence intake,
+  worker construction, settings, PostgreSQL engine, private staging Compose,
+  deployment runbook and V1 gap register.
+- Checked current AWS primary documentation for S3 immutability/encryption,
+  RDS PostgreSQL 17 and pgvector support, TLS, PITR, Backup Vault Lock and
+  restore-test validation.
+- `git diff --check`: PASS for the transition record and proposal.
+- Branch CI
+  [#59](https://github.com/krutarth92/WatchTower/actions/runs/39234360256):
+  PASS for backend checks, Python dependency audit and container build/Trivy
+  scan at proposal commit `0063e7a210930570e636cd77c864532f8fa67851`.
+- Application tests were not repeated locally because this proposal changes
+  documentation only. The hosted workflow repeated every required check.
+
 ## Primary references checked
 
 - [S3 Object Lock](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html)
