@@ -47,6 +47,12 @@ class AdvisoryReferenceError(ValueError):
     pass
 
 
+def _required_attribution(value: str | None) -> str:
+    if value is None:
+        raise AdvisoryReferenceError("Authenticated advisory attribution is required.")
+    return value
+
+
 class AdvisoryService:
     def create(self, session: Session, payload: AdvisoryCreate) -> AdvisoryRead:
         if session.scalar(select(Advisory.id).where(Advisory.slug == payload.slug)) is not None:
@@ -127,7 +133,7 @@ class AdvisoryService:
             title=payload.title,
             summary=payload.summary,
             intelligence_type=payload.intelligence_type,
-            created_by=payload.created_by,
+            created_by=_required_attribution(payload.created_by),
             evidence=self._resolve(session, Evidence, payload.evidence_ids, "evidence"),
         )
         advisory.updated_at = datetime.now(UTC)
@@ -263,7 +269,7 @@ class AdvisoryService:
             version=version,
             title=payload.title,
             summary=payload.summary,
-            created_by=payload.created_by,
+            created_by=_required_attribution(payload.created_by),
             sections=[
                 AdvisorySection(
                     section_type=item.section_type,

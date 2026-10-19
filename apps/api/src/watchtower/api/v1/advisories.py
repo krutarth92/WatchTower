@@ -23,7 +23,7 @@ from watchtower.advisories.service import (
     AdvisoryService,
 )
 from watchtower.api.errors import ERROR_RESPONSES, OPERATOR_ERROR_RESPONSES, ApiError
-from watchtower.api.operator_auth import require_operator
+from watchtower.api.operator_auth import Operator, OperatorPrincipal, Publisher, require_operator
 from watchtower.db.session import get_session
 
 public_router = APIRouter(
@@ -50,6 +50,18 @@ def _write_error(error: Exception) -> ApiError:
     if isinstance(error, AdvisoryConflictError):
         return ApiError(409, "advisory_conflict", str(error))
     return ApiError(422, "invalid_advisory_reference", str(error))
+
+
+def _attribution(principal: OperatorPrincipal, supplied: str | None) -> str:
+    if principal.auth_method == "oidc":
+        return principal.subject
+    if supplied is None:
+        raise ApiError(
+            422,
+            "operator_attribution_required",
+            "Local static-token requests must supply advisory attribution.",
+        )
+    return supplied
 
 
 @public_router.get("", response_model=AdvisoryCollectionResponse, summary="List advisories")
@@ -108,9 +120,16 @@ def get_advisory_updates(
     status_code=status.HTTP_201_CREATED,
     summary="Create a draft advisory",
 )
-def create_advisory(payload: AdvisoryCreate, session: DatabaseSession) -> AdvisoryResponse:
+def create_advisory(
+    payload: AdvisoryCreate,
+    session: DatabaseSession,
+    principal: Operator,
+) -> AdvisoryResponse:
     try:
-        data = AdvisoryService().create(session, payload)
+        attributed = payload.model_copy(
+            update={"created_by": _attribution(principal, payload.created_by)}
+        )
+        data = AdvisoryService().create(session, attributed)
         session.commit()
     except (AdvisoryConflictError, AdvisoryReferenceError, AdvisoryNotFoundError) as error:
         session.rollback()
@@ -125,10 +144,16 @@ def create_advisory(payload: AdvisoryCreate, session: DatabaseSession) -> Adviso
     summary="Append an immutable advisory revision",
 )
 def add_advisory_revision(
-    advisory_id: UUID, payload: RevisionInput, session: DatabaseSession
+    advisory_id: UUID,
+    payload: RevisionInput,
+    session: DatabaseSession,
+    principal: Operator,
 ) -> AdvisoryResponse:
     try:
-        data = AdvisoryService().add_revision(session, advisory_id, payload)
+        attributed = payload.model_copy(
+            update={"created_by": _attribution(principal, payload.created_by)}
+        )
+        data = AdvisoryService().add_revision(session, advisory_id, attributed)
         session.commit()
     except (AdvisoryConflictError, AdvisoryReferenceError, AdvisoryNotFoundError) as error:
         session.rollback()
@@ -146,9 +171,15 @@ def publish_advisory_revision(
     version: int,
     payload: PublishRequest,
     session: DatabaseSession,
+    principal: Publisher,
 ) -> AdvisoryResponse:
     try:
-        data = AdvisoryService().publish(session, advisory_id, version, payload.published_by)
+        data = AdvisoryService().publish(
+            session,
+            advisory_id,
+            version,
+            _attribution(principal, payload.published_by),
+        )
         session.commit()
     except (AdvisoryConflictError, AdvisoryReferenceError, AdvisoryNotFoundError) as error:
         session.rollback()
@@ -166,9 +197,13 @@ def add_advisory_update(
     advisory_id: UUID,
     payload: AdvisoryUpdateCreate,
     session: DatabaseSession,
+    principal: Operator,
 ) -> UpdateRead:
     try:
-        data = AdvisoryService().add_update(session, advisory_id, payload)
+        attributed = payload.model_copy(
+            update={"created_by": _attribution(principal, payload.created_by)}
+        )
+        data = AdvisoryService().add_update(session, advisory_id, attributed)
         session.commit()
     except (AdvisoryConflictError, AdvisoryReferenceError, AdvisoryNotFoundError) as error:
         session.rollback()

@@ -1,8 +1,8 @@
 # WATCHTOWER V1 readiness audit
 
-Status: complete, verified and approved; remediation status updated through
-Task 24.
-Date: 2026-10-01.
+Status: complete, verified and approved; remediation status updated through the
+locally verified Task 25 application boundary.
+Date: 2026-10-19.
 Scope: approved backend/API V1 in `docs/product-specs/v1-scope.md`.
 
 ## Verdict
@@ -11,10 +11,10 @@ WATCHTOWER is **ready for local development and private staging evaluation**.
 It is **not ready for an internet-facing production release**.
 
 The core backend contracts are implemented and pass the complete local
-PostgreSQL-backed suite. Repository and public-read visibility controls are now
-in place. The remaining release blockers are identity-aware administration,
-production edge controls, shared object storage and retention, backup/restore
-operations, and monitored production infrastructure.
+PostgreSQL-backed suite. Repository, public-read visibility and the
+identity-aware application boundary are in place. The remaining release
+blockers include deployed Cognito/ALB/WAF controls, shared object storage and
+retention, backup/restore operations, and monitored production infrastructure.
 
 This audit does not treat the absent frontend as a defect. The approved V1 scope
 is backend/API first and says frontend implementation requires separate
@@ -44,15 +44,15 @@ off until its data/provider/budget decision is made.
 | Normalization | **Complete** | The parse → normalize → validate → deduplicate → persist ledger is deterministic and replay-safe. Conflict, older-version, malformed and unsupported-record behavior is tested. The deliberate intrusion-set-only mapping matches the approved narrow reference connector. |
 | Actor resolution | **Complete** | Exact/known rules, unresolved ambiguity, review-only similarity candidates, manual correction and immutable decision audit are implemented and tested. Fuzzy similarity never auto-links an actor. |
 | Actor timeline | **Complete** | Stable actor lookup, aliases, observations, evidence, techniques, date/type filtering and opaque cursor pagination are implemented with bounded eager loading. Public reads fail closed and include only explicitly published records with published provenance. |
-| API quality | **Partial** | Versioned routes, strict validation, stable error envelopes, request IDs, body limits, gzip, bounded queries, publication filtering, cursor-paginated search and OpenAPI are present. Production trusted-host/rate-limit/TLS behavior belongs to an absent edge. |
+| API quality | **Partial** | Versioned routes, strict validation, stable error envelopes, request IDs, body limits, gzip, bounded queries, publication filtering, cursor-paginated search, OpenAPI, trusted-host enforcement and explicit proxy trust are present. Production rate limits and TLS still require the approved AWS edge deployment. |
 | Search | **Partial** | PostgreSQL full-text search has stable ranking, publication filters, GIN/generated-vector support, 11 rank-1 evaluation cases and scoped keyset pagination. It lacks a production-scale relevance corpus and production-like latency result. |
 | RAG grounding | **Partial** | pgvector storage, actor/time filtering, deterministic reranking, context budgets, citations, OBSERVED/ASSESSED enforcement and insufficient-evidence behavior are evaluated with deterministic providers. No approved live provider, automatic embedding ingestion/backfill or measured vector index exists; the endpoint correctly returns unavailable by default. |
 | Technical artifacts | **Complete** | STIX 2.1, Sigma and ATT&CK technique records preserve exact original content, hashes, parsed structure, validation failures and provenance. Reads are operator-only and tests cover valid, invalid, duplicate and provenance behavior. |
 | STIX export | **Complete** | The documented actor-centered STIX 2.1 subset is deterministic, conservative, operator-only and validates with the official library. Unsupported semantics are deliberately omitted rather than guessed. |
 | Async jobs | **Complete** | Durable PostgreSQL state, UUID-only Redis messages, idempotent submission, leases, bounded retry/backoff, restart recovery, backpressure and queue metrics are implemented and tested. Redis is transport rather than the source of truth. |
 | Living advisories | **Complete** | Draft privacy, immutable published revisions, typed sections, evidence/entity links and sequenced timestamped updates are implemented and tested. Earlier published revisions remain intentionally durable. |
-| Tests | **Complete** | The current suite contains 90 passing tests covering the database, API, workers, security boundaries, evaluations and migrations. The suite runs against PostgreSQL with every warning treated as an error; Ruff, formatting and Pyright pass. Starlette TestClient uses its supported `httpx2` backend. |
-| Security | **Partial** | Application controls include strict input boundaries, stable errors, constant-time operator token comparison, safe fixed-source fetching, publication filtering, log redaction and security headers. Identity-aware operator authorization, edge TLS/rate limits, private production services, egress control and operational incident ownership remain release gates. |
+| Tests | **Complete** | The current suite contains 102 passing tests covering the database, API, workers, OIDC/static authentication, roles, attribution, security boundaries, evaluations and migrations. The suite runs against PostgreSQL with every warning treated as an error; Ruff, formatting and Pyright pass. Starlette TestClient uses its supported `httpx2` backend. |
+| Security | **Partial** | Application controls include strict input boundaries, stable errors, Cognito-compatible access-token verification, `operator`/`publisher` roles, authenticated advisory attribution, production host/proxy fail-closed settings, safe fixed-source fetching, publication filtering, log redaction and security headers. Deployed Cognito/MFA/account lifecycle, ALB/ACM/WAF, private production services, egress control and operational incident ownership remain release gates. |
 | CI/CD | **Partial** | Protected `main` requires branch-neutral hosted backend, dependency-audit and container checks. Actions are commit-pinned; CI performs locked install, lint, type/migration/tests, package build, dependency audit, image build/smoke/Trivy scan, and retains a verified commit-specific CycloneDX SBOM for 30 days. Durable image publication/attestation and staging environment validation remain open. |
 | Deployment | **Blocked** | A careful private Ubuntu EC2 staging runbook and SHA-based deployment/rollback script exist. No approved/available staging host, secrets, identity provider, production network/storage design, backup service or monitoring environment is evidenced. The runbook explicitly forbids public exposure. |
 | Observability | **Partial** | JSON logs, request/correlation IDs, slow-request logs, health/readiness, durable job states and queue metrics exist. There is no production metrics exporter/dashboard, alert routing, log retention/access policy, backup-age alert or exercised incident response. |
@@ -66,8 +66,8 @@ Result count: **12 complete, 8 partial, 0 missing, 1 blocked**.
 | --- | --- | --- | --- | --- | --- | --- |
 | G01 | Repository | Remediated by Tasks 19–20: the reviewed repository is tracked on protected `main`, branch-neutral CI runs on every push/PR, and the three required checks are enforced without bypass. | Repository history and checks still require normal maintenance. | Keep action/dependency updates reviewed and preserve the protected workflow. | Repository ownership. | **Complete** |
 | G02 | Publication | Remediated by Task 21: public actor and cross-entity search reads require explicit per-record publication and default all existing/new canonical records to internal. | A publication operation without identity or review could still make a wrong record public. | Implement an authenticated, attributable editorial workflow only after G03 identity and withdrawal policy are approved. | Operator identity and editorial/withdrawal policy. | **P0 read boundary complete; operations pending** |
-| G03 | Operator identity | One shared static token authenticates operations but supplies no trusted user identity, role, MFA or rotation trail. Advisory author fields are caller-supplied strings. | Compromise grants all operator access and audit attribution can be forged. | Put operator routes behind the approved identity provider/API gateway, map authenticated subject and roles into audit records, and document rotation/revocation. | Identity provider and security owner. | **P0** |
-| G04 | Production edge | No deployed TLS proxy/API gateway, shared rate limit, trusted-host policy or forwarding-header trust boundary exists. | Direct public exposure permits abuse, ambiguous client identity and transport-policy failures. | Deploy and test one approved edge configuration with TLS, host/header/body/connection limits, shared rate limits and explicit forwarding trust. | Hosting/network choice and DNS/certificate ownership. | **P0** |
+| G03 | Operator identity | Task 25 implemented Cognito-compatible access-token verification, explicit `operator`/`publisher` roles, stable auth errors, structured subject audit fields and authenticated advisory attribution. Production fails closed without OIDC. Cognito, MFA, group/account lifecycle and revocation operations are not deployed. | The code prevents caller-forged advisory attribution, but production identity assurance does not exist until the configured Cognito boundary and operational ownership are proven. | Provision the approved Cognito pool/client/groups, require MFA, set token lifetime, assign lifecycle/revocation ownership and execute the documented acceptance tests. | Identity provider and security owner. | **P0 application boundary complete; deployment pending** |
+| G04 | Production edge | Task 25 implemented explicit trusted-host and proxy-source configuration and documented ALB + ACM + WAF ownership. No TLS edge, shared rate rule, DNS/certificate or forwarding boundary is deployed. | Direct public exposure still permits abuse and transport-policy failures; the application settings alone cannot supply TLS or shared rate enforcement. | Deploy the documented ALB/ACM/WAF configuration and test TLS, direct-target denial, host/header handling, shared rate rules and sanitized logs. | Hosting/network choice and DNS/certificate ownership. | **P0 application contract complete; deployment pending** |
 | G05 | Raw storage | Only `LocalObjectStore` is implemented; retention, source licensing, encryption and deletion policy are undecided. | A multi-host deployment can lose or inconsistently access evidence and may violate source policy. | Select the S3-compatible target and retention policy, implement the existing `ObjectStore` protocol, and add integration tests for immutability, replay and access failure. | Hosting, legal/licensing and retention decisions. | **P0** |
 | G06 | Data operations | Production PostgreSQL/object backups, point-in-time policy and restore rehearsal are not implemented. Runtime least privilege and in-transit encryption are not demonstrated. | A host/database/storage failure can cause unrecoverable intelligence or an untested outage. | Provision private encrypted services/roles, automate coordinated backups, and execute a documented restore drill with recovery evidence. | AWS/service selection and operations owner. | **P0** |
 | G07 | Deployment | The private staging workflow/runbook has not run against an approved EC2 environment. | Shell, Compose, migration and rollback assumptions remain locally validated only. | Provision private staging, configure protected environment secrets/reviewers, deploy one immutable SHA, verify API/worker/migration, then rehearse application rollback. | G01 plus approved AWS host and secrets. | **P1** |
@@ -85,7 +85,7 @@ Result count: **12 complete, 8 partial, 0 missing, 1 blocked**.
 Do not combine these into one implementation task. Each item should retain a
 separate review checkpoint.
 
-1. **P0 — Approve and implement the production security boundary**: G03 and G04.
+1. **P0 — Deploy and prove the approved production security boundary**: remaining G03 and G04 operations work.
 2. **P0 — Approve durable evidence/data operations**: G05 and G06.
 3. **P1 — Exercise private staging and rollback**: G07.
 4. **P1 — Add operational monitoring and production-like capacity evidence**:

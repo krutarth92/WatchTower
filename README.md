@@ -69,7 +69,9 @@ The complete setup and configuration reference is in [SETUP.md](SETUP.md).
 - `/api/v1/operations/exports/stix` — actor-centered STIX 2.1 export
 - `/api/v1/operations/research/answers` — disabled-by-default grounded research
 
-Operator routes require the `X-WATCHTOWER-Operator-Token` header.
+Operator routes use the `X-WATCHTOWER-Operator-Token` header for local/private
+staging. Production requires Cognito-compatible bearer tokens and explicit
+`operator`/`publisher` roles.
 
 ## Validation
 
@@ -90,6 +92,7 @@ audits dependencies, and scans the container for high-severity vulnerabilities.
 - [V1 scope](docs/product-specs/v1-scope.md)
 - [Intelligence data model](docs/design/intelligence-data-model.md)
 - [Security threat model](docs/security/threat-model.md)
+- [Production security boundary](docs/security/production-boundary.md)
 - [Private staging deployment](docs/deployment/ubuntu-ec2-staging.md)
 - [Living intelligence contract](docs/design/living-intelligence-advisories.md)
 

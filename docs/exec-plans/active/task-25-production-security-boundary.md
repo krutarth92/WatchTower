@@ -1,7 +1,7 @@
 # Task 25: production security boundary
 
-Status: architecture decision prepared; implementation requires human approval.
-Date: 2026-10-01.
+Status: application boundary implemented and locally verified; hosted CI and deployment evidence pending.
+Date: 2026-10-19.
 Source: V1 readiness gaps G03 and G04.
 
 ## Prior-task verification
@@ -71,7 +71,14 @@ keeps TLS and distributed abuse controls at the shared edge.
 | Static token behind a TLS reverse proxy | Improves transport security but does not resolve identity, roles, MFA, expiry, revocation or attribution; it cannot close G03. |
 | Process-local application rate limiting | Does not provide one shared limit across workers and would trust ambiguous client identity; it cannot close G04. |
 
-## Proposed implementation boundary after approval
+## Approval record
+
+The user approved continuing to Task 25 after reviewing the proposed boundary.
+That approval selected the AWS ALB + ACM + WAF + Cognito application and
+deployment contract. It did not authorize provisioning AWS resources or an
+internet-facing release.
+
+## Implemented application boundary
 
 - Add a standards-based OIDC settings contract and token verifier with bounded
   JWKS caching, issuer/audience/algorithm checks, clock-skew bounds and stable
@@ -89,6 +96,18 @@ keeps TLS and distributed abuse controls at the shared edge.
 - Document ALB, ACM, WAF, Cognito, security-group, token-rotation/revocation and
   rollback requirements. Do not provision AWS resources or store secrets.
 
+The implementation uses Cognito-compatible RS256 access tokens, exact issuer,
+client ID and token-use checks, a bounded PyJWT JWKS cache, explicit
+`operator`/`publisher` roles and an immutable authenticated principal. Advisory
+creation and publication derive attribution from the OIDC subject. Local and
+private staging retain the constant-time static token path, while production
+configuration rejects static authentication, wildcard/missing host allowlists
+and wildcard/missing proxy trust.
+
+`docs/security/production-boundary.md` assigns TLS to ALB/ACM, shared abuse
+controls to WAF, identity and MFA to Cognito, and token/role enforcement to the
+application. No AWS resources were provisioned.
+
 ## Acceptance criteria
 
 - Every protected route has an authenticated subject and explicit role policy.
@@ -105,6 +124,31 @@ keeps TLS and distributed abuse controls at the shared edge.
 
 ## Approval checkpoint
 
-Approve or replace the recommended AWS ALB + ACM + WAF + Cognito boundary before
-implementation. Approval is required because this selects production identity
-and ingress architecture and changes the operator authentication/API contract.
+Satisfied before implementation by the user's instruction to continue to the
+next task. Task 25 remains at its post-implementation review checkpoint until
+the branch and protected-main checks pass.
+
+## Validation record
+
+| Check | Result |
+| --- | --- |
+| Focused authentication and foundation tests | PASS: 22 tests |
+| PostgreSQL-backed advisory tests | PASS: 3 tests |
+| Full PostgreSQL-backed suite with warnings fatal | PASS: 102 tests |
+| Ruff lint | PASS |
+| Ruff formatting | PASS: 138 files formatted |
+| Pyright | PASS: 0 errors, 0 warnings |
+| `uv lock --check` | PASS: 67 packages resolved |
+| Runtime and development requirements export | PASS: regenerated from `uv.lock` |
+| Alembic heads/current/check | PASS: sole/current head `4c7d9e2a1b5f`; no drift |
+| OpenAPI security contract | PASS: bearer and static-header alternatives declared |
+| Local Docker build and installed-package smoke import | PASS: `watchtower:task25`, PyJWT 2.15.1 |
+| `git diff --check` | PASS |
+
+The complete suite initially found one test-isolation defect: earlier logging
+configuration routed the audit event through its installed JSON handler instead
+of pytest's inherited capture handler. The test now attaches pytest's handler
+directly, and the final full run passed. Hosted dependency audit, container
+build/scan/SBOM and branch checks remain pending until the implementation commit
+is pushed. AWS acceptance evidence remains a deployment prerequisite and is not
+reported as complete.

@@ -8,6 +8,8 @@ from fastapi.exceptions import RequestValidationError
 from sqlalchemy.orm import sessionmaker
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.gzip import GZipMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from watchtower.api.errors import (
     ApiError,
@@ -17,6 +19,7 @@ from watchtower.api.errors import (
     validation_error_handler,
 )
 from watchtower.api.health import router
+from watchtower.api.operator_auth import build_operator_authenticator
 from watchtower.api.request_id import add_request_id
 from watchtower.api.security import RequestBodyLimitMiddleware
 from watchtower.api.v1.router import router as v1_router
@@ -29,6 +32,7 @@ from watchtower.workers.queue import DramatiqJobQueue
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     config = settings if settings is not None else Settings()  # pyright: ignore[reportCallIssue]
+    operator_authenticator = build_operator_authenticator(config)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -57,6 +61,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             logger.info("application_stopped")
 
     app = FastAPI(title="WATCHTOWER", version="0.1.0", lifespan=lifespan)
+    app.state.operator_authenticator = operator_authenticator
+    if config.proxy_trusted_hosts:
+        app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=config.proxy_trusted_hosts)
+    if config.trusted_hosts:
+        app.add_middleware(TrustedHostMiddleware, allowed_hosts=config.trusted_hosts)
     app.add_middleware(RequestBodyLimitMiddleware, max_bytes=config.max_request_body_bytes)
     app.add_middleware(
         GZipMiddleware,

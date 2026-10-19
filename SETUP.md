@@ -117,21 +117,23 @@ atomicity rules are documented in `docs/design/technical-artifact-handling.md`.
 
 Published living intelligence is available under `/api/v1/advisories`.
 Draft creation, immutable revision creation, publication and timestamped update
-append operations are under `/api/v1/operations/advisories` and require the
-operator token. Drafts and unpublished revisions are never returned by public
-routes. Section-level OBSERVED/ASSESSED labels, evidence, actor, campaign and
-technique links, publication history, and update pagination are documented in
+append operations are under `/api/v1/operations/advisories` and require an
+operator identity. Publication additionally requires the `publisher` role in
+OIDC mode. Drafts and unpublished revisions are never returned by public routes.
+Section-level OBSERVED/ASSESSED labels, evidence, actor, campaign and technique
+links, publication history, and update pagination are documented in
 `docs/design/living-intelligence-advisories.md`.
 
-No authentication or publication-state filter exists for actor reads yet. Keep
-Uvicorn bound to `127.0.0.1`; do not expose these routes to the internet until
-the later security, publication and deployment tasks establish that boundary.
+Actor and search public reads fail closed to explicitly published records with
+published provenance. Keep local Uvicorn bound to `127.0.0.1`; the production
+ALB/WAF/Cognito contract and remaining deployment evidence are documented in
+`docs/security/production-boundary.md`.
 
 The ingestion submission and status endpoints are under
 `/api/v1/operations/ingestion/jobs` and require the
-`X-WATCHTOWER-Operator-Token` header. Configure a random token of at least 32
-characters in `.env`, then submit the approved ATT&CK refresh job with a unique
-idempotency key:
+`X-WATCHTOWER-Operator-Token` header in local/private static mode. Configure a
+random token of at least 32 characters in `.env`, then submit the approved
+ATT&CK refresh job with a unique idempotency key:
 
 ```powershell
 $headers = @{ 'X-WATCHTOWER-Operator-Token' = $env:WATCHTOWER_OPERATOR_TOKEN }
@@ -151,6 +153,10 @@ Invoke-RestMethod `
 PowerShell does not automatically load `.env`; either set the token in the
 terminal or replace the header value locally. Reusing the same idempotency key
 returns the original job with `duplicate=true`.
+
+Production rejects the static header. An OIDC client sends a Cognito access
+token as `Authorization: Bearer <token>`; see
+`docs/security/production-boundary.md` for the token and role contract.
 
 Read durable queue depth and admission capacity from the protected metrics route:
 
@@ -213,7 +219,18 @@ deployment runbook are resolved.
 | WATCHTOWER_RAW_STORAGE_PATH | storage/raw |
 | WATCHTOWER_MAX_RAW_EVIDENCE_BYTES | 10485760 (10 MiB), range 1 KiB–100 MiB |
 | WATCHTOWER_REDIS_URL | redis://127.0.0.1:6379/0 |
-| WATCHTOWER_OPERATOR_TOKEN | Optional; at least 32 characters; required to enable operator endpoints |
+| WATCHTOWER_OPERATOR_AUTH_MODE | `static` for local/private staging; production requires `oidc` |
+| WATCHTOWER_OPERATOR_TOKEN | Optional local/private token of at least 32 characters; forbidden in production |
+| WATCHTOWER_OIDC_ISSUER | Required in OIDC mode; exact HTTPS Cognito user-pool issuer |
+| WATCHTOWER_OIDC_JWKS_URL | Required in OIDC mode; fixed HTTPS Cognito JWKS URL |
+| WATCHTOWER_OIDC_CLIENT_ID | Required in OIDC mode; expected Cognito access-token `client_id` |
+| WATCHTOWER_OIDC_OPERATOR_GROUP | `operator`; grants protected-route access |
+| WATCHTOWER_OIDC_PUBLISHER_GROUP | `publisher`; grants operator access plus publication |
+| WATCHTOWER_OIDC_JWKS_CACHE_SECONDS | 300, range 60–3600 |
+| WATCHTOWER_OIDC_HTTP_TIMEOUT_SECONDS | 3, range 1–10 |
+| WATCHTOWER_OIDC_CLOCK_SKEW_SECONDS | 30, range 0–120 |
+| WATCHTOWER_TRUSTED_HOSTS | JSON host allowlist; required and non-wildcard in production |
+| WATCHTOWER_PROXY_TRUSTED_HOSTS | JSON IP/CIDR allowlist for trusted proxy headers; required and non-wildcard in production |
 | WATCHTOWER_INGESTION_JOB_MAX_ATTEMPTS | 3, range 1–10 |
 | WATCHTOWER_INGESTION_JOB_LEASE_SECONDS | 300 seconds, range 30–3600 |
 | WATCHTOWER_INGESTION_JOB_TIMEOUT_SECONDS | 240 seconds, range 10–3595; must leave 5 seconds before lease expiry |

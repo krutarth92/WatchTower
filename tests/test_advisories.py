@@ -1,11 +1,18 @@
 from collections.abc import Iterator
-from typing import TypedDict
+from typing import TypedDict, cast
 from uuid import UUID, uuid4
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
+from watchtower.api.operator_auth import (
+    OPERATOR_ROLE,
+    PUBLISHER_ROLE,
+    OperatorAuthenticator,
+    OperatorPrincipal,
+)
 from watchtower.core.config import Settings
 from watchtower.db.models import (
     Actor,
@@ -29,6 +36,14 @@ class AdvisoryFixture(TypedDict):
     campaign_id: UUID
     technique_id: UUID
     evidence_id: UUID
+
+
+class FixedPrincipalVerifier:
+    def __init__(self, principal: OperatorPrincipal) -> None:
+        self.principal = principal
+
+    def verify(self, token: str) -> OperatorPrincipal:
+        return self.principal
 
 
 @pytest.fixture
@@ -202,3 +217,52 @@ def test_operator_auth_and_advisory_validation(
     invalid = client.post("/api/v1/operations/advisories", headers=fixture["headers"], json=payload)
     assert invalid.status_code == 422
     assert invalid.json()["error"]["code"] == "validation_error"
+
+
+def test_oidc_subject_controls_advisory_attribution(
+    advisory_api: tuple[TestClient, AdvisoryFixture],
+) -> None:
+    client, fixture = advisory_api
+    principal = OperatorPrincipal(
+        subject="cognito-subject-publisher",
+        display_identity="publisher@example.test",
+        roles=frozenset({OPERATOR_ROLE, PUBLISHER_ROLE}),
+        auth_method="oidc",
+        token_id="oidc-token-id",
+    )
+    settings = Settings(  # pyright: ignore[reportCallIssue]
+        operator_auth_mode="oidc",
+        oidc_issuer="https://cognito-idp.ap-south-1.amazonaws.com/ap-south-1_example",
+        oidc_jwks_url=(
+            "https://cognito-idp.ap-south-1.amazonaws.com/ap-south-1_example/.well-known/jwks.json"
+        ),
+        oidc_client_id="watchtower-client",
+    )
+    app = cast(FastAPI, client.app)
+    app.state.operator_authenticator = OperatorAuthenticator(
+        settings,
+        oidc_verifier=FixedPrincipalVerifier(principal),
+    )
+    headers = {"Authorization": "Bearer opaque-test-token"}
+    payload = {
+        "slug": f"oidc-{fixture['slug']}",
+        **_revision_payload(fixture, "OIDC attributed advisory"),
+        "created_by": "forged-author@example.test",
+    }
+
+    created = client.post(
+        "/api/v1/operations/advisories",
+        headers=headers,
+        json=payload,
+    )
+    assert created.status_code == 201
+    advisory_id = created.json()["data"]["id"]
+    assert created.json()["data"]["revision"]["created_by"] == principal.subject
+
+    published = client.post(
+        f"/api/v1/operations/advisories/{advisory_id}/revisions/1/publish",
+        headers=headers,
+        json={"published_by": "forged-publisher@example.test"},
+    )
+    assert published.status_code == 200
+    assert published.json()["data"]["revision"]["published_by"] == principal.subject

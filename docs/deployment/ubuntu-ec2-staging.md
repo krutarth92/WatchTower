@@ -52,6 +52,7 @@ must not use this local volume.
 | `POSTGRES_*` | Initial staging database and container credentials |
 | `WATCHTOWER_DATABASE_URL` | Runtime URL using Compose host `postgres`; URL-encode its password |
 | `WATCHTOWER_REDIS_URL` | Runtime URL using Compose host `redis` |
+| `WATCHTOWER_OPERATOR_AUTH_MODE` | `static` for this private SSH-tunnel staging pattern |
 | `WATCHTOWER_OPERATOR_TOKEN` | Random staging token of at least 32 characters |
 | `WATCHTOWER_RAW_STORAGE_PATH` | `/var/lib/watchtower/raw` inside the worker |
 | `WATCHTOWER_ENVIRONMENT` | `staging` |

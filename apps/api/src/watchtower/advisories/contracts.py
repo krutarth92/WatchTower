@@ -33,9 +33,10 @@ class RevisionInput(BaseModel):
 
     title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=500)]
     summary: NonBlank
-    created_by: Annotated[
-        str, StringConstraints(strip_whitespace=True, min_length=1, max_length=255)
-    ]
+    created_by: (
+        Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=255)]
+        | None
+    ) = None
     sections: list[SectionInput] = Field(min_length=1)
     evidence_ids: list[UUID] = Field(default_factory=list)
     actor_ids: list[UUID] = Field(default_factory=list)
@@ -68,9 +69,10 @@ class AdvisoryCreate(RevisionInput):
 class PublishRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    published_by: Annotated[
-        str, StringConstraints(strip_whitespace=True, min_length=1, max_length=255)
-    ]
+    published_by: (
+        Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=255)]
+        | None
+    ) = None
 
 
 class AdvisoryUpdateCreate(BaseModel):
@@ -80,9 +82,10 @@ class AdvisoryUpdateCreate(BaseModel):
     title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=500)]
     summary: NonBlank
     intelligence_type: IntelligenceType
-    created_by: Annotated[
-        str, StringConstraints(strip_whitespace=True, min_length=1, max_length=255)
-    ]
+    created_by: (
+        Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=255)]
+        | None
+    ) = None
     evidence_ids: list[UUID] = Field(default_factory=list)
 
     @field_validator("occurred_at")

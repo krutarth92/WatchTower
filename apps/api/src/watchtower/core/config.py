@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 from typing import Literal
 from urllib.parse import urlsplit
@@ -6,6 +7,8 @@ from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import ArgumentError
+
+SAFE_AUTH_VALUE = re.compile(r"^[A-Za-z0-9._:@/-]{1,255}$")
 
 
 class Settings(BaseSettings):
@@ -29,7 +32,18 @@ class Settings(BaseSettings):
     raw_storage_path: Path = Path("storage/raw")
     max_raw_evidence_bytes: int = Field(default=10 * 1024 * 1024, ge=1024, le=100 * 1024 * 1024)
     redis_url: SecretStr = SecretStr("redis://127.0.0.1:6379/0")
+    operator_auth_mode: Literal["static", "oidc"] = "static"
     operator_token: SecretStr | None = None
+    oidc_issuer: str | None = None
+    oidc_jwks_url: str | None = None
+    oidc_client_id: str | None = None
+    oidc_operator_group: str = "operator"
+    oidc_publisher_group: str = "publisher"
+    oidc_jwks_cache_seconds: int = Field(default=300, ge=60, le=3600)
+    oidc_http_timeout_seconds: int = Field(default=3, ge=1, le=10)
+    oidc_clock_skew_seconds: int = Field(default=30, ge=0, le=120)
+    trusted_hosts: list[str] = Field(default_factory=list)
+    proxy_trusted_hosts: list[str] = Field(default_factory=list)
     ingestion_job_max_attempts: int = Field(default=3, ge=1, le=10)
     ingestion_job_lease_seconds: int = Field(default=300, ge=30, le=3600)
     ingestion_job_timeout_seconds: int = Field(default=240, ge=10, le=3595)
@@ -71,8 +85,46 @@ class Settings(BaseSettings):
             raise ValueError("WATCHTOWER_OPERATOR_TOKEN must contain at least 32 characters")
         return value
 
+    @field_validator("oidc_issuer", "oidc_jwks_url")
+    @classmethod
+    def validate_oidc_url(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        parsed = urlsplit(value)
+        if (
+            parsed.scheme != "https"
+            or not parsed.hostname
+            or parsed.username is not None
+            or parsed.password is not None
+            or parsed.query
+            or parsed.fragment
+        ):
+            raise ValueError(
+                "OIDC URLs must be absolute HTTPS URLs without credentials or fragments"
+            )
+        return value.rstrip("/")
+
+    @field_validator("oidc_client_id", "oidc_operator_group", "oidc_publisher_group")
+    @classmethod
+    def validate_oidc_value(cls, value: str | None) -> str | None:
+        if value is not None and not SAFE_AUTH_VALUE.fullmatch(value):
+            raise ValueError("OIDC identifiers must use a safe 1–255 character value")
+        return value
+
+    @field_validator("trusted_hosts", "proxy_trusted_hosts")
+    @classmethod
+    def validate_host_list(cls, value: list[str]) -> list[str]:
+        cleaned = [item.strip() for item in value]
+        if any(
+            not item or len(item) > 255 or any(char.isspace() for char in item) for item in cleaned
+        ):
+            raise ValueError("Trusted host entries must be non-empty and contain no whitespace")
+        if len(set(cleaned)) != len(cleaned):
+            raise ValueError("Trusted host entries must be unique")
+        return cleaned
+
     @model_validator(mode="after")
-    def validate_ingestion_timeouts(self) -> "Settings":
+    def validate_security_and_ingestion_settings(self) -> "Settings":
         if self.ingestion_job_timeout_seconds > self.ingestion_job_lease_seconds - 5:
             raise ValueError(
                 "WATCHTOWER_INGESTION_JOB_TIMEOUT_SECONDS must leave five seconds "
@@ -83,4 +135,26 @@ class Settings(BaseSettings):
                 "WATCHTOWER_INGESTION_FETCH_CONNECT_TIMEOUT_SECONDS cannot exceed "
                 "the total fetch timeout"
             )
+        if self.operator_auth_mode == "oidc" and not all(
+            (self.oidc_issuer, self.oidc_jwks_url, self.oidc_client_id)
+        ):
+            raise ValueError(
+                "OIDC authentication requires WATCHTOWER_OIDC_ISSUER, "
+                "WATCHTOWER_OIDC_JWKS_URL and WATCHTOWER_OIDC_CLIENT_ID"
+            )
+        if self.oidc_operator_group == self.oidc_publisher_group:
+            raise ValueError("OIDC operator and publisher groups must be different")
+        if self.environment == "production":
+            if self.operator_auth_mode != "oidc":
+                raise ValueError("Production requires WATCHTOWER_OPERATOR_AUTH_MODE=oidc")
+            if self.operator_token is not None:
+                raise ValueError("WATCHTOWER_OPERATOR_TOKEN is forbidden in production")
+            if not self.trusted_hosts or "*" in self.trusted_hosts:
+                raise ValueError(
+                    "Production requires an explicit WATCHTOWER_TRUSTED_HOSTS allowlist"
+                )
+            if not self.proxy_trusted_hosts or "*" in self.proxy_trusted_hosts:
+                raise ValueError(
+                    "Production requires an explicit WATCHTOWER_PROXY_TRUSTED_HOSTS allowlist"
+                )
         return self

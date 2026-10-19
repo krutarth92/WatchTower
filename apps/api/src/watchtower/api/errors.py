@@ -128,5 +128,6 @@ ERROR_RESPONSES: dict[int | str, dict[str, Any]] = {
 OPERATOR_ERROR_RESPONSES: dict[int | str, dict[str, Any]] = {
     **ERROR_RESPONSES,
     401: {"model": ErrorResponse, "description": "Operator authentication failed"},
+    403: {"model": ErrorResponse, "description": "Operator authorization failed"},
     503: {"model": ErrorResponse, "description": "Required service is unavailable"},
 }
