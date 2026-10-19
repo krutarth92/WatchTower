@@ -148,7 +148,18 @@ the branch and protected-main checks pass.
 The complete suite initially found one test-isolation defect: earlier logging
 configuration routed the audit event through its installed JSON handler instead
 of pytest's inherited capture handler. The test now attaches pytest's handler
-directly, and the final full run passed. Hosted dependency audit, container
-build/scan/SBOM and branch checks remain pending until the implementation commit
-is pushed. AWS acceptance evidence remains a deployment prerequisite and is not
-reported as complete.
+directly, and the final full run passed.
+
+Hosted branch run
+[#49](https://github.com/krutarth92/WatchTower/actions/runs/39196875274)
+passed the backend and Python dependency-audit jobs but failed the container
+scan. Trivy found patched Debian updates available for the base image's
+`libpcre2-8-0` and `perl-base` packages. The Dockerfile now refreshes package
+metadata, installs available base-image security updates noninteractively and
+removes the apt lists before application installation. A local rebuild confirms
+`libpcre2-8-0` `10.42-1+deb12u2`, `perl-base` `5.36.0-7+deb12u4`, OpenSSL
+`3.0.22-1~deb12u1`, and a successful application/PyJWT smoke import. The
+successor hosted run remains pending.
+
+AWS acceptance evidence remains a deployment prerequisite and is not reported
+as complete.

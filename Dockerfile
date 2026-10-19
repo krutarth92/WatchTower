@@ -13,7 +13,10 @@ ENV PATH="/app/.venv/bin:$PATH" \
 
 WORKDIR /app
 
-RUN groupadd --system --gid 10001 watchtower \
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get upgrade --yes \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --system --gid 10001 watchtower \
     && useradd --system --uid 10001 --gid watchtower --home-dir /app watchtower
 
 COPY pyproject.toml uv.lock .python-version ./
