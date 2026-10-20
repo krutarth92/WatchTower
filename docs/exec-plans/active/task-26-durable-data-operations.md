@@ -256,6 +256,35 @@ Repository acceptance is complete except for the explicitly environment-gated
 disposable S3 test. That check and the real restore rehearsal require external
 resources and remain open. No AWS service was created, changed, or deployed.
 
+## Pre-merge revalidation (2026-10-21)
+
+The owner authorized merge to protected `main`. The branch was fetched and
+compared with current `origin/main`; it contains the complete main history and
+has no merge divergence. Pre-merge `git diff --check` found one trailing blank
+line in this plan, which was removed before merge.
+
+The corrected branch run
+[#63](https://github.com/krutarth92/WatchTower/actions/runs/39488455411)
+then failed the Python dependency audit because newly published advisory
+`GHSA-6q48-6c7w-9gw2` affects locked `certifi==2026.7.22`. This run is recorded
+as failed and is not acceptance evidence. The lock and both hash-pinned exports
+were updated to fixed `certifi==2026.10.19` without changing other packages.
+
+Validation after the dependency update:
+
+- `pip-audit --no-deps --disable-pip`: no known vulnerabilities, with the two
+  existing documented exceptions ignored;
+- Ruff, formatting and Pyright: pass with 0 errors or warnings;
+- `uv lock --check`: pass with 73 packages;
+- Alembic `heads` and `current`: `4c7d9e2a1b5f (head)`; `alembic check`: no new
+  upgrade operations;
+- PostgreSQL/Redis suite: **110 passed, 1 skipped**. The skip remains the
+  unauthorized external disposable-S3 check and is not reported as passed;
+- `git diff --check`: pass.
+
+The fixed branch must pass all required hosted jobs for its exact commit before
+it can be merged.
+
 ## Primary references checked
 
 - [S3 Object Lock](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html)
