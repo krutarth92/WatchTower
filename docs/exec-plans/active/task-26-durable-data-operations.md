@@ -282,8 +282,14 @@ Validation after the dependency update:
   unauthorized external disposable-S3 check and is not reported as passed;
 - `git diff --check`: pass.
 
-The fixed branch must pass all required hosted jobs for its exact commit before
-it can be merged.
+The fixed exact commit
+`3c0fe0d5c09cbf9ac800123ae9cc4893cfa9504a` passed branch run
+[#64](https://github.com/krutarth92/WatchTower/actions/runs/39489020478) and was
+fast-forwarded to protected `main`. Protected-main run
+[#65](https://github.com/krutarth92/WatchTower/actions/runs/39489315546) passed
+backend checks, Python dependency audit, and container build/Trivy/SBOM for the
+same commit. Jira Tasks `SCRUM-2` through `SCRUM-8` were transitioned to Done;
+the real restore rehearsal `SCRUM-9` remains To Do. No AWS resource was created.
 
 ## Primary references checked
 

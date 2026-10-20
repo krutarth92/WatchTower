@@ -127,7 +127,9 @@ links, publication history, and update pagination are documented in
 Actor and search public reads fail closed to explicitly published records with
 published provenance. Keep local Uvicorn bound to `127.0.0.1`; the production
 ALB/WAF/Cognito contract and remaining deployment evidence are documented in
-`docs/security/production-boundary.md`.
+`docs/security/production-boundary.md`. The validation-only infrastructure and
+acceptance procedure are in `infra/aws/production-edge.template.json` and
+`docs/operations/production-edge-deployment.md`.
 
 The ingestion submission and status endpoints are under
 `/api/v1/operations/ingestion/jobs` and require the
@@ -205,6 +207,13 @@ application settings. The production database URL must include
 `sslmode=verify-full` and a readable `sslrootcert` path. The validation-only AWS
 baseline is in `infra/aws/data-services.template.json`; recovery and integrity
 procedures are in `docs/operations/durable-data-recovery.md`.
+
+The production identity/edge template consumes an existing private API target,
+VPC, public ALB subnets, ACM certificate and approved hostname. It deliberately
+requires measured public/operator WAF rate limits and does not create DNS. Use
+its deployment runbook to review a CloudFormation change set and collect
+identity, TLS, target-isolation, WAF, logging, alerting and rollback evidence.
+Do not execute the change set as part of local setup.
 
 ## Configuration
 

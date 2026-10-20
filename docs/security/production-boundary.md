@@ -1,12 +1,19 @@
 # Production security boundary
 
-Status: Task 25 application and deployment contract, 2026-10-19.
+Status: Task 27 repository infrastructure contract, 2026-10-21. External
+deployment and acceptance evidence remain pending.
 
 This contract selects AWS Application Load Balancer (ALB), AWS Certificate
 Manager (ACM), AWS WAF and Amazon Cognito for the first production boundary. It
 does not provision AWS resources or authorize public release. DNS ownership,
 certificate issuance, measured rate thresholds, an approved production VPC and
 an operations owner remain deployment inputs.
+
+The validation-only implementation is
+`infra/aws/production-edge.template.json`; the reviewed change-set, identity
+lifecycle, acceptance and rollback procedure is
+`docs/operations/production-edge-deployment.md`. The template creates nothing
+until an authorized operator executes it.
 
 ## Request path and ownership
 
@@ -50,12 +57,14 @@ interface so the ALB can reach it; it must not open that port to the internet.
 
 ## WAF policy
 
-Attach one web ACL to the ALB. Start with AWS-managed common protections and
-rate-based rules for public reads and stricter operator-route rules. Choose the
-actual request and burst limits from representative staging traffic; this
-document deliberately does not invent thresholds. Log sampled blocks without
-request authorization headers or bodies, alert on sustained blocks and test the
-rule action in count mode before enforcement where operationally appropriate.
+Attach one web ACL to the ALB. The repository template includes AWS-managed
+common and known-bad-input protections plus separate per-IP rate rules for
+public reads and `/api/v1/operations/`. The actual five-minute limits are
+required parameters without defaults and must come from representative staging
+traffic. WAF request sampling is disabled; retained WAF logs are limited to
+counted/blocked requests with authorization/cookie fields redacted. The
+deployment runbook requires a count-mode rehearsal where operationally
+appropriate before blocking is accepted.
 
 ## Cognito token and role contract
 
