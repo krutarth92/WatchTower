@@ -1,26 +1,39 @@
 # WATCHTOWER V1 readiness audit
 
-Status: complete, verified and approved; remediation status updated through the
-locally verified Task 25 application boundary.
-Date: 2026-10-19.
-Scope: approved backend/API V1 in `docs/product-specs/v1-scope.md`.
+Status: backend audit complete; release boundary updated through Task 28.
+Date: 2026-10-21.
+Scope: V1 backend plus local/private UI, with AWS productionization deferred to
+`docs/product-specs/v2-productionization-scope.md`.
 
 ## Verdict
 
-WATCHTOWER is **ready for local development and private staging evaluation**.
-It is **not ready for an internet-facing production release**.
+The WATCHTOWER backend is **ready for local development and private evaluation**.
+Product V1 is **not complete until its first-party UI is implemented and
+accepted**. Internet-facing AWS production readiness is a V2 objective.
 
 The core backend contracts are implemented and pass the complete local
 PostgreSQL-backed suite. Repository, public-read visibility and the
-identity-aware application boundary are in place. The remaining release
-blockers include deployed Cognito/ALB/WAF controls, shared object storage and
-retention, backup/restore operations, and monitored production infrastructure.
+identity-aware application boundary are in place. The next V1 work is the UI
+experience, frontend foundation and tested researcher flow over these APIs.
 
-This audit does not treat the absent frontend as a defect. The approved V1 scope
-is backend/API first and says frontend implementation requires separate
-approval. It also does not count disabled live RAG as a security failure:
-provider-neutral grounding is evaluated, while live execution correctly remains
-off until its data/provider/budget decision is made.
+The owner changed the release sequence on 2026-10-21: the absent frontend is now
+the remaining V1 product gap. Deployed Cognito/ALB/WAF, shared object storage,
+backup/restore operations, monitored infrastructure and release attestation are
+preserved as V2 productionization work. Disabled live RAG remains a separately
+gated product decision; provider-neutral grounding is evaluated and live
+execution correctly remains off.
+
+## Release boundary
+
+- **V1:** completed backend plus an accepted SvelteKit/TypeScript UI for
+  local/private use. V1 must remain truthful about local storage, static local
+  operator authentication and the absence of a public service.
+- **V2:** deploy and prove the existing AWS identity, edge, durable-data,
+  recovery, staging, monitoring, capacity and immutable-release contracts.
+
+The production capability matrix below remains useful evidence, but its
+deployment gaps no longer block V1 acceptance. They gate V2 and any claim of an
+internet-facing release.
 
 ## Status definitions
 
@@ -51,14 +64,17 @@ off until its data/provider/budget decision is made.
 | STIX export | **Complete** | The documented actor-centered STIX 2.1 subset is deterministic, conservative, operator-only and validates with the official library. Unsupported semantics are deliberately omitted rather than guessed. |
 | Async jobs | **Complete** | Durable PostgreSQL state, UUID-only Redis messages, idempotent submission, leases, bounded retry/backoff, restart recovery, backpressure and queue metrics are implemented and tested. Redis is transport rather than the source of truth. |
 | Living advisories | **Complete** | Draft privacy, immutable published revisions, typed sections, evidence/entity links and sequenced timestamped updates are implemented and tested. Earlier published revisions remain intentionally durable. |
-| Tests | **Complete** | The current suite contains 102 passing tests covering the database, API, workers, OIDC/static authentication, roles, attribution, security boundaries, evaluations and migrations. The suite runs against PostgreSQL with every warning treated as an error; Ruff, formatting and Pyright pass. Starlette TestClient uses its supported `httpx2` backend. |
+| Tests | **Complete** | The current suite contains 114 passing tests covering the database, API, workers, OIDC/static authentication, roles, attribution, security boundaries, infrastructure contracts, evaluations and migrations. One external disposable-S3 integration remains environment-gated and is not counted as passed. The suite runs against PostgreSQL with every warning treated as an error; Ruff, formatting and Pyright pass. |
+| Frontend | **Missing** | The V1 UI is now approved in scope, but no frontend application, API client, screen, accessibility check or frontend CI job exists yet. The next task must define the concrete UI flow and acceptance boundary before implementation. |
 | Security | **Partial** | Application controls include strict input boundaries, stable errors, Cognito-compatible access-token verification, `operator`/`publisher` roles, authenticated advisory attribution, production host/proxy fail-closed settings, safe fixed-source fetching, publication filtering, log redaction and security headers. Deployed Cognito/MFA/account lifecycle, ALB/ACM/WAF, private production services, egress control and operational incident ownership remain release gates. |
 | CI/CD | **Partial** | Protected `main` requires branch-neutral hosted backend, dependency-audit and container checks. Actions are commit-pinned; CI performs locked install, lint, type/migration/tests, package build, dependency audit, image build/smoke/Trivy scan, and retains a verified commit-specific CycloneDX SBOM for 30 days. Durable image publication/attestation and staging environment validation remain open. |
 | Deployment | **Blocked** | A careful private Ubuntu EC2 staging runbook and SHA-based deployment/rollback script exist. No approved/available staging host, secrets, identity provider, production network/storage design, backup service or monitoring environment is evidenced. The runbook explicitly forbids public exposure. |
 | Observability | **Partial** | JSON logs, request/correlation IDs, slow-request logs, health/readiness, durable job states and queue metrics exist. There is no production metrics exporter/dashboard, alert routing, log retention/access policy, backup-age alert or exercised incident response. |
 | Documentation | **Partial** | Setup, model, ingestion, normalization, resolution, API, RAG, artifact, STIX, performance, security, deployment and advisory contracts are present and consistent with V1. The mandatory `docs/design/system-workflow-reference.md` remains absent and its contents were not invented. |
 
-Result count: **12 complete, 8 partial, 0 missing, 1 blocked**.
+Production-capability result count: **12 complete, 8 partial, 1 missing, 1
+blocked**. For V1 sequencing, the missing frontend is the active product gap;
+the deployment partial/blocked items are V2 gates.
 
 ## Gap and remediation register
 
@@ -79,20 +95,33 @@ Result count: **12 complete, 8 partial, 0 missing, 1 blocked**.
 | G13 | Advisory policy | Published revisions have no withdrawal/redaction state and remain readable forever. | Later legal or source-policy removal cannot be represented without an unsafe destructive edit. | Approve and model an audited withdrawal state with explicit public behavior; preserve revision history for authorized review. | Editorial/legal policy. | **P2** |
 | G14 | Authoritative docs | `docs/design/system-workflow-reference.md` is absent. | Future work may diverge from an unknown authoritative workflow. | Supply the document or record an explicit decision that the approved V1 scope and current design set replace it. | Project owner. | **P2** |
 | G15 | Test tooling | Remediated by Task 23: `httpx2` is locked as a development dependency, Starlette TestClient selects it, and pytest makes all warnings fatal. Production connectors retain their separate `httpx` runtime dependency. | Future dependency incompatibilities now fail the suite rather than appearing as non-blocking warnings. | Keep the two client roles explicit and review dependency updates through the locked CI suite. | Upstream FastAPI/Starlette/httpx2 compatibility. | **Complete** |
+| G16 | Frontend | The V1 UI has been approved, but no frontend tree or tested user flow exists. | The backend is accessible only through direct API clients and Swagger, so the intended researcher cannot use WATCHTOWER as a complete product. | Approve the UI experience/API contract, then implement the SvelteKit foundation and evidence-backed researcher flow with accessibility and frontend CI checks. | Stable V1 APIs and owner review of the UI plan. | **V1 P0 — missing** |
 
-## Recommended final task list
+## Recommended task sequence
 
 Do not combine these into one implementation task. Each item should retain a
 separate review checkpoint.
 
-1. **P0 — Deploy and prove the approved production security boundary**: remaining G03 and G04 operations work.
-2. **P0 — Deploy and prove durable evidence/data operations**: remaining G05 and G06 operations work.
-3. **P1 — Exercise private staging and rollback**: G07.
-4. **P1 — Add operational monitoring and production-like capacity evidence**:
-   G09 and G10.
-5. **P1 — Publish and attest an immutable release image**: remaining G08 work.
-6. **P2 — Decide optional product policies**: live RAG (G11), advisory
-   withdrawal (G13), and the missing workflow authority (G14).
+V1:
+
+1. **P0 — Approve the UI experience and API contract:** define the information
+   architecture, responsive screens, API/error/loading states, local operator
+   boundary, accessibility target and visual direction without changing backend
+   semantics.
+2. **P0 — Implement and validate the frontend:** add the SvelteKit/TypeScript
+   foundation, API client, core researcher flow, approved operator flow,
+   frontend CI and local run documentation in separately reviewable tasks.
+
+V2 productionization:
+
+1. Deploy and prove the approved production security boundary: G03 and G04.
+2. Deploy and prove durable evidence/data operations: G05 and G06.
+3. Exercise private staging and rollback: G07.
+4. Add operational monitoring and production-like capacity evidence: G09/G10.
+5. Publish and attest an immutable release image: G08.
+
+Optional product decisions remain separately gated: live RAG (G11), advisory
+withdrawal (G13), and the missing workflow authority (G14).
 
 G12 and G15 are complete as of Tasks 24 and 23 and are no longer in the
 remaining task list.

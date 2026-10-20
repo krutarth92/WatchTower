@@ -6,8 +6,9 @@ the intelligence model, actor-centric reads, durable Dramatiq ingestion jobs,
 a deterministic PostgreSQL search baseline, a disabled-by-default grounded
 research RAG boundary, faithful technical artifact storage, and a reproducible
 CI/private-staging deployment baseline. It also provides versioned living
-intelligence advisories with an explicit publication boundary. Frontend work
-remains a later task.
+intelligence advisories with an explicit publication boundary. The backend is
+the completed foundation for the approved V1 frontend; that application has not
+been added yet.
 
 ## Prerequisites and startup
 
@@ -181,8 +182,8 @@ method, results and scaling triggers are in
 GitHub Actions in `.github/workflows/ci.yml` install the locked environment and
 run Ruff, Pyright, Alembic checks, the PostgreSQL-backed test suite, package and
 container builds, dependency auditing, and a HIGH/CRITICAL image scan. There is
-no frontend tree, so no frontend job exists yet. Run the equivalent application
-checks locally with the commands in Validation below.
+no frontend tree or frontend job yet; both are required by the next V1 phase.
+Run the equivalent backend checks locally with the commands in Validation below.
 The one documented audit exception and its removal criteria are in
 `docs/security/dependency-audit-exceptions.md`.
 
@@ -198,8 +199,8 @@ expectations, and rollback limits are in
 The staging Compose stack publishes the API only on EC2 loopback and keeps
 PostgreSQL and Redis on an internal container network. Its local raw-storage
 volume is appropriate only for this single-host baseline. Keep the deployment
-private until the production blockers in `docs/security/threat-model.md` and the
-deployment runbook are resolved.
+private. Internet-facing AWS deployment and operational proof are V2 work under
+`docs/product-specs/v2-productionization-scope.md`.
 
 Production selects the `s3` raw-storage backend and uses the AWS SDK default
 credential chain from the instance or task role. Do not place AWS access keys in

@@ -1,7 +1,7 @@
 # WATCHTOWER V1 scope
 
-Status: baseline approved for Task 01 by the user's instruction to start the
-next task on 2026-09-27. Later-task decisions below remain open.
+Status: backend baseline approved on 2026-09-27; release boundary amended on
+2026-10-21 to include the first-party UI and defer AWS productionization to V2.
 
 ## Product and intended user
 
@@ -47,11 +47,17 @@ It does not claim to reconstruct their contents.
 12. A living advisory backend contract with evidence links, timestamped updates
     and preserved history. Proposed publication policy: drafts are private and
     only explicitly published advisories appear in public reads.
+13. A first-party web interface for local/private use that presents the core
+    researcher flow over the versioned API: search, actor context and timeline,
+    evidence/provenance and published advisories. The UI must preserve
+    OBSERVED/ASSESSED distinctions and must not expose drafts or administrative
+    operations to unauthenticated users. Its exact screens and operator workflow
+    are defined and accepted in a dedicated UI plan before implementation.
 
-The first usable milestone ends at Task 09: evidence-backed actor lookup,
-timeline and search. It is not completion of the entire V1 scope above.
-The initial release is proposed as backend/API first; no frontend implementation
-task is present in the supplied sequence.
+The backend milestone ends with the implemented and tested V1 APIs. Product V1
+is complete only after the first-party UI is accepted for local/private use.
+Internet-facing AWS deployment and operational proof are sequenced into
+`docs/product-specs/v2-productionization-scope.md`.
 
 ## Non-negotiable behavior
 
@@ -81,9 +87,11 @@ to retain the requested pip-compatible files without duplicate manual editing.
 Resolve versions and test compatibility at implementation time; existing ranges
 are not a validated lock. Do not install future-task dependencies preemptively.
 
-SvelteKit, TypeScript, shadcn-svelte, Tailwind and ECharts remain the specified
-frontend stack if a separate frontend task is approved. Provider/model choices,
-hosting and retention policy remain open as listed below.
+The approved frontend baseline is SvelteKit, TypeScript, shadcn-svelte,
+Tailwind and ECharts. The dedicated UI plan must select compatible current
+versions, define an API-client boundary and add appropriate frontend checks
+without weakening the existing backend CI. Provider/model choices and live RAG
+remain open as listed below.
 
 ## Explicitly out of scope
 
@@ -91,19 +99,20 @@ Forecasting, autonomous agents, multi-agent orchestration, AI actor merging,
 automatic editorial or Sigma generation, a scraping fleet, arbitrary URL
 ingestion, paid-source integration, full STIX schema replication, graph
 databases, Kafka, Kubernetes, sharding, microservices and unmeasured caching.
-Frontend implementation and production deployment are not authorized by this
-planning task. A release must not claim these features implicitly.
+AWS production deployment and its operational proof are outside V1 and belong
+to the separately gated V2 productionization scope. A release must not claim
+public production readiness or optional features implicitly.
 
 ## Human Decisions Required
 
 | Decision | Proposed choice | Required before |
 | --- | --- | --- |
 | Missing authoritative documents | Supply AGENTS.md/workflow reference, or explicitly adopt this proposal as the baseline without them | Task 01 |
-| Release boundary | Backend/API V1 covering Tasks 01–18; frontend separately scoped | Task 01 |
+| Release boundary | Backend plus first-party local/private UI in V1; AWS productionization in V2 | Decided 2026-10-21 |
 | Write access and publication | Local/operator-only ingestion initially; authenticated administration before remote access; public reads expose published material only | Task 08 and advisory contract |
 | AI execution and data policy | Select embedding/LLM provider, permitted source data and budget; disabled until configured | Task 10 |
-| Evidence retention and hosting | Choose retention/licensing policy and S3-compatible target; local adapter for development | Production evidence intake/deployment |
-| Deployment exposure | Select hosting, authentication owner and operational resource limits | Task 16 |
+| Evidence retention and hosting | Keep local adapter for V1; choose retention/licensing policy and deploy the approved S3 boundary in V2 | V2 productionization |
+| Deployment exposure | Keep V1 local/private; select hosting, authentication owner and operational resource limits before V2 deployment | V2 productionization |
 
 Other choices such as internal module names and local development ports are
 routine implementation decisions, not separate approval gates.
@@ -116,5 +125,7 @@ remain unresolved; deterministic search has evaluated relevance; RAG outputs
 are evaluated and cited; artifacts retain originals; STIX exports validate;
 advisory updates preserve history. Automated checks, migrations, performance
 measurements and deployment/security documentation must support a truthful
-Task 18 audit. Numerical performance and evaluation targets must be established
-with representative workloads in their corresponding tasks, not invented here.
+backend audit. The UI must make the evidence-backed search, actor timeline,
+provenance and published-advisory flow usable without bypassing API visibility
+or authentication rules. Numerical production performance and operational
+targets are established with representative V2 workloads, not invented in V1.

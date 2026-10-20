@@ -1,7 +1,7 @@
 # Production security boundary
 
-Status: Task 27 repository infrastructure contract, 2026-10-21. External
-deployment and acceptance evidence remain pending.
+Status: Task 27 repository infrastructure contract retained for V2
+productionization. External deployment and acceptance evidence remain pending.
 
 This contract selects AWS Application Load Balancer (ALB), AWS Certificate
 Manager (ACM), AWS WAF and Amazon Cognito for the first production boundary. It

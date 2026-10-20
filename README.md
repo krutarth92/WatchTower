@@ -1,6 +1,6 @@
 # WATCHTOWER
 
-WATCHTOWER is an adversary-first cyber threat intelligence backend for studying
+WATCHTOWER is an adversary-first cyber threat intelligence product for studying
 threat actors, their behavior over time, and the evidence behind each claim.
 
 It provides a FastAPI service, PostgreSQL intelligence model, deterministic
@@ -10,16 +10,16 @@ versioned living intelligence advisories.
 
 ## Current status
 
-The backend is suitable for local development and private staging evaluation.
-The [V1 readiness audit](docs/exec-plans/active/v1-readiness.md) lists the
-remaining controls required before an internet-facing production release.
+The backend is complete for local development and private evaluation. The next
+V1 phase is the first-party web interface; no frontend tree exists yet. The
+[V1 readiness audit](docs/exec-plans/active/v1-readiness.md) records the exact
+boundary and remaining UI work.
 
 Production templates define private S3 evidence storage, encrypted Multi-AZ RDS
 PostgreSQL, governed backups, Cognito operator identity, and an ALB/WAF HTTPS
-edge. They are validation-only until an AWS deployment and its acceptance
-rehearsals are separately authorized.
-
-Frontend implementation is outside the current backend V1 scope.
+edge. They are preserved for the separately gated
+[V2 productionization phase](docs/product-specs/v2-productionization-scope.md)
+and remain validation-only until an AWS deployment is authorized.
 
 ## Quick start
 
@@ -95,6 +95,7 @@ audits dependencies, and scans the container for high-severity vulnerabilities.
 ## Documentation
 
 - [V1 scope](docs/product-specs/v1-scope.md)
+- [V2 productionization scope](docs/product-specs/v2-productionization-scope.md)
 - [Intelligence data model](docs/design/intelligence-data-model.md)
 - [Security threat model](docs/security/threat-model.md)
 - [Production security boundary](docs/security/production-boundary.md)
