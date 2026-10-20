@@ -266,4 +266,3 @@ resources and remain open. No AWS service was created, changed, or deployed.
 - [RDS backup and point-in-time restore](https://docs.aws.amazon.com/AmazonRDS/latest/gettingstartedguide/managing-backup-restore.html)
 - [AWS Backup Vault Lock](https://docs.aws.amazon.com/aws-backup/latest/devguide/vault-lock.html)
 - [AWS Backup restore testing](https://docs.aws.amazon.com/aws-backup/latest/devguide/restore-testing-validation.html)
-
