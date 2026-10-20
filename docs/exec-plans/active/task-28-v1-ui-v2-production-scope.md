@@ -1,7 +1,6 @@
 # Task 28: V1 UI and V2 productionization boundary
 
-Status: scope update and local documentation validation complete; exact-commit
-hosted CI pending.
+Status: scope update and validation complete.
 Date: 2026-10-21.
 Source: owner decision to complete the UI before any AWS deployment.
 
@@ -77,3 +76,8 @@ internet-facing production readiness until the V2 deployed evidence passes.
 - No AWS resource, Jira evidence ticket, application contract or runtime
   setting was deleted. No AWS resource, DNS record or public endpoint was
   created.
+- Branch CI
+  [#75](https://github.com/krutarth92/WatchTower/actions/runs/39494444329)
+  passed backend checks, Python dependency audit and container
+  build/Trivy/SBOM for exact scope commit
+  `7396e4894d0ae02762a4444e1c88c1b261f3a1c2`.
