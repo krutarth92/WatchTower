@@ -1,8 +1,7 @@
 # Task 27: production identity and edge infrastructure
 
-Status: repository implementation and local validation complete; exact-commit
-hosted CI pending. AWS provisioning and public release are not authorized by
-this task.
+Status: repository implementation and validation complete. AWS provisioning and
+public release are not authorized by this task.
 Date: 2026-10-21.
 Source: V1 readiness gaps G03 and G04.
 
@@ -115,5 +114,8 @@ release is performed.
   `watchtower` and `create_app` successfully.
 - `git diff --check`: PASS. No AWS resource, user, DNS record, certificate or
   public endpoint was created or changed.
-- Hosted backend, dependency-audit and container/Trivy/SBOM evidence is pending
-  the final exact-commit branch run and is not yet reported as passed.
+- Branch CI
+  [#72](https://github.com/krutarth92/WatchTower/actions/runs/39491354312)
+  passed backend checks, Python dependency audit and container
+  build/Trivy/SBOM for exact implementation commit
+  `5e8a16749626842d77d6f678b3a4816e40385d6e`.
