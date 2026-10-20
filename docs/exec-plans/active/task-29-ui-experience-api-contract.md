@@ -95,6 +95,11 @@ decisions.
   published commit.
 - No frontend dependency, runtime code, AWS resource or browser credential flow
   was created.
+- Branch CI
+  [#78](https://github.com/krutarth92/WatchTower/actions/runs/39496955103)
+  passed backend checks, Python dependency audit and container
+  build/Trivy/SBOM for exact contract commit
+  `c1ffc886bd6f82df060a60b6a31f4b98d310f390`.
 
 ## Review checkpoint
 
