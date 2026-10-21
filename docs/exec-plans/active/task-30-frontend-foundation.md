@@ -1,6 +1,6 @@
 # Task 30 — frontend foundation and CI
 
-Status: implementation complete; exact-commit hosted CI and owner review pending.
+Status: verified and ready for owner review.
 Date started: 2026-10-21.
 Branch: `codex/task-30-frontend-foundation`.
 Jira: [`SCRUM-18`](https://kb-ai-projects.atlassian.net/browse/SCRUM-18).
@@ -74,9 +74,12 @@ Local validation on 2026-10-21:
   `src/lib/styles/tokens.css`; all shared visual decisions are centralized.
 - PASS: `git diff --check` reported no whitespace errors.
 
-Exact-commit hosted CI is pending until the reviewed local state is committed
-and pushed. The owner review gate remains open; Task 31 cannot start until this
-task passes CI and the shell/dependency footprint is accepted.
+Hosted GitHub Actions
+[#85](https://github.com/krutarth92/WatchTower/actions/runs/39547370739)
+passed on implementation commit `ec4d9307694eb65e340cbf963ad557aaef48aa39`:
+frontend checks, backend checks, Python dependency audit, and container
+build/scan all completed successfully. The owner review gate remains open;
+Task 31 cannot start until the shell and dependency footprint are accepted.
 
 ## Acceptance criteria
 
@@ -86,7 +89,7 @@ task passes CI and the shell/dependency footprint is accepted.
   forms, and is absent from generated browser assets.
 - PASS: the existing backend, dependency-audit and container CI jobs remain in
   the workflow without weaker commands or permissions.
-- PENDING: all four hosted CI jobs pass on the exact final commit.
+- PASS: all four hosted CI jobs passed on the exact implementation commit.
 - PENDING: owner reviews the rendered shell and dependency footprint.
 
 ## Risks and remaining issues
