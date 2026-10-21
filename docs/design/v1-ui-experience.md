@@ -360,17 +360,19 @@ published local fixture, every loading/empty/partial/error state above has a
 testable presentation, frontend CI passes with the unchanged backend jobs, and
 the owner reviews the rendered desktop and mobile interface.
 
-## Implementation slices after approval
+## Implementation plan after approval
 
-1. **Task 30 — foundation:** scaffold `apps/web`, same-origin server API client,
-   design tokens, shared shell, typed fixtures, checks and frontend CI.
-2. **Task 31 — researcher flow:** implement search, actor workspace, evidence
-   disclosure, pagination, filters and deterministic published demo data.
-3. **Task 32 — advisories:** implement list, current/historic detail, updates
-   and cross-links to actors.
-4. **Task 33 — acceptance hardening:** responsive and accessibility review,
-   browser tests, security headers, Docker/local orchestration and clean setup
-   documentation.
+The complete sequence, fixed deliverables, exclusions, commands and review
+gates are defined in the
+[V1 UI development master plan](../exec-plans/active/v1-ui-development-plan.md):
+
+1. **Task 30:** frontend foundation and CI;
+2. **Task 31:** design system and typed public API client;
+3. **Task 32:** published intelligence search;
+4. **Task 33:** actor research workspace;
+5. **Task 34:** published advisories;
+6. **Task 35:** deterministic demo data and Docker integration; and
+7. **Task 36:** V1 UI acceptance and readiness closure.
 
 Owner approval of this contract is the review checkpoint before Task 30 starts.
 

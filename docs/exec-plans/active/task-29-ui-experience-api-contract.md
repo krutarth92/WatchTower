@@ -36,6 +36,8 @@ decisions.
 - Specify accessibility, visual language and ECharts use rules.
 - Select a compatible frontend baseline, directory, checks and CI contract.
 - Split the accepted design into executable implementation tasks.
+- Define the complete UI delivery sequence, dependencies, fixed scope,
+  task-specific commands and review gates before Task 30 begins.
 
 ## Decisions
 
@@ -56,6 +58,7 @@ decisions.
 
 - `docs/design/v1-ui-experience.md`
 - `docs/exec-plans/active/task-29-ui-experience-api-contract.md`
+- `docs/exec-plans/active/v1-ui-development-plan.md`
 - `docs/exec-plans/active/v1-readiness.md`
 
 ## Acceptance criteria
@@ -66,6 +69,8 @@ decisions.
 - `OBSERVED` and `ASSESSED` remain explicit in all typed UI content.
 - Desktop, mobile, accessibility and failure behavior are specified.
 - Package/version, test and CI choices are recorded.
+- Every planned UI task has deliverables, exclusions, validation and an
+  acceptance gate before implementation begins.
 - Relative links and terminology are valid, and `git diff --check` passes.
 - Application tests may be marked not applicable because this task changes
   documentation only; final hosted CI must still validate the repository.
@@ -95,6 +100,17 @@ decisions.
   published commit.
 - No frontend dependency, runtime code, AWS resource or browser credential flow
   was created.
+- The complete supplied Task 00-18 bundle and the current scope, API, security,
+  deployment and developer-workflow references were traced into the UI master
+  plan. The plan fixes Tasks 30-36 before implementation rather than defining
+  their scope during delivery.
+- Master-plan structure validation: PASS. Each of Tasks 30-36 has a goal,
+  deliverables, explicit exclusions, validation and acceptance gate; the
+  dependency graph and program definition of done cover the complete sequence.
+- Local tooling discovery found Node 24.19.0 but no `npm` or `corepack` on PATH.
+  Task 30 therefore records the official pinned pnpm standalone bootstrap as a
+  prerequisite instead of assuming Corepack is available. This is a planned
+  prerequisite, not a passed installation check.
 - Branch CI
   [#78](https://github.com/krutarth92/WatchTower/actions/runs/39496955103)
   passed backend checks, Python dependency audit and container
