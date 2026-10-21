@@ -116,6 +116,11 @@ decisions.
   passed backend checks, Python dependency audit and container
   build/Trivy/SBOM for exact contract commit
   `c1ffc886bd6f82df060a60b6a31f4b98d310f390`.
+- Revised-plan CI
+  [#80](https://github.com/krutarth92/WatchTower/actions/runs/39540365500)
+  passed the same three required jobs for exact master-plan commit
+  `de3b6f80aa40c5aeb21c77917ef718c877202991` and retained its commit-bound
+  SBOM artifact.
 
 ## Review checkpoint
 
