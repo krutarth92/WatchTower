@@ -1,6 +1,6 @@
 # WATCHTOWER V1 UI development master plan
 
-Status: proposed for owner review; no frontend implementation has started.
+Status: owner-approved on 2026-10-21; Task 30 may begin.
 Date: 2026-10-21.
 Program: Jira `SCRUM-16`.
 Planning task: Task 29 / Jira `SCRUM-17`.
@@ -555,4 +555,13 @@ rewrite. Any of the following do:
 The amendment must identify the reference that changed, its effect on later
 tasks and the new validation evidence. Owner review is required before dependent
 implementation continues.
+
+## Owner approval
+
+The owner approved this plan and its seven-ticket Jira backlog on 2026-10-21,
+with an additional implementation constraint: color, typography, spacing,
+radii, shadow and motion decisions must be defined as shared design tokens so a
+critical visual change is made in one authoritative location rather than across
+individual components. Task 31 owns the complete token system; Task 30 must
+establish its single-source structure in the initial shell.
 

@@ -145,6 +145,8 @@ decisions.
 
 ## Review checkpoint
 
-Owner approval is required before starting Task 30. Until then, no frontend
-dependencies or runtime code are added.
+Owner approval was received on 2026-10-21 for the amended plan and seven-ticket
+backlog. The owner also required critical visual values to have one shared token
+source rather than being repeated across components. Task 29 is cleared for the
+Task 30 handoff after this approval record passes exact-commit hosted CI.
 
