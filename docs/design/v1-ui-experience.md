@@ -282,28 +282,60 @@ checks cover search, filters, pagination, evidence disclosure and navigation.
 
 ## Visual direction
 
-The interface should feel like a calm research workspace rather than a generic
-security dashboard. It uses a light neutral canvas, white evidence surfaces, a
-dark ink header and restrained blue actions. Dense metadata stays subordinate
-to claims and citations.
+The visual reference is [CyberNetSec.io](https://cyber.netsecops.io/), reviewed
+on 2026-10-21 at its home, advisory-list and advisory-detail routes. WATCHTOWER
+uses it as directional inspiration rather than a template. The intended shared
+feel is a dark cyber-intelligence workspace with crisp cyan/violet accents,
+outlined data surfaces, compact status labels, clear severity/state color and
+strong technical hierarchy.
+
+WATCHTOWER remains a calmer research product. It does not copy the reference
+site's logo, wording, layouts, illustrations, background imagery, category
+taxonomy or promotional controls. It also avoids its oversized landing hero,
+continuous neon glow, emoji-led headings, all-caps body copy and metrics that
+the WATCHTOWER API cannot support. Claims and citations remain more prominent
+than decoration.
+
+The default V1 presentation is dark. A near-black navy canvas supports slightly
+lighter layered panels; fine cool borders separate regions without relying on
+large shadows. Cyan is the primary interactive accent, while violet/magenta is
+reserved for secondary emphasis and selected research context. A cyan-to-violet
+gradient may appear in the WATCHTOWER wordmark, page titles or a short divider,
+but never in body text, dense metadata or semantic status labels.
 
 Initial design tokens:
 
 | Role | Value |
 | --- | --- |
-| Canvas | `#F4F6F8` |
-| Surface | `#FFFFFF` |
-| Ink | `#18202B` |
-| Muted ink | `#566273` |
-| Border | `#CFD6DF` |
-| Primary action | `#245EA8` |
-| Observed | `#176B5A` with eye icon and `OBSERVED` text |
-| Assessed | `#8A520F` with analysis icon and `ASSESSED` text |
-| Error | `#A53636` |
+| Canvas | `#060A13` |
+| Surface | `#0E1625` |
+| Raised surface | `#131D2E` |
+| Ink | `#E6EDF7` |
+| Muted ink | `#98A7BA` |
+| Border | `#2C3A50` |
+| Primary action | `#29D3E6` |
+| Secondary accent | `#B56BEA` |
+| Highlight accent | `#EC6BB6` |
+| Observed | `#4ECB9B` with eye icon and `OBSERVED` text |
+| Assessed | `#F0B35A` with analysis icon and `ASSESSED` text |
+| Error/critical | `#FF626E` |
 
 Use the native system sans-serif stack and system monospace for IDs and
-locators; V1 downloads no fonts. Corners are modest (6-10 pixels), shadows are
-subtle and motion is limited to state transitions shorter than 150 ms.
+locators; V1 downloads no fonts. Headings use weight and occasional gradient
+accent instead of a downloaded display face. Corners are modest (6-10 pixels),
+shadows and glows are restrained, panel borders remain visible without them,
+and motion is limited to state transitions shorter than 150 ms. Controls and
+panels must retain WCAG 2.2 AA contrast in their resting, hover, focus, selected
+and disabled states.
+
+The shared shell uses a compact product header and persistent Research and
+Advisories destinations. Screen intros may use a faint grid or circuit-line
+texture authored in CSS, provided it does not reduce legibility or animate.
+Search results, actor context and advisory content use bordered cards with a
+consistent title/metadata/action order. Severity, entity type, OBSERVED and
+ASSESSED appear as compact labelled chips; color and glow are never their only
+distinction. Operational summaries or counters appear only when supported by
+complete API data and are never inferred from one cursor page.
 
 ECharts is permitted only for a complete, meaningful series. The current
 cursor-paginated API cannot truthfully provide aggregate timeline charts, so the

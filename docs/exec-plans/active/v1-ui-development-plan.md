@@ -46,6 +46,14 @@ The plan was derived from the complete supplied `Instructions/TASK_00` through
 | Task 18 | Close the evidenced usable-UI release gap and avoid declaring readiness until the integrated flow passes. |
 
 The following current repository references also control the UI work:
+
+- [CyberNetSec.io](https://cyber.netsecops.io/) is the owner-supplied visual
+  reference. Its home, advisory-list and advisory-detail routes were reviewed
+  on 2026-10-21. The plan carries forward its dark navy intelligence-workspace
+  feel, cyan/violet accent family, outlined panels, compact status chips and
+  strong technical hierarchy. It deliberately does not copy its branding,
+  content, page composition, background artwork, promotional controls, heavy
+  glow or unsupported aggregate metrics.
 - [V1 scope](../../product-specs/v1-scope.md) makes a local/private first-party
   UI part of V1.
 - [V2 productionization scope](../../product-specs/v2-productionization-scope.md)
@@ -204,7 +212,8 @@ quality gates without implementing product screens.
 - Configure pnpm/Corepack, root lockfile, Node engine and package scripts.
 - Add ESLint/Prettier/Svelte checking, Vitest, Testing Library and Playwright.
 - Add the base SvelteKit shell, root-to-search redirect, error boundary and a
-  minimal local/private environment label.
+  minimal local/private environment label. The empty shell must establish the
+  approved dark navy canvas, compact header and cyan/violet focus treatment.
 - Add private `WATCHTOWER_API_ORIGIN` parsing with a safe localhost default and
   tests that prevent client-side exposure or arbitrary schemes/credentials.
 - Add a frontend GitHub Actions job using a frozen lockfile: install, format,
@@ -247,8 +256,11 @@ screen-specific development.
 ### Deliverables
 
 - Implement approved color, spacing, typography, focus, reduced-motion and
-  responsive tokens.
+  responsive tokens derived from the reviewed CyberNetSec.io qualities without
+  copying its brand assets, content or page composition.
 - Add semantic header/navigation, skip link, main landmark and page container.
+- Add reusable outlined panel, metadata strip, labelled status/severity chip,
+  accent heading and restrained CSS grid-texture primitives.
 - Add shared OBSERVED/ASSESSED label, source metadata, confidence, date/UTC,
   safe locator, evidence disclosure, empty/loading/error and retry components.
 - Define hand-written TypeScript transport contracts for search, actors,
@@ -276,7 +288,9 @@ automated accessibility scan of the shell/component gallery fixture.
 Shared components visibly preserve intelligence type and provenance, keyboard
 focus is deterministic, hostile fixture strings remain text, and API errors
 retain status/code/request ID without exposing response internals. Owner reviews
-the component gallery at 320, 768 and 1440 CSS pixels.
+the component gallery at 320, 768 and 1440 CSS pixels against the approved
+reference qualities: dark layered surfaces, crisp technical hierarchy,
+restrained cyan/violet emphasis and readable data density.
 
 ## Task 32 — published intelligence search
 
@@ -457,6 +471,9 @@ Prove the complete V1 interface and update the readiness claim using evidence.
 - Complete automated accessibility scans and manual keyboard, focus, zoom,
   reduced-motion and screen-reader landmark checks.
 - Inspect 320 px mobile, 768 px tablet, 1440 px desktop and 200% zoom.
+- Review the finished flow against the CyberNetSec.io-derived visual qualities
+  recorded in the UI contract and confirm that no copied branding, imagery,
+  wording, unsupported metrics or page composition entered the product.
 - Verify CSP/security headers, safe external links, plain-text untrusted content,
   no credential storage and no backend origin in client assets.
 - Capture performance evidence for initial page/navigation using a documented

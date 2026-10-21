@@ -34,6 +34,8 @@ decisions.
 - Specify loading, empty, partial, unavailable and stable API-error states.
 - Decide the V1 browser operator/authentication boundary.
 - Specify accessibility, visual language and ECharts use rules.
+- Review the owner-supplied CyberNetSec.io visual reference and record which
+  qualities WATCHTOWER adopts and which site-specific elements it excludes.
 - Select a compatible frontend baseline, directory, checks and CI contract.
 - Split the accepted design into executable implementation tasks.
 - Define the complete UI delivery sequence, dependencies, fixed scope,
@@ -68,6 +70,9 @@ decisions.
 - Public visibility remains consistent with the backend contract.
 - `OBSERVED` and `ASSESSED` remain explicit in all typed UI content.
 - Desktop, mobile, accessibility and failure behavior are specified.
+- The owner-supplied website is named in the contract, and its influence is
+  bounded so implementation can reproduce the intended feel without copying
+  branding, content or unsupported behavior.
 - Package/version, test and CI choices are recorded.
 - Every planned UI task has deliverables, exclusions, validation and an
   acceptance gate before implementation begins.
@@ -91,8 +96,10 @@ decisions.
 - Required language check: PASS for explicit `OBSERVED`/`ASSESSED`, operator
   token exclusion, private API origin, ECharts constraint, owner review and
   Task 30 handoff.
-- Initial text-token contrast against its stated surface: PASS. Ratios range
-  from 6.19:1 to 15.14:1, above the 4.5:1 normal-text target.
+- Amended dark-theme text-token contrast against its stated canvas/surface:
+  PASS. Ratios range from 5.39:1 to 16.80:1 for ink, muted ink, primary,
+  secondary, highlight, observed, assessed and error tokens, above the 4.5:1
+  normal-text target.
 - `git diff --check`: PASS.
 - Application tests are not applicable to this documentation-only task. No
   application, dependency, migration, workflow or runtime file changed. Final
@@ -111,6 +118,15 @@ decisions.
   Task 30 therefore records the official pinned pnpm standalone bootstrap as a
   prerequisite instead of assuming Corepack is available. This is a planned
   prerequisite, not a passed installation check.
+- Reviewed `https://cyber.netsecops.io/`, `/articles/` and one advisory detail
+  route on 2026-10-21. The amended contract records the requested dark
+  cyber-intelligence feel through layered navy surfaces, cyan/violet accents,
+  outlined panels, status chips and technical hierarchy, while excluding the
+  site's branding, artwork, exact layouts, promotional features, heavy glow and
+  unsupported metrics.
+- Post-amendment validation: PASS for `git diff --check`, relative Markdown
+  links, all seven Task 30-36 section structures and explicit owner-reference
+  traceability in the master plan.
 - Branch CI
   [#78](https://github.com/krutarth92/WatchTower/actions/runs/39496955103)
   passed backend checks, Python dependency audit and container
