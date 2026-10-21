@@ -34,8 +34,12 @@ coverage.xml
 
 # Frontend generated files
 node_modules/
+.pnpm-store/
 .svelte-kit/
 coverage/
+apps/web/build/
+apps/web/playwright-report/
+apps/web/test-results/
 
 # Editor and operating system files
 .idea/

@@ -8,6 +8,13 @@
 .ruff_cache
 .pyright
 .deploy
+node_modules
+.pnpm-store
+apps/web/.svelte-kit
+apps/web/build
+apps/web/coverage
+apps/web/playwright-report
+apps/web/test-results
 __pycache__
 *.py[cod]
 *.egg-info

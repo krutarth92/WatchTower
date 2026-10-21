@@ -10,8 +10,9 @@ versioned living intelligence advisories.
 
 ## Current status
 
-The backend is complete for local development and private evaluation. The next
-V1 phase is the first-party web interface; no frontend tree exists yet. The
+The backend is complete for local development and private evaluation. The V1
+web interface now has a reproducible SvelteKit foundation, centralized design
+tokens and frontend CI; research screens remain the active delivery phase. The
 [V1 readiness audit](docs/exec-plans/active/v1-readiness.md) records the exact
 boundary and remaining UI work.
 
@@ -28,6 +29,7 @@ Requirements:
 - Python 3.12 or 3.13
 - [uv](https://docs.astral.sh/uv/)
 - Docker with Compose
+- Node.js 24 and pnpm 12.14.0 for the web application
 
 From the repository root:
 
@@ -50,6 +52,13 @@ Start the API:
 uv run --locked uvicorn watchtower.main:create_app --factory --host 127.0.0.1 --port 8000
 ```
 
+Install and start the web foundation in another terminal:
+
+```powershell
+pnpm install --frozen-lockfile
+pnpm --dir apps/web dev --host 127.0.0.1
+```
+
 Start the worker in another terminal:
 
 ```powershell
@@ -59,6 +68,7 @@ uv run --locked python -m watchtower.workers.run
 Open:
 
 - API documentation: <http://127.0.0.1:8000/docs>
+- Web research shell: <http://127.0.0.1:5173/search>
 - Health check: <http://127.0.0.1:8000/health>
 - Readiness check: <http://127.0.0.1:8000/ready>
 

@@ -1,0 +1,24 @@
+packages:
+  - apps/web
+
+minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  - '@sveltejs/*'
+  - '@tailwindcss/*'
+  - '@testing-library/*'
+  - '@types/*'
+  - '@vitest/*'
+  - eslint*
+  - globals
+  - jsdom
+  - playwright
+  - prettier*
+  - svelte
+  - svelte-check
+  - tailwindcss
+  - typescript
+  - typescript-eslint
+  - vite
+  - vitest
+
+strictDepBuilds: true

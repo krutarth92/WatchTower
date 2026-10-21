@@ -1,18 +1,20 @@
 # WATCHTOWER development setup
 
-WATCHTOWER currently provides FastAPI, validated configuration, JSON application
+WATCHTOWER provides FastAPI, validated configuration, JSON application
 logs, SQLAlchemy sessions, Alembic, local PostgreSQL/Redis service definitions,
 the intelligence model, actor-centric reads, durable Dramatiq ingestion jobs,
 a deterministic PostgreSQL search baseline, a disabled-by-default grounded
 research RAG boundary, faithful technical artifact storage, and a reproducible
 CI/private-staging deployment baseline. It also provides versioned living
-intelligence advisories with an explicit publication boundary. The backend is
-the completed foundation for the approved V1 frontend; that application has not
-been added yet.
+intelligence advisories with an explicit publication boundary. The V1 web
+application now has its reproducible SvelteKit foundation, centralized visual
+tokens and frontend quality gates; product screens are delivered in subsequent
+UI tasks.
 
 ## Prerequisites and startup
 
-Use Python 3.12, uv, Git, and Docker with Compose and Linux-container support.
+Use Python 3.12, uv, Git, Docker with Compose and Linux-container support,
+Node.js 24 and pnpm 12.14.0.
 Pyright needs Node.js on PATH (its Python wrapper can download Node if absent).
 Python 3.12–3.13 are supported; validation used 3.12. Run from the repository root:
 
@@ -62,6 +64,35 @@ SELECT 1 and returns 200/ready or 503/not_ready without exposing connection erro
 Pool, connection and statement timeouts are bounded. Readiness checks database
 connectivity, not schema version or Redis. OpenAPI documentation is at
 http://127.0.0.1:8000/docs.
+
+## Frontend foundation
+
+Install the exact frontend dependency graph from the repository root:
+
+```powershell
+pnpm install --frozen-lockfile
+pnpm --dir apps/web dev --host 127.0.0.1
+```
+
+Open <http://127.0.0.1:5173>. The root redirects to the research shell at
+`/search`. `WATCHTOWER_API_ORIGIN` is a server-only setting and defaults to
+`http://127.0.0.1:8000`; it must remain an HTTP(S) origin without credentials,
+path, query or fragment. `WATCHTOWER_UI_ENVIRONMENT` controls the bounded
+local/private environment label. Neither value is exposed as public browser
+configuration.
+
+All foundational color, typography, spacing, radius, shadow, motion and layout
+values live in `apps/web/src/lib/styles/tokens.css`. Components consume semantic
+CSS variables so critical visual changes are made once. Run the frontend checks
+with:
+
+```powershell
+pnpm --dir apps/web format:check
+pnpm --dir apps/web lint
+pnpm --dir apps/web check
+pnpm --dir apps/web test:unit
+pnpm --dir apps/web build
+```
 
 Responses of at least 1 KiB are gzip-compressed when the client advertises gzip.
 Database pool size, overflow, recycling and slow-request logging are configurable;

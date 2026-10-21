@@ -1,0 +1,18 @@
+{
+	"name": "watchtower",
+	"private": true,
+	"packageManager": "pnpm@12.14.0",
+	"engines": {
+		"node": ">=24.0.0 <25",
+		"pnpm": "12.14.0"
+	},
+	"scripts": {
+		"web:dev": "pnpm --dir apps/web dev",
+		"web:build": "pnpm --dir apps/web build",
+		"web:check": "pnpm --dir apps/web check",
+		"web:lint": "pnpm --dir apps/web lint",
+		"web:format:check": "pnpm --dir apps/web format:check",
+		"web:test:unit": "pnpm --dir apps/web test:unit",
+		"web:test:e2e": "pnpm --dir apps/web test:e2e"
+	}
+}

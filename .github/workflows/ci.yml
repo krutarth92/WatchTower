@@ -13,6 +13,49 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  frontend:
+    name: Frontend checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install pnpm and Node
+        uses: pnpm/setup@a0881977cd8ea73b1ed212236c99ca10dcc80cf4 # v3
+        with:
+          version: "12.14.0"
+          runtime: node@24.19.0
+          cache: true
+          cache-dependency-path: pnpm-lock.yaml
+          install: false
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check formatting
+        run: pnpm --dir apps/web format:check
+
+      - name: Lint frontend
+        run: pnpm --dir apps/web lint
+
+      - name: Check Svelte and TypeScript
+        run: pnpm --dir apps/web check
+
+      - name: Run frontend unit tests
+        run: pnpm --dir apps/web test:unit
+
+      - name: Build frontend
+        run: pnpm --dir apps/web build
+
+      - name: Verify private origin is absent from client assets
+        shell: bash
+        run: |
+          if grep -R -E 'http://127\.0\.0\.1:8000|WATCHTOWER_API_ORIGIN' apps/web/build/client; then
+            echo 'Private API configuration leaked into client assets.' >&2
+            exit 1
+          fi
+
   backend:
     name: Backend checks
     runs-on: ubuntu-latest
