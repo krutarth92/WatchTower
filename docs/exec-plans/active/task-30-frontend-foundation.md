@@ -1,6 +1,6 @@
 # Task 30 — frontend foundation and CI
 
-Status: revised shell locally verified; hosted CI and owner review pending.
+Status: revised shell verified; owner review pending.
 Date started: 2026-10-21.
 Branch: `codex/task-30-frontend-foundation`.
 Jira: [`SCRUM-18`](https://kb-ai-projects.atlassian.net/browse/SCRUM-18).
@@ -122,5 +122,9 @@ Revision validation on 2026-10-22:
   shell assertions passed, and a new 320 x 720 test verified the revised
   hierarchy and absence of horizontal overflow.
 - PASS: `git diff --check` reported no whitespace errors.
-- PENDING: hosted CI must pass on the revision commit and the owner must review
-  the refreshed shell before Task 31 begins.
+- PASS: hosted GitHub Actions
+  [#87](https://github.com/krutarth92/WatchTower/actions/runs/39819897447)
+  passed frontend checks, backend checks, Python dependency audit and container
+  build/scan on exact revision commit
+  `93fb6014f482c1e79d9f47b2edfe2dcf7b46a4d0`.
+- PENDING: the owner must review the refreshed shell before Task 31 begins.
