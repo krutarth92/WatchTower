@@ -128,3 +128,14 @@ Revision validation on 2026-10-22:
   build/scan on exact revision commit
   `93fb6014f482c1e79d9f47b2edfe2dcf7b46a4d0`.
 - PENDING: the owner must review the refreshed shell before Task 31 begins.
+
+### Preview asset incident
+
+During owner review on 2026-10-22, port 4173 was still served by a Node process
+started against an older build. A later production build replaced the hashed
+client assets on disk while that process retained its older server manifest.
+The page therefore returned server-rendered HTML while its stale CSS and some
+JavaScript URLs failed. The preview process was replaced after the final build.
+The browser test now also requires successful `_app` responses, loaded CSS
+design tokens, fetched JavaScript resources and no client page errors so a
+server-rendered shell alone cannot satisfy the check.
