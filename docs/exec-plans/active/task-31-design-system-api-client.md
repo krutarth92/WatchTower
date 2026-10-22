@@ -1,6 +1,6 @@
 # Task 31 — design system and typed public API client
 
-Status: locally verified; hosted CI and owner review pending.
+Status: implementation verified; owner review pending.
 Date started: 2026-10-22.
 Branch: `codex/task-31-design-system-api-client`.
 Jira: [`SCRUM-19`](https://kb-ai-projects.atlassian.net/browse/SCRUM-19).
@@ -87,4 +87,9 @@ git diff --check
 - PASS: generated browser assets contain neither `WATCHTOWER_API_ORIGIN`, its
   private default origin nor the operator API route.
 - PASS: `git diff --check` reported no whitespace errors.
-- PENDING: hosted CI and owner review of the gallery.
+- PASS: hosted GitHub Actions
+  [#91](https://github.com/krutarth92/WatchTower/actions/runs/39824649301)
+  passed frontend checks, backend checks, Python dependency audit and container
+  build/scan on exact implementation commit
+  `0032d4512b89a612992297e442aff55a0154fb56`.
+- PENDING: owner review of the component gallery.
