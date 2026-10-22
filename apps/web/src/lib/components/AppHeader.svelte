@@ -13,10 +13,15 @@
 <header class="app-header">
 	<div class="header-inner">
 		<a class="brand" href="/search" aria-label="WATCHTOWER research home">
-			<svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
-				<path d="M6 27h20M9 27V13l7-8 7 8v14M12 14h8M13 19h6M16 14v13" />
-			</svg>
-			<span>WATCH<span class="brand-accent">TOWER</span></span>
+			<span class="mark-frame">
+				<svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+					<path d="M6 27h20M9 27V13l7-8 7 8v14M12 14h8M13 19h6M16 14v13" />
+				</svg>
+			</span>
+			<span class="brand-copy">
+				<span class="wordmark">WATCH<span class="brand-accent">TOWER</span></span>
+				<span class="brand-subtitle">INTELLIGENCE OPERATIONS</span>
+			</span>
 		</a>
 
 		<nav aria-label="Primary navigation">
@@ -25,12 +30,14 @@
 				aria-current={researchActive ? 'page' : undefined}
 				href="/search"
 			>
-				Research
+				<span class="nav-index" aria-hidden="true">01</span> Research
 			</a>
-			<span class="nav-pending" aria-disabled="true">Advisories</span>
+			<span class="nav-pending" aria-disabled="true"
+				><span class="nav-index" aria-hidden="true">02</span> Advisories</span
+			>
 		</nav>
 
-		<span class="environment-label">{environmentLabel}</span>
+		<span class="environment-label"><span aria-hidden="true"></span>{environmentLabel}</span>
 	</div>
 </header>
 
@@ -64,14 +71,42 @@
 		text-decoration: none;
 	}
 
+	.mark-frame {
+		display: grid;
+		width: 2.25rem;
+		height: 2.25rem;
+		place-items: center;
+		border: var(--border-width) solid var(--color-border-strong);
+		border-radius: var(--radius-sm);
+		background: var(--gradient-surface), var(--color-surface);
+	}
+
 	.brand-mark {
-		width: var(--space-6);
-		height: var(--space-6);
+		width: var(--space-5);
+		height: var(--space-5);
 		fill: none;
 		stroke: var(--color-primary);
 		stroke-linecap: round;
 		stroke-linejoin: round;
 		stroke-width: 2;
+	}
+
+	.brand-copy {
+		display: grid;
+		line-height: 1;
+	}
+
+	.wordmark {
+		font-size: var(--font-size-sm);
+	}
+
+	.brand-subtitle {
+		margin-top: var(--space-1);
+		color: var(--color-ink-subtle);
+		font-family: var(--font-mono);
+		font-size: 0.5625rem;
+		font-weight: 500;
+		letter-spacing: 0.12em;
 	}
 
 	.brand-accent {
@@ -88,6 +123,7 @@
 
 	nav a,
 	.nav-pending {
+		position: relative;
 		padding: var(--space-2) var(--space-3);
 		border-radius: var(--radius-sm);
 		color: var(--color-ink-muted);
@@ -97,10 +133,27 @@
 			background var(--motion-fast) var(--easing-standard);
 	}
 
+	.nav-index {
+		margin-right: var(--space-1);
+		font-family: var(--font-mono);
+		font-size: 0.625rem;
+		opacity: 0.72;
+	}
+
 	nav a:hover,
 	nav a.active {
 		background: var(--color-primary-soft);
 		color: var(--color-primary);
+	}
+
+	nav a.active::after {
+		position: absolute;
+		right: var(--space-3);
+		bottom: 0;
+		left: var(--space-3);
+		height: var(--border-width);
+		background: var(--gradient-brand);
+		content: '';
 	}
 
 	.nav-pending {
@@ -109,6 +162,9 @@
 	}
 
 	.environment-label {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
 		padding: var(--space-1) var(--space-2);
 		border: var(--border-width) solid var(--color-observed);
 		border-radius: var(--radius-sm);
@@ -116,6 +172,14 @@
 		font-family: var(--font-mono);
 		font-size: var(--font-size-xs);
 		letter-spacing: var(--letter-spacing-label);
+	}
+
+	.environment-label span {
+		width: 0.375rem;
+		height: 0.375rem;
+		border-radius: 50%;
+		background: currentColor;
+		box-shadow: 0 0 var(--space-2) currentColor;
 	}
 
 	@media (max-width: 40rem) {
@@ -133,6 +197,12 @@
 
 		.environment-label {
 			margin-left: auto;
+		}
+	}
+
+	@media (max-width: 55rem) {
+		.brand-subtitle {
+			display: none;
 		}
 	}
 </style>

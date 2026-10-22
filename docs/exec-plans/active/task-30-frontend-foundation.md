@@ -1,6 +1,6 @@
 # Task 30 — frontend foundation and CI
 
-Status: verified and ready for owner review.
+Status: revised shell locally verified; hosted CI and owner review pending.
 Date started: 2026-10-21.
 Branch: `codex/task-30-frontend-foundation`.
 Jira: [`SCRUM-18`](https://kb-ai-projects.atlassian.net/browse/SCRUM-18).
@@ -98,3 +98,29 @@ Task 31 cannot start until the shell and dependency footprint are accepted.
   Tasks 32-34. This task exposes no incomplete data controls.
 - The standalone pnpm executable and Playwright browser are local ignored tools;
   they are not repository artifacts. CI provisions its pinned pnpm runtime.
+
+## Owner review feedback
+
+On 2026-10-22 the owner found the first shell too basic and requested a more
+developed visual treatment. The revision strengthens the header identity,
+creates a two-column research hero with an abstract intelligence surface, adds
+an explicit research-principles rail and improves foundation status hierarchy.
+It remains within Task 30: all displayed statements describe implemented
+boundaries or design principles, and no mock search result, actor, advisory or
+unfinished control was added. New shared colors, gradients and shadows remain
+defined only in the authoritative token stylesheet.
+
+Revision validation on 2026-10-22:
+
+- PASS: Prettier, ESLint and Svelte/TypeScript checks completed with no errors
+  or warnings on the revised files.
+- PASS: Vitest ran all 13 tests, including the rule that rejects color literals
+  outside `src/lib/styles/tokens.css`.
+- PASS: the adapter-node production build completed, and its client bundle
+  contains neither `WATCHTOWER_API_ORIGIN` nor the private API default origin.
+- PASS: Playwright ran two production-browser tests. The existing redirect and
+  shell assertions passed, and a new 320 x 720 test verified the revised
+  hierarchy and absence of horizontal overflow.
+- PASS: `git diff --check` reported no whitespace errors.
+- PENDING: hosted CI must pass on the revision commit and the owner must review
+  the refreshed shell before Task 31 begins.
