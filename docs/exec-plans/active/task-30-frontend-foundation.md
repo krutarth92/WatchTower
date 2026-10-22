@@ -1,6 +1,6 @@
 # Task 30 — frontend foundation and CI
 
-Status: revised shell verified; owner review pending.
+Status: complete; owner approved 2026-10-22.
 Date started: 2026-10-21.
 Branch: `codex/task-30-frontend-foundation`.
 Jira: [`SCRUM-18`](https://kb-ai-projects.atlassian.net/browse/SCRUM-18).
@@ -90,7 +90,8 @@ Task 31 cannot start until the shell and dependency footprint are accepted.
 - PASS: the existing backend, dependency-audit and container CI jobs remain in
   the workflow without weaker commands or permissions.
 - PASS: all four hosted CI jobs passed on the exact implementation commit.
-- PENDING: owner reviews the rendered shell and dependency footprint.
+- PASS: owner reviewed and approved the corrected rendered shell and dependency
+  footprint on 2026-10-22.
 
 ## Risks and remaining issues
 
@@ -127,7 +128,7 @@ Revision validation on 2026-10-22:
   passed frontend checks, backend checks, Python dependency audit and container
   build/scan on exact revision commit
   `93fb6014f482c1e79d9f47b2edfe2dcf7b46a4d0`.
-- PENDING: the owner must review the refreshed shell before Task 31 begins.
+- PASS: the owner approved the refreshed shell on 2026-10-22.
 
 ### Preview asset incident
 
@@ -139,3 +140,9 @@ JavaScript URLs failed. The preview process was replaced after the final build.
 The browser test now also requires successful `_app` responses, loaded CSS
 design tokens, fetched JavaScript resources and no client page errors so a
 server-rendered shell alone cannot satisfy the check.
+
+The correction was committed as
+`77f7e817b5f629f8a646bef952140a49d58f8061`. Hosted GitHub Actions
+[#89](https://github.com/krutarth92/WatchTower/actions/runs/39822235663)
+passed frontend checks, backend checks, Python dependency audit and container
+build/scan on that exact commit. The owner then approved moving to Task 31.
