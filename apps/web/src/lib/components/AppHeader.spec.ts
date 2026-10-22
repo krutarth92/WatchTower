@@ -6,9 +6,7 @@ describe('AppHeader', () => {
 	it('exposes the research destination and private environment', () => {
 		render(AppHeader, { environmentLabel: 'LOCAL / PRIVATE', currentPath: '/search' });
 
-		expect(
-			screen.getByRole('link', { name: 'WATCHTOWER research home' }).getAttribute('href')
-		).toBe('/search');
+		expect(screen.getByRole('link', { name: /WATCHTOWER/ }).getAttribute('href')).toBe('/search');
 		expect(screen.getByRole('link', { name: 'Research' }).getAttribute('aria-current')).toBe(
 			'page'
 		);

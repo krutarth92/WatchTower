@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
 
 test('redirects to the research shell', async ({ page }) => {
 	const failedAssets: string[] = [];
@@ -10,7 +11,7 @@ test('redirects to the research shell', async ({ page }) => {
 	});
 	page.on('pageerror', (error) => pageErrors.push(error.message));
 
-	await page.goto('/');
+	const navigation = await page.goto('/');
 	await page.waitForLoadState('networkidle');
 
 	await expect(page).toHaveURL(/\/search$/);
@@ -33,6 +34,9 @@ test('redirects to the research shell', async ({ page }) => {
 	expect(loadedPresentation.primaryColor).not.toBe('');
 	expect(loadedPresentation.stylesheets).toBeGreaterThan(0);
 	expect(loadedPresentation.javascriptResources).toBeGreaterThan(0);
+	expect(navigation?.headers()['content-security-policy']).toContain("default-src 'self'");
+	expect(navigation?.headers()['x-frame-options']).toBe('DENY');
+	expect(navigation?.headers()['x-content-type-options']).toBe('nosniff');
 });
 
 test('preserves the research hierarchy at the minimum supported width', async ({ page }) => {
@@ -49,4 +53,22 @@ test('preserves the research hierarchy at the minimum supported width', async ({
 		() => document.documentElement.scrollWidth <= innerWidth
 	);
 	expect(viewportFits).toBe(true);
+});
+
+test('component gallery is accessible and responsive at review widths', async ({ page }) => {
+	for (const width of [320, 768, 1440]) {
+		await page.setViewportSize({ width, height: 900 });
+		await page.goto('/components');
+		await page.waitForLoadState('networkidle');
+
+		await expect(
+			page.getByRole('heading', { level: 1, name: 'Intelligence interface primitives' })
+		).toBeVisible();
+		expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+			true
+		);
+
+		const results = await new AxeBuilder({ page }).analyze();
+		expect(results.violations, `${width}px accessibility violations`).toEqual([]);
+	}
 });

@@ -12,7 +12,7 @@
 
 <header class="app-header">
 	<div class="header-inner">
-		<a class="brand" href="/search" aria-label="WATCHTOWER research home">
+		<a class="brand" href="/search">
 			<span class="mark-frame">
 				<svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
 					<path d="M6 27h20M9 27V13l7-8 7 8v14M12 14h8M13 19h6M16 14v13" />
