@@ -1,6 +1,6 @@
 # Task 31 — design system and typed public API client
 
-Status: implementation verified; owner review pending.
+Status: complete; owner approved.
 Date started: 2026-10-22.
 Branch: `codex/task-31-design-system-api-client`.
 Jira: [`SCRUM-19`](https://kb-ai-projects.atlassian.net/browse/SCRUM-19).
@@ -92,4 +92,14 @@ git diff --check
   passed frontend checks, backend checks, Python dependency audit and container
   build/scan on exact implementation commit
   `0032d4512b89a612992297e442aff55a0154fb56`.
-- PENDING: owner review of the component gallery.
+- PASS: the owner reviewed and approved the component gallery on 2026-10-22,
+  satisfying the Task 31 to Task 32 transition gate.
+- PASS: immediately before transition, the branch was clean and synchronized at
+  `e987ebc5e7bd7ca4069acf5464e37003587ca649`; the production gallery returned
+  HTTP 200, all 11 referenced CSS and JavaScript assets returned HTTP 200, CSP
+  remained present and `X-Frame-Options` remained `DENY`.
+- PASS: hosted GitHub Actions
+  [#92](https://github.com/krutarth92/WatchTower/actions/runs/39824951648)
+  passed the required frontend checks, backend checks, Python dependency audit
+  and container build/scan on exact validation commit
+  `e987ebc5e7bd7ca4069acf5464e37003587ca649`.
