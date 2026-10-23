@@ -1,7 +1,8 @@
 # Task 32 — published intelligence search
 
-Status: in review.
+Status: complete.
 Date started: 2026-10-22.
+Date completed: 2026-10-23.
 Branch: `codex/task-32-published-intelligence-search`.
 Jira: [`SCRUM-20`](https://kb-ai-projects.atlassian.net/browse/SCRUM-20).
 
@@ -105,4 +106,11 @@ git diff --check
   `62b095033c061f3a5a964eebf8e7f7ae64319a33`. Frontend checks, backend checks,
   Python dependency audit and container build/scan all passed; the run produced
   the commit-addressed SBOM artifact.
-- PENDING: owner review of the complete search screen.
+- PASS: hosted GitHub Actions
+  [#97](https://github.com/krutarth92/WatchTower/actions/runs/39927632902)
+  also passed on exact review-state commit
+  `4b408126bf97dd010761236cc0723778ae6246b6`; all four jobs completed
+  successfully and produced the commit-addressed SBOM artifact.
+- PASS: the owner reviewed and accepted the complete search screen on
+  2026-10-23. Task 33 may begin after this closing record passes hosted CI and
+  Jira `SCRUM-20` is moved to Done.
