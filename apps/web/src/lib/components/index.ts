@@ -5,6 +5,8 @@ export { default as GridSurface } from './GridSurface.svelte';
 export { default as MetadataStrip } from './MetadataStrip.svelte';
 export { default as Panel } from './Panel.svelte';
 export { default as SafeLocator } from './SafeLocator.svelte';
+export { default as SearchFilters } from './SearchFilters.svelte';
+export { default as SearchResultCard } from './SearchResultCard.svelte';
 export { default as SourceMetadata } from './SourceMetadata.svelte';
 export { default as StatePanel } from './StatePanel.svelte';
 export { default as StatusChip } from './StatusChip.svelte';
