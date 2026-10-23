@@ -1,8 +1,10 @@
 export { default as AccentHeading } from './AccentHeading.svelte';
 export { default as ActorTimelineEvent } from './ActorTimelineEvent.svelte';
+export { default as ActorDiscovery } from './ActorDiscovery.svelte';
 export { default as ConfidenceMeter } from './ConfidenceMeter.svelte';
 export { default as EvidenceDisclosure } from './EvidenceDisclosure.svelte';
 export { default as GridSurface } from './GridSurface.svelte';
+export { default as HighlightedText } from './HighlightedText.svelte';
 export { default as MetadataStrip } from './MetadataStrip.svelte';
 export { default as Panel } from './Panel.svelte';
 export { default as SafeLocator } from './SafeLocator.svelte';

@@ -17,12 +17,15 @@ from watchtower.db.models import (
     Alias,
     Behavior,
     Campaign,
+    Indicator,
+    IndicatorType,
     IntelligenceType,
     Observation,
     Origin,
     PublicationState,
     Source,
     Technique,
+    Vulnerability,
 )
 from watchtower.db.session import get_session
 from watchtower.main import create_app
@@ -78,6 +81,29 @@ def seed_search_evaluation(db_session: Session) -> dict[str, Source]:
         name="PowerShell",
         description="A command and scripting interpreter available on Windows.",
     )
+    indicator = Indicator(
+        source=alpha,
+        indicator_type=IndicatorType.DOMAIN,
+        value="malicious-update.example",
+        normalized_value="malicious-update.example",
+        description="Domain used in a targeted malicious update operation.",
+        first_seen=datetime(2026, 1, 10, tzinfo=UTC),
+        last_seen=datetime(2026, 2, 10, tzinfo=UTC),
+        confidence=91,
+        intelligence_type=IntelligenceType.OBSERVED,
+        origin=Origin.IMPORTED,
+    )
+    vulnerability = Vulnerability(
+        source=alpha,
+        cve_id="CVE-2026-45123",
+        title="Remote service vulnerability",
+        description="Vulnerability exploited during Sandworm operations.",
+        severity="critical",
+        cvss_score=9.8,
+        published_at=datetime(2026, 1, 5, tzinfo=UTC),
+        intelligence_type=IntelligenceType.OBSERVED,
+        origin=Origin.IMPORTED,
+    )
     observed = Observation(
         source=alpha,
         source_native_id="observation--credential-phishing",
@@ -111,6 +137,8 @@ def seed_search_evaluation(db_session: Session) -> dict[str, Source]:
         origin=Origin.WATCHTOWER,
     )
     actor.observations.append(observed)
+    actor.indicators.append(indicator)
+    actor.vulnerabilities.append(vulnerability)
     observed.behaviors.append(behavior)
     observed.techniques.append(technique)
     for record in (
@@ -121,6 +149,8 @@ def seed_search_evaluation(db_session: Session) -> dict[str, Source]:
         campaign,
         behavior,
         technique,
+        indicator,
+        vulnerability,
         observed,
         distractor,
         assessment,
@@ -135,6 +165,8 @@ def seed_search_evaluation(db_session: Session) -> dict[str, Source]:
             campaign,
             behavior,
             technique,
+            indicator,
+            vulnerability,
             observed,
             distractor,
             assessment,
@@ -190,6 +222,54 @@ def test_curated_search_evaluation_and_stable_ranking(db_session: Session) -> No
     _, exact_results, _ = service.search(db_session, "Sandworm Team")
     assert exact_results[0].match_kind is SearchMatchKind.EXACT
     assert exact_results[0].score >= 100
+
+
+def test_indicator_cve_search_and_actor_discovery(db_session: Session) -> None:
+    seed_search_evaluation(db_session)
+    service = SearchService()
+
+    _, indicator_results, _ = service.search(db_session, "malicious-update.example")
+    _, vulnerability_results, _ = service.search(db_session, "CVE-2026-45123")
+    discovery = service.discover_actors(db_session, limit=12)
+
+    indicator = indicator_results[0]
+    assert indicator.entity_type is SearchEntityType.INDICATOR
+    assert indicator.indicator_type == "domain"
+    assert indicator.indicator_value == "malicious-update.example"
+    assert indicator.related_actors[0].canonical_name == "Sandworm Team"
+    assert indicator.related_actors[0].description
+
+    vulnerability = vulnerability_results[0]
+    assert vulnerability.entity_type is SearchEntityType.VULNERABILITY
+    assert vulnerability.external_id == "CVE-2026-45123"
+    assert vulnerability.severity == "critical"
+    assert vulnerability.cvss_score == 9.8
+    assert vulnerability.related_actors[0].canonical_name == "Sandworm Team"
+
+    assert len(discovery.recent) <= 6
+    assert len(discovery.popular) <= 6
+    assert discovery.limit == 12
+    assert discovery.recent[0].canonical_name == "Sandworm Team"
+    assert discovery.recent[0].description
+    assert discovery.popular[0].popularity_score > 0
+
+
+def test_actor_discovery_api_contract(db_session: Session) -> None:
+    seed_search_evaluation(db_session)
+    app = create_app(Settings())  # pyright: ignore[reportCallIssue]
+
+    def override_session() -> Iterator[Session]:
+        yield db_session
+
+    app.dependency_overrides[get_session] = override_session
+    with TestClient(app) as client:
+        response = client.get("/api/v1/search/discovery", params={"limit": 12})
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["limit"] == 12
+    assert payload["recent"][0]["canonical_name"] == "Sandworm Team"
+    assert payload["popular"][0]["published_observation_count"] == 1
 
 
 def test_search_api_filters_validation_and_response_contract(db_session: Session) -> None:
@@ -446,8 +526,10 @@ def test_search_indexes_exist_and_support_full_text_plan(db_session: Session) ->
         "ix_behaviors_search_document",
         "ix_campaigns_search_document",
         "ix_observations_search_document",
+        "ix_indicators_search_document",
         "ix_sources_search_document",
         "ix_techniques_search_document",
+        "ix_vulnerabilities_search_document",
     } <= indexes
 
     db_session.execute(text("SET LOCAL enable_seqscan = off"))

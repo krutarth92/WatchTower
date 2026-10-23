@@ -1,6 +1,8 @@
 import type { IntelligenceType, SearchEntityType } from '#lib/api/contracts.ts';
 
 export const searchEntityTypes = [
+	'indicator',
+	'vulnerability',
 	'actor',
 	'alias',
 	'campaign',

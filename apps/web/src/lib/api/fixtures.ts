@@ -21,6 +21,12 @@ export const searchSuccessFixture = {
 			observed_at: '2026-01-02T03:04:05Z',
 			intelligence_type: 'observed',
 			origin: 'imported',
+			indicator_type: null,
+			indicator_value: null,
+			severity: null,
+			cvss_score: null,
+			related_actors: [],
+			related_actors_truncated: false,
 			match_kind: 'exact',
 			score: 1
 		}

@@ -7,6 +7,7 @@ const uuidPath =
 const slugPath = '[a-z0-9]+(?:-[a-z0-9]+)*';
 
 const routes = [
+	{ pattern: /^\/api\/v1\/search\/discovery$/, query: new Set(['limit']) },
 	{
 		pattern: /^\/api\/v1\/search$/,
 		query: new Set([

@@ -17,11 +17,20 @@ class SearchEntityType(StrEnum):
     TECHNIQUE = "technique"
     OBSERVATION = "observation"
     SOURCE = "source"
+    INDICATOR = "indicator"
+    VULNERABILITY = "vulnerability"
 
 
 class SearchMatchKind(StrEnum):
     EXACT = "exact"
     FULL_TEXT = "full_text"
+
+
+class RelatedActorRead(BaseModel):
+    id: UUID
+    canonical_name: str
+    description: str | None = None
+    latest_observed_at: datetime | None = None
 
 
 class SearchResultRead(BaseModel):
@@ -35,6 +44,12 @@ class SearchResultRead(BaseModel):
     observed_at: datetime | None
     intelligence_type: IntelligenceType | None
     origin: Origin | None
+    indicator_type: str | None = None
+    indicator_value: str | None = None
+    severity: str | None = None
+    cvss_score: float | None = None
+    related_actors: list[RelatedActorRead] = Field(default_factory=list)
+    related_actors_truncated: bool = False
     match_kind: SearchMatchKind
     score: float = Field(ge=0)
 
@@ -44,3 +59,19 @@ class SearchResponse(BaseModel):
     data: list[SearchResultRead]
     limit: int
     next_cursor: str | None
+
+
+class ActorDiscoveryRead(BaseModel):
+    id: UUID
+    canonical_name: str
+    description: str | None
+    latest_observed_at: datetime | None
+    published_observation_count: int = Field(ge=0)
+    published_alias_count: int = Field(ge=0)
+    popularity_score: int = Field(ge=0)
+
+
+class ActorDiscoveryResponse(BaseModel):
+    recent: list[ActorDiscoveryRead]
+    popular: list[ActorDiscoveryRead]
+    limit: int

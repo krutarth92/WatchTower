@@ -30,8 +30,11 @@ actor. Unlinked records and unsupported meanings are omitted.
   not contain the required cyber-observable object references and may be
   analytic assessments. Mapping them to Observed Data would change their
   meaning.
-- `indicator` is not emitted because V1 has no first-class indicator or STIX
-  pattern model.
+- First-class WATCHTOWER indicators are not emitted by this export because the
+  current records preserve normalized values but do not yet store a validated
+  STIX pattern and pattern type. Export must not synthesize a pattern.
+- Vulnerability records are not emitted by this actor bundle until their
+  external-reference and relationship mapping is specified and validated.
 - Generic behaviors are omitted because their current meaning is too broad for
   a reliable STIX Domain Object mapping.
 - Arbitrary internal relationship predicates are omitted. Only the exact

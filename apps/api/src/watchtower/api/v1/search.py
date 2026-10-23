@@ -8,7 +8,11 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from watchtower.api.errors import ERROR_RESPONSES, ApiError
-from watchtower.api.v1.search_schemas import SearchEntityType, SearchResponse
+from watchtower.api.v1.search_schemas import (
+    ActorDiscoveryResponse,
+    SearchEntityType,
+    SearchResponse,
+)
 from watchtower.db.models import IntelligenceType
 from watchtower.db.session import get_session
 from watchtower.services.search import SearchQueryError, SearchService
@@ -16,6 +20,21 @@ from watchtower.services.search import SearchQueryError, SearchService
 router = APIRouter(prefix="/api/v1/search", tags=["search"], responses=ERROR_RESPONSES)
 service = SearchService()
 DatabaseSession = Annotated[Session, Depends(get_session)]
+
+
+@router.get(
+    "/discovery",
+    response_model=ActorDiscoveryResponse,
+    summary="List recent and active published threat actors",
+)
+def discover_actors(
+    session: DatabaseSession,
+    limit: Annotated[int, Query(ge=1, le=12)] = 12,
+) -> ActorDiscoveryResponse:
+    try:
+        return service.discover_actors(session, limit=limit)
+    except SearchQueryError as error:
+        raise ApiError(422, "validation_error", str(error)) from None
 
 
 @router.get(

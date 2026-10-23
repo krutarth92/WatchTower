@@ -3,8 +3,9 @@ import { PublicApiError } from '#lib/server/api/client.ts';
 import { loadSearchPage } from './page.ts';
 
 describe('search page loader', () => {
-	it('does not call the API for initial or invalid state', async () => {
-		const get = vi.fn();
+	it('loads live actor discovery for the initial state and skips invalid queries', async () => {
+		const discovery = { recent: [], popular: [], limit: 12 };
+		const get = vi.fn(async () => discovery);
 
 		await expect(loadSearchPage(new URLSearchParams(), { get })).resolves.toMatchObject({
 			view: 'initial'
@@ -12,7 +13,8 @@ describe('search page loader', () => {
 		await expect(loadSearchPage(new URLSearchParams('q=x'), { get })).resolves.toMatchObject({
 			view: 'invalid'
 		});
-		expect(get).not.toHaveBeenCalled();
+		expect(get).toHaveBeenCalledOnce();
+		expect(get).toHaveBeenCalledWith('/api/v1/search/discovery', { limit: 12 });
 	});
 
 	it('passes normalized filters and preserves API result order', async () => {
@@ -27,6 +29,12 @@ describe('search page loader', () => {
 			observed_at: null,
 			intelligence_type: 'observed' as const,
 			origin: 'imported' as const,
+			indicator_type: null,
+			indicator_value: null,
+			severity: null,
+			cvss_score: null,
+			related_actors: [],
+			related_actors_truncated: false,
 			match_kind: 'full_text' as const,
 			score: 0.5
 		});

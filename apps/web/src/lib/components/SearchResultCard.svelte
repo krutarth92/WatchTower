@@ -1,13 +1,23 @@
 <script lang="ts">
 	import type { SearchResultRead } from '#lib/api/contracts.ts';
+	import HighlightedText from './HighlightedText.svelte';
 	import StatusChip from './StatusChip.svelte';
 	import UtcDate from './UtcDate.svelte';
 
-	let { result, fromSearch }: { result: SearchResultRead; fromSearch: string } = $props();
+	let {
+		result,
+		fromSearch,
+		query
+	}: { result: SearchResultRead; fromSearch: string; query: string } = $props();
 
+	const relatedActorHref = (actorId: string) =>
+		`/actors/${actorId}?fromSearch=${encodeURIComponent(fromSearch)}`;
 	const actorId = $derived(result.entity_type === 'actor' ? result.id : result.actor_id);
 	const actorHref = $derived(
 		actorId ? `/actors/${actorId}?fromSearch=${encodeURIComponent(fromSearch)}` : null
+	);
+	const relatedActorContextHref = $derived(
+		result.related_actors[0] ? relatedActorHref(result.related_actors[0].id) : null
 	);
 	const entityLabel = $derived(result.entity_type.replace('_', ' ').toUpperCase());
 	const matchLabel = $derived(result.match_kind === 'exact' ? 'EXACT MATCH' : 'FULL TEXT');
@@ -27,19 +37,39 @@
 			{/if}
 		</div>
 		{#if actorHref}
-			<h2><a href={actorHref}>{result.title}</a></h2>
+			<h2><a href={actorHref}><HighlightedText text={result.title} {query} /></a></h2>
 		{:else}
-			<h2>{result.title}</h2>
+			<h2><HighlightedText text={result.title} {query} /></h2>
 		{/if}
 	</header>
 
-	{#if result.summary}<p class="summary">{result.summary}</p>{/if}
+	{#if result.summary}
+		<p class="summary"><HighlightedText text={result.summary} {query} /></p>
+	{/if}
 
 	<dl>
 		{#if result.external_id}
 			<div>
 				<dt>EXTERNAL ID</dt>
-				<dd><code>{result.external_id}</code></dd>
+				<dd><code><HighlightedText text={result.external_id} {query} /></code></dd>
+			</div>
+		{/if}
+		{#if result.indicator_type}
+			<div>
+				<dt>INDICATOR TYPE</dt>
+				<dd>{result.indicator_type}</dd>
+			</div>
+		{/if}
+		{#if result.indicator_value}
+			<div>
+				<dt>INDICATOR VALUE</dt>
+				<dd><code><HighlightedText text={result.indicator_value} {query} /></code></dd>
+			</div>
+		{/if}
+		{#if result.severity}
+			<div>
+				<dt>SEVERITY</dt>
+				<dd>{result.severity}{result.cvss_score !== null ? ` / CVSS ${result.cvss_score}` : ''}</dd>
 			</div>
 		{/if}
 		{#if result.source_id}
@@ -62,10 +92,34 @@
 		{/if}
 	</dl>
 
+	{#if result.related_actors.length}
+		<section class="related" aria-label="Related threat actors">
+			<h3>RELATED THREAT ACTORS</h3>
+			{#each result.related_actors as actor (actor.id)}
+				<div class="actor-context">
+					<a href={relatedActorHref(actor.id)}
+						><HighlightedText text={actor.canonical_name} {query} /></a
+					>
+					{#if actor.description}
+						<p><HighlightedText text={actor.description} {query} /></p>
+					{/if}
+					{#if actor.latest_observed_at}
+						<small>Latest published observation <UtcDate value={actor.latest_observed_at} /></small>
+					{/if}
+				</div>
+			{/each}
+			{#if result.related_actors_truncated}<small>Additional actor links are available.</small>{/if}
+		</section>
+	{/if}
+
 	<footer>
 		<span>RELEVANCE {result.score.toFixed(3)}</span>
 		{#if actorHref}
 			<a href={actorHref}>Open actor context <span aria-hidden="true">→</span></a>
+		{:else if relatedActorContextHref}
+			<a href={relatedActorContextHref}
+				>Open related actor context <span aria-hidden="true">→</span></a
+			>
 		{:else}
 			<span class="self-contained">No public detail route</span>
 		{/if}
@@ -145,6 +199,40 @@
 	.summary {
 		margin: 0;
 		color: var(--color-ink-muted);
+	}
+
+	.related {
+		display: grid;
+		gap: var(--space-3);
+		padding-left: var(--space-4);
+		border-left: 0.1875rem solid var(--color-secondary);
+	}
+	.related h3,
+	.related small {
+		font-family: var(--font-mono);
+		font-size: var(--font-size-xs);
+		letter-spacing: var(--letter-spacing-label);
+	}
+	.related h3 {
+		margin: 0;
+		color: var(--color-secondary);
+	}
+	.actor-context {
+		display: grid;
+		gap: var(--space-1);
+	}
+	.actor-context a {
+		width: fit-content;
+		color: var(--color-ink);
+		font-weight: 750;
+		text-underline-offset: var(--space-1);
+	}
+	.actor-context p {
+		margin: 0;
+		color: var(--color-ink-muted);
+	}
+	.related small {
+		color: var(--color-ink-subtle);
 	}
 
 	dl {

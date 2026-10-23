@@ -14,6 +14,7 @@ from sqlalchemy import (
     Computed,
     DateTime,
     Enum,
+    Float,
     ForeignKey,
     Identity,
     Index,
@@ -121,6 +122,17 @@ class PublicationState(StrEnum):
     PUBLISHED = "published"
 
 
+class IndicatorType(StrEnum):
+    IPV4 = "ipv4"
+    IPV6 = "ipv6"
+    DOMAIN = "domain"
+    URL = "url"
+    EMAIL = "email"
+    MD5 = "md5"
+    SHA1 = "sha1"
+    SHA256 = "sha256"
+
+
 class AdvisorySectionType(StrEnum):
     WHAT_HAPPENED = "what_happened"
     ACTOR_CONTEXT = "actor_context"
@@ -201,6 +213,11 @@ publication_state_enum = Enum(
     name="publication_state",
     values_callable=lambda values: [value.value for value in values],
 )
+indicator_type_enum = Enum(
+    IndicatorType,
+    name="indicator_type",
+    values_callable=lambda values: [value.value for value in values],
+)
 advisory_section_type_enum = Enum(
     AdvisorySectionType,
     name="advisory_section_type",
@@ -237,6 +254,25 @@ actor_observations = Table(
     Column("actor_id", Uuid, ForeignKey("actors.id", ondelete="CASCADE"), primary_key=True),
     Column(
         "observation_id", Uuid, ForeignKey("observations.id", ondelete="CASCADE"), primary_key=True
+    ),
+)
+
+actor_indicators = Table(
+    "actor_indicators",
+    Base.metadata,
+    Column("actor_id", Uuid, ForeignKey("actors.id", ondelete="CASCADE"), primary_key=True),
+    Column("indicator_id", Uuid, ForeignKey("indicators.id", ondelete="CASCADE"), primary_key=True),
+)
+
+actor_vulnerabilities = Table(
+    "actor_vulnerabilities",
+    Base.metadata,
+    Column("actor_id", Uuid, ForeignKey("actors.id", ondelete="CASCADE"), primary_key=True),
+    Column(
+        "vulnerability_id",
+        Uuid,
+        ForeignKey("vulnerabilities.id", ondelete="CASCADE"),
+        primary_key=True,
     ),
 )
 
@@ -303,6 +339,8 @@ class Source(IdMixin, TimestampMixin, PublicationMixin, Base):
     aliases: Mapped[list[Alias]] = orm_relationship(back_populates="source")
     observations: Mapped[list[Observation]] = orm_relationship(back_populates="source")
     evidence: Mapped[list[Evidence]] = orm_relationship(back_populates="source")
+    indicators: Mapped[list[Indicator]] = orm_relationship(back_populates="source")
+    vulnerabilities: Mapped[list[Vulnerability]] = orm_relationship(back_populates="source")
     techniques: Mapped[list[Technique]] = orm_relationship(back_populates="source")
     campaigns: Mapped[list[Campaign]] = orm_relationship(back_populates="source")
     relationships: Mapped[list[Relationship]] = orm_relationship(back_populates="source")
@@ -471,6 +509,12 @@ class Actor(IdMixin, TimestampMixin, PublicationMixin, Base):
     aliases: Mapped[list[Alias]] = orm_relationship(back_populates="actor")
     observations: Mapped[list[Observation]] = orm_relationship(
         secondary=actor_observations, back_populates="actors"
+    )
+    indicators: Mapped[list[Indicator]] = orm_relationship(
+        secondary=actor_indicators, back_populates="actors"
+    )
+    vulnerabilities: Mapped[list[Vulnerability]] = orm_relationship(
+        secondary=actor_vulnerabilities, back_populates="actors"
     )
     relationships: Mapped[list[Relationship]] = orm_relationship(back_populates="actor")
     alias_rules: Mapped[list[ActorAliasRule]] = orm_relationship(back_populates="actor")
@@ -775,6 +819,116 @@ class EvidenceEmbedding(IdMixin, TimestampMixin, Base):
 
     evidence: Mapped[Evidence] = orm_relationship(back_populates="embeddings")
     source: Mapped[Source] = orm_relationship(back_populates="evidence_embeddings")
+
+
+class Indicator(IdMixin, TimestampMixin, PublicationMixin, Base):
+    __tablename__ = "indicators"
+    __table_args__ = (
+        UniqueConstraint("source_id", "indicator_type", "normalized_value"),
+        CheckConstraint("btrim(value) <> ''", name="value_not_blank"),
+        CheckConstraint("btrim(normalized_value) <> ''", name="normalized_value_not_blank"),
+        CheckConstraint(
+            "confidence IS NULL OR confidence BETWEEN 0 AND 100", name="confidence_range"
+        ),
+        CheckConstraint(
+            "first_seen IS NULL OR last_seen IS NULL OR first_seen <= last_seen",
+            name="time_range_order",
+        ),
+        Index("ix_indicators_first_seen", "first_seen"),
+        Index("ix_indicators_last_seen", "last_seen"),
+        Index(
+            "ix_indicators_search_document",
+            "search_document",
+            postgresql_using="gin",
+        ),
+    )
+
+    source_id: Mapped[UUID] = mapped_column(
+        ForeignKey("sources.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    indicator_type: Mapped[IndicatorType] = mapped_column(indicator_type_enum, nullable=False)
+    value: Mapped[str] = mapped_column(Text, nullable=False)
+    normalized_value: Mapped[str] = mapped_column(Text, nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
+    first_seen: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_seen: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    confidence: Mapped[int | None] = mapped_column(Integer)
+    intelligence_type: Mapped[IntelligenceType] = mapped_column(
+        intelligence_type_enum, nullable=False
+    )
+    origin: Mapped[Origin] = mapped_column(origin_enum, nullable=False)
+    indicator_metadata: Mapped[dict[str, Any]] = mapped_column(
+        "metadata", JSONB, nullable=False, default=dict, server_default=text("'{}'::jsonb")
+    )
+    search_document: Mapped[str] = mapped_column(
+        TSVECTOR,
+        Computed(
+            "setweight(to_tsvector('simple'::regconfig, coalesce(value, '')), 'A') || "
+            "setweight(to_tsvector('english'::regconfig, coalesce(description, '')), 'B') || "
+            "setweight(to_tsvector('english'::regconfig, coalesce(metadata::text, '')), 'D')",
+            persisted=True,
+        ),
+        nullable=False,
+    )
+
+    source: Mapped[Source] = orm_relationship(back_populates="indicators")
+    actors: Mapped[list[Actor]] = orm_relationship(
+        secondary=actor_indicators, back_populates="indicators"
+    )
+
+
+class Vulnerability(IdMixin, TimestampMixin, PublicationMixin, Base):
+    __tablename__ = "vulnerabilities"
+    __table_args__ = (
+        UniqueConstraint("source_id", "cve_id"),
+        CheckConstraint("cve_id ~ '^CVE-[0-9]{4}-[0-9]{4,}$'", name="cve_id_format"),
+        CheckConstraint("btrim(title) <> ''", name="title_not_blank"),
+        CheckConstraint("cvss_score IS NULL OR cvss_score BETWEEN 0 AND 10", name="cvss_range"),
+        CheckConstraint(
+            "severity IS NULL OR severity IN ('unknown', 'low', 'medium', 'high', 'critical')",
+            name="severity_value",
+        ),
+        Index("ix_vulnerabilities_published_at", "published_at"),
+        Index(
+            "ix_vulnerabilities_search_document",
+            "search_document",
+            postgresql_using="gin",
+        ),
+    )
+
+    source_id: Mapped[UUID] = mapped_column(
+        ForeignKey("sources.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    cve_id: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    title: Mapped[str] = mapped_column(String(500), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
+    severity: Mapped[str | None] = mapped_column(String(20))
+    cvss_score: Mapped[float | None] = mapped_column(Float)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    modified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    intelligence_type: Mapped[IntelligenceType] = mapped_column(
+        intelligence_type_enum, nullable=False
+    )
+    origin: Mapped[Origin] = mapped_column(origin_enum, nullable=False)
+    vulnerability_metadata: Mapped[dict[str, Any]] = mapped_column(
+        "metadata", JSONB, nullable=False, default=dict, server_default=text("'{}'::jsonb")
+    )
+    search_document: Mapped[str] = mapped_column(
+        TSVECTOR,
+        Computed(
+            "setweight(to_tsvector('simple'::regconfig, coalesce(cve_id, '')), 'A') || "
+            "setweight(to_tsvector('english'::regconfig, coalesce(title, '') || ' ' || "
+            "coalesce(description, '')), 'B') || setweight(to_tsvector('english'::regconfig, "
+            "coalesce(metadata::text, '')), 'D')",
+            persisted=True,
+        ),
+        nullable=False,
+    )
+
+    source: Mapped[Source] = orm_relationship(back_populates="vulnerabilities")
+    actors: Mapped[list[Actor]] = orm_relationship(
+        secondary=actor_vulnerabilities, back_populates="vulnerabilities"
+    )
 
 
 class TechnicalArtifact(IdMixin, TimestampMixin, Base):

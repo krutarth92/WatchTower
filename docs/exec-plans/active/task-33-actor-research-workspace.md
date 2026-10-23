@@ -1,6 +1,6 @@
 # Task 33 — actor research workspace
 
-Status: in review.
+Status: in review after owner review revisions.
 Date started: 2026-10-23.
 Branch: `codex/task-33-actor-research-workspace`.
 Jira: [`SCRUM-21`](https://kb-ai-projects.atlassian.net/browse/SCRUM-21).
@@ -41,6 +41,14 @@ Implement the core adversary to behavior to evolution to evidence workflow at
   tokens; avoid dashboard-card repetition and page-local color literals.
 - Keep the component gallery as a temporary direct review route through Task
   34.
+- Highlight the literal searched attribute without decorating the query with
+  quotation marks.
+- Add first-class indicator and CVE search results with bounded related-actor
+  identity, description and activity context.
+- Populate the empty search page from published database records with at most
+  12 recent and active actors. Recency follows the latest published observation;
+  activity is a deterministic score over published observations, aliases,
+  indicators and vulnerabilities.
 
 ## Validation
 
@@ -86,16 +94,36 @@ git diff --check
 - PASS: the production actor route returned HTTP 200 with CSP and
   `X-Frame-Options: DENY`, and visual review confirmed the open editorial
   layout at desktop and narrow widths.
-- PASS: real-stack browser smoke testing used healthy local PostgreSQL and Redis
+- PASS (superseded by owner revision): real-stack browser smoke testing used healthy local PostgreSQL and Redis
   containers plus the FastAPI service, rather than the deterministic browser
   mock. A published, local-only record set marked `task-33-search-smoke-v1`
   returned the Sandworm Team actor and Voodoo Bear alias for `sandworm`, the
   PowerShell technique as an exact match for `T1059.001`, and the Credential
   phishing activity observation for `credential phishing`. Opening the actor
   result preserved the search return URL and displayed its alias, associations,
-  timeline, provenance and evidence from PostgreSQL. V1 has no first-class IOC
-  entity; its published search types are actor, alias, campaign, behavior,
-  technique, observation and source.
+  timeline, provenance and evidence from PostgreSQL.
+- PASS: owner review revisions removed quotation marks from search headings and
+  highlight literal query matches in result titles, summaries and identifiers.
+- PASS: migration `f6a1c2d3e4b5` adds published indicators, vulnerabilities and
+  their actor associations. Its upgrade, downgrade and re-upgrade cycle passed
+  in the isolated `watchtower_test` PostgreSQL database.
+- PASS: indicator and CVE searches return bounded related actors with canonical
+  name, description and latest published activity. The empty search page loads
+  at most 12 actors from a deterministic recent/active discovery endpoint.
+- PASS: Ruff and Pyright completed with no diagnostics. The full backend suite
+  passed 116 tests; the configured disposable-S3 test remained the only skip.
+- PASS: Prettier, ESLint and `svelte-check` passed. Vitest completed 12 files and
+  55 tests. The production build completed successfully.
+- PASS: Playwright completed all 10 production-browser journeys. Indicator and
+  CVE actor context, discovery data, keyboard flow, axe checks and horizontal
+  overflow checks at 320, 768 and 1440 CSS pixels passed.
+- PASS: real-stack verification used the migrated development PostgreSQL
+  database and live FastAPI/Svelte services. `malicious-update.example` returned
+  a domain indicator with Sandworm Team context; `CVE-2026-45123` returned a
+  critical vulnerability with CVSS 9.8 and Sandworm Team context; the discovery
+  endpoint populated Sandworm Team from published records.
+- PASS: Jira `SCRUM-21` comment `10017` records the revision and validation; the
+  issue remains In Review pending owner acceptance.
 - PASS: `git diff --check` reported no whitespace errors; the Task 33 sources
   contain no page-local color literals; the browser bundle contains no
   `WATCHTOWER_API_ORIGIN`, default backend origin or operator-route strings.

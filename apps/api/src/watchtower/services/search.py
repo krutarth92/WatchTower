@@ -6,6 +6,7 @@ import hmac
 import json
 import math
 import re
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
@@ -32,6 +33,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql import Select
 
 from watchtower.api.v1.search_schemas import (
+    ActorDiscoveryRead,
+    ActorDiscoveryResponse,
+    RelatedActorRead,
     SearchEntityType,
     SearchMatchKind,
     SearchResultRead,
@@ -41,12 +45,16 @@ from watchtower.db.models import (
     Alias,
     Behavior,
     Campaign,
+    Indicator,
     IntelligenceType,
     Observation,
     PublicationState,
     Source,
     Technique,
+    Vulnerability,
+    actor_indicators,
     actor_observations,
+    actor_vulnerabilities,
     observation_behaviors,
 )
 from watchtower.services.actor_resolution import normalize_actor_name
@@ -54,13 +62,15 @@ from watchtower.services.actor_resolution import normalize_actor_name
 CONTROL_CHARACTER = re.compile(r"[\x00-\x1f\x7f]")
 ENGLISH = literal_column("'english'::regconfig")
 ENTITY_ORDER = {
-    SearchEntityType.ACTOR: 0,
-    SearchEntityType.ALIAS: 1,
-    SearchEntityType.CAMPAIGN: 2,
-    SearchEntityType.BEHAVIOR: 3,
-    SearchEntityType.TECHNIQUE: 4,
-    SearchEntityType.OBSERVATION: 5,
-    SearchEntityType.SOURCE: 6,
+    SearchEntityType.INDICATOR: 0,
+    SearchEntityType.VULNERABILITY: 1,
+    SearchEntityType.ACTOR: 2,
+    SearchEntityType.ALIAS: 3,
+    SearchEntityType.CAMPAIGN: 4,
+    SearchEntityType.BEHAVIOR: 5,
+    SearchEntityType.TECHNIQUE: 6,
+    SearchEntityType.OBSERVATION: 7,
+    SearchEntityType.SOURCE: 8,
 }
 MAX_CURSOR_LENGTH = 4096
 
@@ -103,6 +113,8 @@ SEARCH_DOCUMENTS = {
         "coalesce(techniques.metadata::text, '')), 'D')"
     ),
     SearchEntityType.OBSERVATION: ("observations.search_document"),
+    SearchEntityType.INDICATOR: ("indicators.search_document"),
+    SearchEntityType.VULNERABILITY: ("vulnerabilities.search_document"),
 }
 
 
@@ -302,6 +314,83 @@ class SearchService:
                 )
             )
 
+        if SearchEntityType.INDICATOR in selected:
+            indicator_filters = [
+                Indicator.publication_state == PublicationState.PUBLISHED,
+                Indicator.source.has(Source.publication_state == PublicationState.PUBLISHED),
+            ]
+            if source_id is not None:
+                indicator_filters.append(Indicator.source_id == source_id)
+            if intelligence_type is not None:
+                indicator_filters.append(Indicator.intelligence_type == intelligence_type)
+            if date_from is not None:
+                indicator_filters.append(
+                    or_(Indicator.last_seen.is_(None), Indicator.last_seen >= date_from)
+                )
+            if date_to is not None:
+                indicator_filters.append(
+                    or_(Indicator.first_seen.is_(None), Indicator.first_seen <= date_to)
+                )
+            branches.append(
+                self._branch(
+                    SearchEntityType.INDICATOR,
+                    Indicator.id,
+                    Indicator.value,
+                    Indicator.description,
+                    exact=func.lower(Indicator.normalized_value) == clean_query.casefold(),
+                    tsquery=tsquery,
+                    source_id=Indicator.source_id,
+                    observed_at=Indicator.last_seen,
+                    intelligence_type=Indicator.intelligence_type,
+                    origin=Indicator.origin,
+                    indicator_type=Indicator.indicator_type,
+                    indicator_value=Indicator.value,
+                    source_condition=and_(*indicator_filters),
+                )
+            )
+
+        if SearchEntityType.VULNERABILITY in selected:
+            vulnerability_filters = [
+                Vulnerability.publication_state == PublicationState.PUBLISHED,
+                Vulnerability.source.has(Source.publication_state == PublicationState.PUBLISHED),
+            ]
+            if source_id is not None:
+                vulnerability_filters.append(Vulnerability.source_id == source_id)
+            if intelligence_type is not None:
+                vulnerability_filters.append(Vulnerability.intelligence_type == intelligence_type)
+            if date_from is not None:
+                vulnerability_filters.append(
+                    or_(
+                        Vulnerability.published_at.is_(None),
+                        Vulnerability.published_at >= date_from,
+                    )
+                )
+            if date_to is not None:
+                vulnerability_filters.append(
+                    or_(
+                        Vulnerability.published_at.is_(None),
+                        Vulnerability.published_at <= date_to,
+                    )
+                )
+            branches.append(
+                self._branch(
+                    SearchEntityType.VULNERABILITY,
+                    Vulnerability.id,
+                    Vulnerability.cve_id,
+                    Vulnerability.description,
+                    exact=func.lower(Vulnerability.cve_id) == clean_query.casefold(),
+                    tsquery=tsquery,
+                    source_id=Vulnerability.source_id,
+                    external_id=Vulnerability.cve_id,
+                    observed_at=Vulnerability.published_at,
+                    intelligence_type=Vulnerability.intelligence_type,
+                    origin=Vulnerability.origin,
+                    severity=Vulnerability.severity,
+                    cvss_score=Vulnerability.cvss_score,
+                    source_condition=and_(*vulnerability_filters),
+                )
+            )
+
         if SearchEntityType.OBSERVATION in selected:
             observation_filters = [
                 Observation.publication_state == PublicationState.PUBLISHED,
@@ -404,11 +493,200 @@ class SearchService:
                 UUID(str(last["id"])),
                 cursor_scope,
             )
-        return (
-            clean_query,
-            [SearchResultRead.model_validate(dict(row)) for row in page_rows],
-            next_cursor,
+        related = self._related_actors(session, page_rows)
+        records: list[SearchResultRead] = []
+        for row in page_rows:
+            values = dict(row)
+            actors = related.get((str(row["entity_type"]), UUID(str(row["id"]))), [])
+            values["related_actors"] = actors[:3]
+            values["related_actors_truncated"] = len(actors) > 3
+            records.append(SearchResultRead.model_validate(values))
+        return clean_query, records, next_cursor
+
+    def discover_actors(self, session: Session, *, limit: int = 12) -> ActorDiscoveryResponse:
+        if not 1 <= limit <= 12:
+            raise SearchQueryError("Actor discovery limit must be between 1 and 12.")
+        recent_limit = max(1, math.ceil(limit / 2))
+        popular_limit = max(0, limit - recent_limit)
+        observation_count = (
+            select(func.count())
+            .select_from(
+                actor_observations.join(
+                    Observation, Observation.id == actor_observations.c.observation_id
+                )
+            )
+            .where(
+                actor_observations.c.actor_id == Actor.id,
+                Observation.publication_state == PublicationState.PUBLISHED,
+                Observation.source.has(Source.publication_state == PublicationState.PUBLISHED),
+            )
+            .correlate(Actor)
+            .scalar_subquery()
         )
+        latest_observed_at = (
+            select(func.max(Observation.observed_at))
+            .select_from(
+                actor_observations.join(
+                    Observation, Observation.id == actor_observations.c.observation_id
+                )
+            )
+            .where(
+                actor_observations.c.actor_id == Actor.id,
+                Observation.publication_state == PublicationState.PUBLISHED,
+                Observation.source.has(Source.publication_state == PublicationState.PUBLISHED),
+            )
+            .correlate(Actor)
+            .scalar_subquery()
+        )
+        alias_count = (
+            select(func.count(Alias.id))
+            .where(
+                Alias.actor_id == Actor.id,
+                Alias.publication_state == PublicationState.PUBLISHED,
+                Alias.source.has(Source.publication_state == PublicationState.PUBLISHED),
+            )
+            .correlate(Actor)
+            .scalar_subquery()
+        )
+        indicator_count = (
+            select(func.count())
+            .select_from(
+                actor_indicators.join(Indicator, Indicator.id == actor_indicators.c.indicator_id)
+            )
+            .where(
+                actor_indicators.c.actor_id == Actor.id,
+                Indicator.publication_state == PublicationState.PUBLISHED,
+                Indicator.source.has(Source.publication_state == PublicationState.PUBLISHED),
+            )
+            .correlate(Actor)
+            .scalar_subquery()
+        )
+        vulnerability_count = (
+            select(func.count())
+            .select_from(
+                actor_vulnerabilities.join(
+                    Vulnerability,
+                    Vulnerability.id == actor_vulnerabilities.c.vulnerability_id,
+                )
+            )
+            .where(
+                actor_vulnerabilities.c.actor_id == Actor.id,
+                Vulnerability.publication_state == PublicationState.PUBLISHED,
+                Vulnerability.source.has(Source.publication_state == PublicationState.PUBLISHED),
+            )
+            .correlate(Actor)
+            .scalar_subquery()
+        )
+        popularity_score = (
+            observation_count * 4 + alias_count * 2 + indicator_count * 3 + vulnerability_count * 3
+        )
+        columns = (
+            Actor.id,
+            Actor.canonical_name,
+            Actor.description,
+            latest_observed_at.label("latest_observed_at"),
+            observation_count.label("published_observation_count"),
+            alias_count.label("published_alias_count"),
+            popularity_score.label("popularity_score"),
+        )
+        base_filter = Actor.publication_state == PublicationState.PUBLISHED
+        recent_rows = session.execute(
+            select(*columns)
+            .where(base_filter)
+            .order_by(
+                latest_observed_at.desc().nulls_last(),
+                Actor.created_at.desc(),
+                Actor.canonical_name,
+                Actor.id,
+            )
+            .limit(recent_limit)
+        ).mappings()
+        popular_rows = session.execute(
+            select(*columns)
+            .where(base_filter)
+            .order_by(
+                popularity_score.desc(),
+                latest_observed_at.desc().nulls_last(),
+                Actor.canonical_name,
+                Actor.id,
+            )
+            .limit(popular_limit)
+        ).mappings()
+        return ActorDiscoveryResponse(
+            recent=[ActorDiscoveryRead.model_validate(dict(row)) for row in recent_rows],
+            popular=[ActorDiscoveryRead.model_validate(dict(row)) for row in popular_rows],
+            limit=limit,
+        )
+
+    @staticmethod
+    def _related_actors(
+        session: Session, page_rows: Sequence[Any]
+    ) -> dict[tuple[str, UUID], list[RelatedActorRead]]:
+        targets = {
+            entity_type: {
+                UUID(str(row["id"])) for row in page_rows if str(row["entity_type"]) == entity_type
+            }
+            for entity_type in (
+                SearchEntityType.INDICATOR.value,
+                SearchEntityType.VULNERABILITY.value,
+            )
+        }
+        latest_observed_at = (
+            select(func.max(Observation.observed_at))
+            .select_from(
+                actor_observations.join(
+                    Observation, Observation.id == actor_observations.c.observation_id
+                )
+            )
+            .where(
+                actor_observations.c.actor_id == Actor.id,
+                Observation.publication_state == PublicationState.PUBLISHED,
+            )
+            .correlate(Actor)
+            .scalar_subquery()
+        )
+        related: dict[tuple[str, UUID], list[RelatedActorRead]] = {}
+        associations = (
+            (SearchEntityType.INDICATOR.value, actor_indicators, "indicator_id"),
+            (SearchEntityType.VULNERABILITY.value, actor_vulnerabilities, "vulnerability_id"),
+        )
+        for entity_type, association, entity_column in associations:
+            entity_ids = targets[entity_type]
+            if not entity_ids:
+                continue
+            rows = session.execute(
+                select(
+                    association.c[entity_column].label("entity_id"),
+                    Actor.id,
+                    Actor.canonical_name,
+                    Actor.description,
+                    latest_observed_at.label("latest_observed_at"),
+                )
+                .join(Actor, Actor.id == association.c.actor_id)
+                .where(
+                    association.c[entity_column].in_(entity_ids),
+                    Actor.publication_state == PublicationState.PUBLISHED,
+                )
+                .order_by(
+                    association.c[entity_column],
+                    latest_observed_at.desc().nulls_last(),
+                    Actor.canonical_name,
+                    Actor.id,
+                )
+            ).mappings()
+            for row in rows:
+                key = (entity_type, UUID(str(row["entity_id"])))
+                related.setdefault(key, []).append(
+                    RelatedActorRead.model_validate(
+                        {
+                            "id": row["id"],
+                            "canonical_name": row["canonical_name"],
+                            "description": row["description"],
+                            "latest_observed_at": row["latest_observed_at"],
+                        }
+                    )
+                )
+        return related
 
     @staticmethod
     def _branch(
@@ -425,6 +703,10 @@ class SearchService:
         observed_at: Any | None = None,
         intelligence_type: Any | None = None,
         origin: Any | None = None,
+        indicator_type: Any | None = None,
+        indicator_value: Any | None = None,
+        severity: Any | None = None,
+        cvss_score: Any | None = None,
         source_condition: Any | None = None,
     ) -> Select[Any]:
         document = literal_column(f"({SEARCH_DOCUMENTS[entity_type]})")
@@ -451,6 +733,14 @@ class SearchService:
                 String,
             ).label("intelligence_type"),
             cast(origin if origin is not None else null(), String).label("origin"),
+            cast(indicator_type if indicator_type is not None else null(), String).label(
+                "indicator_type"
+            ),
+            cast(indicator_value if indicator_value is not None else null(), Text).label(
+                "indicator_value"
+            ),
+            cast(severity if severity is not None else null(), String).label("severity"),
+            cast(cvss_score if cvss_score is not None else null(), Float).label("cvss_score"),
             cast(
                 case(
                     (exact, literal(SearchMatchKind.EXACT.value)),

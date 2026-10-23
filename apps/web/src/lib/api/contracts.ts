@@ -149,7 +149,16 @@ export type SearchEntityType =
 	| 'behavior'
 	| 'technique'
 	| 'observation'
-	| 'source';
+	| 'source'
+	| 'indicator'
+	| 'vulnerability';
+
+export interface RelatedActorRead {
+	id: Uuid;
+	canonical_name: string;
+	description: string | null;
+	latest_observed_at: IsoDateTime | null;
+}
 
 export interface SearchResultRead {
 	entity_type: SearchEntityType;
@@ -162,6 +171,12 @@ export interface SearchResultRead {
 	observed_at: IsoDateTime | null;
 	intelligence_type: IntelligenceType | null;
 	origin: Origin | null;
+	indicator_type: string | null;
+	indicator_value: string | null;
+	severity: string | null;
+	cvss_score: number | null;
+	related_actors: RelatedActorRead[];
+	related_actors_truncated: boolean;
 	match_kind: 'exact' | 'full_text';
 	score: number;
 }
@@ -171,6 +186,22 @@ export interface SearchResponse {
 	data: SearchResultRead[];
 	limit: number;
 	next_cursor: string | null;
+}
+
+export interface ActorDiscoveryRead {
+	id: Uuid;
+	canonical_name: string;
+	description: string | null;
+	latest_observed_at: IsoDateTime | null;
+	published_observation_count: number;
+	published_alias_count: number;
+	popularity_score: number;
+}
+
+export interface ActorDiscoveryResponse {
+	recent: ActorDiscoveryRead[];
+	popular: ActorDiscoveryRead[];
+	limit: number;
 }
 
 export type AdvisorySectionType =

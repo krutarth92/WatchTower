@@ -89,6 +89,12 @@ const searchRecord = (overrides) => ({
 	observed_at: '2026-01-02T03:04:05Z',
 	intelligence_type: 'observed',
 	origin: 'imported',
+	indicator_type: null,
+	indicator_value: null,
+	severity: null,
+	cvss_score: null,
+	related_actors: [],
+	related_actors_truncated: false,
 	match_kind: 'exact',
 	score: 100.25,
 	...overrides
@@ -110,6 +116,20 @@ const mockApi = createHttpServer((request, response) => {
 			})
 		);
 	};
+
+	if (requestUrl.pathname === '/api/v1/search/discovery') {
+		const actor = {
+			id: actorId,
+			canonical_name: 'Midnight Blizzard',
+			description: 'Published adversary identity with source-linked evolution.',
+			latest_observed_at: '2026-03-11T10:00:00Z',
+			published_observation_count: 4,
+			published_alias_count: 2,
+			popularity_score: 26
+		};
+		response.end(JSON.stringify({ recent: [actor], popular: [actor], limit: 12 }));
+		return;
+	}
 
 	if (requestUrl.pathname.startsWith('/api/v1/actors/')) {
 		const [, , , , requestedActorId, panel] = requestUrl.pathname.split('/');
@@ -233,36 +253,80 @@ const mockApi = createHttpServer((request, response) => {
 	const data =
 		query === 'nothing'
 			? []
-			: cursor
+			: query === 'malicious-update.example'
 				? [
 						searchRecord({
-							entity_type: 'source',
-							id: '20000000-0000-4000-8000-000000000003',
-							title: 'Third source result',
+							entity_type: 'indicator',
+							id: '21000000-0000-4000-8000-000000000001',
+							title: 'malicious-update.example',
+							summary: 'Domain used in a targeted malicious update operation.',
 							actor_id: null,
-							intelligence_type: null,
-							origin: null,
-							score: 0.25,
-							match_kind: 'full_text'
+							indicator_type: 'domain',
+							indicator_value: 'malicious-update.example',
+							related_actors: [
+								{
+									id: actorId,
+									canonical_name: 'Midnight Blizzard',
+									description:
+										'Published adversary identity with source-linked evolution.',
+									latest_observed_at: '2026-03-11T10:00:00Z'
+								}
+							]
 						})
 					]
-				: [
-						searchRecord({}),
-						searchRecord({
-							entity_type: 'technique',
-							id: '20000000-0000-4000-8000-000000000002',
-							title: 'PowerShell',
-							external_id: 'T1059.001',
-							score: 2.5,
-							match_kind: 'full_text'
-						})
-					];
+				: query === 'CVE-2026-45123'
+					? [
+							searchRecord({
+								entity_type: 'vulnerability',
+								id: '22000000-0000-4000-8000-000000000001',
+								title: 'CVE-2026-45123',
+								summary:
+									'Published vulnerability linked to actor exploitation activity.',
+								actor_id: null,
+								external_id: 'CVE-2026-45123',
+								severity: 'critical',
+								cvss_score: 9.8,
+								related_actors: [
+									{
+										id: actorId,
+										canonical_name: 'Midnight Blizzard',
+										description:
+											'Published adversary identity with source-linked evolution.',
+										latest_observed_at: '2026-03-11T10:00:00Z'
+									}
+								]
+							})
+						]
+					: cursor
+						? [
+								searchRecord({
+									entity_type: 'source',
+									id: '20000000-0000-4000-8000-000000000003',
+									title: 'Third source result',
+									actor_id: null,
+									intelligence_type: null,
+									origin: null,
+									score: 0.25,
+									match_kind: 'full_text'
+								})
+							]
+						: [
+								searchRecord({}),
+								searchRecord({
+									entity_type: 'technique',
+									id: '20000000-0000-4000-8000-000000000002',
+									title: 'PowerShell',
+									external_id: 'T1059.001',
+									score: 2.5,
+									match_kind: 'full_text'
+								})
+							];
 	response.end(
 		JSON.stringify({
 			query,
 			data,
 			limit: 25,
-			next_cursor: query !== 'nothing' && !cursor ? 'opaque-page-2' : null
+			next_cursor: query === 'midnight' && !cursor ? 'opaque-page-2' : null
 		})
 	);
 });

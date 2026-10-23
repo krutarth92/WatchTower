@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { navigating } from '$app/state';
-	import { SvelteURLSearchParams } from 'svelte/reactivity';
 	import type { PageProps } from './$types';
 	import type { SearchResponse, SearchResultRead } from '#lib/api/contracts.ts';
+	import ActorDiscovery from '#lib/components/ActorDiscovery.svelte';
 	import SearchFilters from '#lib/components/SearchFilters.svelte';
 	import SearchResultCard from '#lib/components/SearchResultCard.svelte';
 	import StatePanel from '#lib/components/StatePanel.svelte';
@@ -75,7 +75,9 @@
 	function submitSearch(event: SubmitEvent) {
 		event.preventDefault();
 		const form = event.currentTarget as HTMLFormElement;
-		const formParams = new SvelteURLSearchParams();
+		// One-shot form serialization must not inherit reactive URL state.
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
+		const formParams = new URLSearchParams();
 		for (const [key, value] of new FormData(form)) {
 			if (typeof value === 'string' && value.trim()) formParams.append(key, value);
 		}
@@ -130,7 +132,7 @@
 						type="search"
 						name="q"
 						value={searchState.query}
-						placeholder="actor, alias, technique, behavior, observation…"
+						placeholder="indicator, CVE, actor, alias, technique…"
 						minlength="2"
 						maxlength="200"
 						autocomplete="off"
@@ -159,10 +161,18 @@
 		</form>
 
 		<div class="research-contract" aria-label="Search behavior">
-			<div><span>01</span><strong>API ORDER</strong><small>No local reranking</small></div>
-			<div><span>02</span><strong>EXPLICIT TYPE</strong><small>Observed or assessed</small></div>
-			<div><span>03</span><strong>SOURCE CONTEXT</strong><small>References preserved</small></div>
-			<div><span>04</span><strong>BOUNDED PAGE</strong><small>25 records per request</small></div>
+			<div>
+				<span>01</span><strong>INDICATOR FIRST</strong><small>Domains, IPs, URLs and hashes</small>
+			</div>
+			<div>
+				<span>02</span><strong>CVE CONTEXT</strong><small>Vulnerability to actor links</small>
+			</div>
+			<div>
+				<span>03</span><strong>RELATED ACTORS</strong><small>Identity and context included</small>
+			</div>
+			<div>
+				<span>04</span><strong>PUBLISHED ONLY</strong><small>Reviewed records per request</small>
+			</div>
 		</div>
 
 		{#if isNavigating && results.length}
@@ -184,17 +194,7 @@
 					message="Applying the current query and scope."
 				/>
 			{:else if data.view === 'initial'}
-				<div class="initial-state">
-					<div class="scan-mark" aria-hidden="true"><span></span><span></span><span></span></div>
-					<div>
-						<p class="state-code">INDEX READY / NO QUERY</p>
-						<h2 id="results-heading">Enter a signal to begin</h2>
-						<p>
-							Use an actor name, source alias, MITRE technique such as <code>T1059.001</code>, or
-							words from an observed behavior. Only published records are returned.
-						</p>
-					</div>
-				</div>
+				<div id="results-heading"><ActorDiscovery discovery={data.discovery} /></div>
 			{:else if data.view === 'invalid'}
 				<div class="invalid-state" role="alert">
 					<p class="state-code">REQUEST REJECTED / LOCAL VALIDATION</p>
@@ -217,7 +217,7 @@
 				<div id="results-heading">
 					<StatePanel
 						state="empty"
-						title={`No published matches for “${data.response?.query ?? searchState.query}”`}
+						title={`No published matches for ${data.response?.query ?? searchState.query}`}
 						message="Broaden the wording or remove a filter. Internal and unpublished records remain outside this interface."
 					/>
 				</div>
@@ -225,7 +225,7 @@
 				<header class="results-header">
 					<div>
 						<p class="state-code">QUERY COMPLETE / {results.length} RECORDS LOADED</p>
-						<h2 id="results-heading">“{data.response?.query ?? searchState.query}”</h2>
+						<h2 id="results-heading">{data.response?.query ?? searchState.query}</h2>
 					</div>
 					<span class="publication-mark"
 						><span class="signal" aria-hidden="true"></span> PUBLICATION FILTERED</span
@@ -234,7 +234,7 @@
 
 				<div class="result-list">
 					{#each results as result (result.id)}
-						<SearchResultCard {result} fromSearch={searchUrl} />
+						<SearchResultCard {result} fromSearch={searchUrl} query={searchState.query} />
 					{/each}
 				</div>
 
@@ -543,76 +543,26 @@
 	.result-surface {
 		margin-top: var(--space-6);
 	}
-	.initial-state,
 	.invalid-state {
 		display: grid;
-		grid-template-columns: auto minmax(0, 1fr);
+		grid-template-columns: 1fr;
 		align-items: center;
 		gap: var(--space-6);
 		padding: clamp(2rem, 5vw, 3.5rem) 0;
 		border-top: var(--border-width) solid var(--color-border-strong);
 	}
 	.invalid-state {
-		grid-template-columns: 1fr;
 		border-top-color: var(--color-critical);
 	}
-	.initial-state h2,
 	.invalid-state h2,
 	.results-header h2 {
 		margin: var(--space-2) 0;
 		font-size: clamp(1.4rem, 4vw, 2.15rem);
 	}
-	.initial-state p:last-child,
 	.invalid-state ul {
 		max-width: 48rem;
 		margin-bottom: 0;
 		color: var(--color-ink-muted);
-	}
-
-	.scan-mark {
-		position: relative;
-		display: grid;
-		width: 7rem;
-		height: 7rem;
-		place-items: center;
-		border: var(--border-width) solid var(--color-primary);
-		border-radius: 50%;
-		box-shadow: inset 0 0 var(--space-6) var(--color-primary-faint);
-	}
-	.scan-mark::before,
-	.scan-mark::after {
-		position: absolute;
-		border: var(--border-width) solid var(--color-border-strong);
-		border-radius: 50%;
-		content: '';
-	}
-	.scan-mark::before {
-		width: 68%;
-		height: 68%;
-	}
-	.scan-mark::after {
-		width: 32%;
-		height: 32%;
-	}
-	.scan-mark span:first-child {
-		width: var(--space-2);
-		height: var(--space-2);
-		border-radius: 50%;
-		background: var(--color-primary);
-		box-shadow: 0 0 var(--space-3) currentColor;
-	}
-	.scan-mark span:nth-child(2),
-	.scan-mark span:last-child {
-		position: absolute;
-		background: var(--color-border-strong);
-	}
-	.scan-mark span:nth-child(2) {
-		width: 80%;
-		height: var(--border-width);
-	}
-	.scan-mark span:last-child {
-		width: var(--border-width);
-		height: 80%;
 	}
 
 	.results-header {
@@ -752,14 +702,6 @@
 		}
 		.research-contract div:first-child {
 			border-top: 0;
-		}
-		.initial-state {
-			grid-template-columns: 1fr;
-			padding: var(--space-5);
-		}
-		.scan-mark {
-			width: 5rem;
-			height: 5rem;
 		}
 		.results-header,
 		.load-error {

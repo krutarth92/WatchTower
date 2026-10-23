@@ -87,6 +87,21 @@ and techniques through unique join tables.
 confidence. It belongs to a Source and carries intelligence type/origin so a
 source-described campaign is distinguishable from a WATCHTOWER assessment.
 
+### Indicator and vulnerability search context
+
+`Indicator` stores a source-preserved value and normalized lookup value for an
+IPv4 address, IPv6 address, domain, URL, email address, MD5, SHA-1 or SHA-256
+hash. It carries optional first/last seen dates and confidence plus the same
+intelligence type, origin, publication and source boundary used by other
+searchable intelligence. An indicator can link to multiple actors, and a link
+is shown only when both records are published.
+
+`Vulnerability` stores a validated CVE identifier, title, description, optional
+severity/CVSS score and source publication dates. It can link to multiple actors
+when published reporting supports an exploitation or targeting association.
+These links provide research context; they do not assert that every actor using
+the same vulnerability is related.
+
 ### Relationship
 
 V1 `Relationship` records an Actor-to-Campaign relationship with a predicate,
@@ -108,6 +123,8 @@ RawEvidence 0..1 ── * Evidence
 Observation * ── * Behavior
 Observation * ── * Technique * ── 1 Source
 Source 1 ── * Campaign
+Source 1 ── * Indicator * ── * Actor
+Source 1 ── * Vulnerability * ── * Actor
 Actor 1 ── * Relationship * ── 1 Campaign
 Source 1 ── * Relationship * ── 0..1 Evidence
 ```
@@ -129,6 +146,9 @@ deliberately deleted. Task 02 does not expose deletion APIs.
 - Technique external ID and source are unique for deterministic lookup.
 - Raw-evidence content hash and storage URI are indexed; content deduplication is
   scoped by source.
+- Indicator normalized values and CVE identifiers support exact lookup; stored
+  search documents have GIN indexes for descriptions and metadata. Actor join
+  indexes support bounded related-actor results.
 
 PostgreSQL full-text search is Task 09. This migration does not add speculative
 GIN indexes, vector columns or Redis caching.
