@@ -86,6 +86,16 @@ git diff --check
 - PASS: the production actor route returned HTTP 200 with CSP and
   `X-Frame-Options: DENY`, and visual review confirmed the open editorial
   layout at desktop and narrow widths.
+- PASS: real-stack browser smoke testing used healthy local PostgreSQL and Redis
+  containers plus the FastAPI service, rather than the deterministic browser
+  mock. A published, local-only record set marked `task-33-search-smoke-v1`
+  returned the Sandworm Team actor and Voodoo Bear alias for `sandworm`, the
+  PowerShell technique as an exact match for `T1059.001`, and the Credential
+  phishing activity observation for `credential phishing`. Opening the actor
+  result preserved the search return URL and displayed its alias, associations,
+  timeline, provenance and evidence from PostgreSQL. V1 has no first-class IOC
+  entity; its published search types are actor, alias, campaign, behavior,
+  technique, observation and source.
 - PASS: `git diff --check` reported no whitespace errors; the Task 33 sources
   contain no page-local color literals; the browser bundle contains no
   `WATCHTOWER_API_ORIGIN`, default backend origin or operator-route strings.
