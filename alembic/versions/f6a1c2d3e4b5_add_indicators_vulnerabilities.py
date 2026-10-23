@@ -97,7 +97,7 @@ def upgrade() -> None:
             "source_id",
             "indicator_type",
             "normalized_value",
-            name="uq_indicators_source_type_value",
+            name="uq_indicators_source_id",
         ),
     )
     op.create_index("ix_indicators_source_id", "indicators", ["source_id"])
@@ -165,7 +165,7 @@ def upgrade() -> None:
         ),
         sa.ForeignKeyConstraint(["source_id"], ["sources.id"], ondelete="RESTRICT"),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("source_id", "cve_id", name="uq_vulnerabilities_source_cve"),
+        sa.UniqueConstraint("source_id", "cve_id", name="uq_vulnerabilities_source_id"),
     )
     op.create_index("ix_vulnerabilities_source_id", "vulnerabilities", ["source_id"])
     op.create_index("ix_vulnerabilities_cve_id", "vulnerabilities", ["cve_id"])

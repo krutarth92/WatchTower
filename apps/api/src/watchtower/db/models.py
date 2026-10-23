@@ -262,6 +262,7 @@ actor_indicators = Table(
     Base.metadata,
     Column("actor_id", Uuid, ForeignKey("actors.id", ondelete="CASCADE"), primary_key=True),
     Column("indicator_id", Uuid, ForeignKey("indicators.id", ondelete="CASCADE"), primary_key=True),
+    Index("ix_actor_indicators_indicator_id", "indicator_id"),
 )
 
 actor_vulnerabilities = Table(
@@ -274,6 +275,7 @@ actor_vulnerabilities = Table(
         ForeignKey("vulnerabilities.id", ondelete="CASCADE"),
         primary_key=True,
     ),
+    Index("ix_actor_vulnerabilities_vulnerability_id", "vulnerability_id"),
 )
 
 observation_evidence = Table(
