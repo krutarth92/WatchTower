@@ -1,6 +1,6 @@
 # Task 32 — published intelligence search
 
-Status: in progress.
+Status: in review.
 Date started: 2026-10-22.
 Branch: `codex/task-32-published-intelligence-search`.
 Jira: [`SCRUM-20`](https://kb-ai-projects.atlassian.net/browse/SCRUM-20).
@@ -99,5 +99,10 @@ git diff --check
   unavailable message.
 - PASS: `git diff --check` reported no whitespace errors, and the new search
   source contains no local color literals outside the centralized tokens.
-- PENDING: hosted GitHub Actions on the implementation commit.
+- PASS: hosted GitHub Actions
+  [#96](https://github.com/krutarth92/WatchTower/actions/runs/39927433801)
+  completed successfully on exact implementation commit
+  `62b095033c061f3a5a964eebf8e7f7ae64319a33`. Frontend checks, backend checks,
+  Python dependency audit and container build/scan all passed; the run produced
+  the commit-addressed SBOM artifact.
 - PENDING: owner review of the complete search screen.
