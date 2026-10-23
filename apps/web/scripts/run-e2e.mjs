@@ -19,13 +19,72 @@ const port = await new Promise((resolve, reject) => {
 });
 const baseUrl = `http://${host}:${port}`;
 
+const actorId = '20000000-0000-4000-8000-000000000001';
+const partialActorId = '20000000-0000-4000-8000-000000000099';
+const source = {
+	id: '10000000-0000-4000-8000-000000000001',
+	name: 'Northstar Research',
+	kind: 'report',
+	base_url: 'https://example.test/research'
+};
+
+const evidence = (overrides = {}) => ({
+	id: '30000000-0000-4000-8000-000000000001',
+	citation: 'Northstar incident report, section 4',
+	excerpt: 'The operator used a signed script before establishing persistence.',
+	locator: 'https://example.test/research/midnight-blizzard',
+	captured_at: '2026-03-11T11:30:00Z',
+	confidence: 88,
+	origin: 'imported',
+	raw_evidence_id: null,
+	source,
+	...overrides
+});
+
+const timelineRecord = (overrides = {}) => ({
+	id: '40000000-0000-4000-8000-000000000001',
+	event_type: 'observation',
+	source_native_id: 'northstar-42',
+	title: 'PowerShell execution observed',
+	summary: 'A published observation connected command execution to the actor.',
+	observed_at: '2026-03-11T10:00:00Z',
+	first_seen: '2026-03-10T09:00:00Z',
+	last_seen: null,
+	confidence: 88,
+	intelligence_type: 'observed',
+	origin: 'imported',
+	raw_evidence_id: null,
+	source,
+	evidence: [evidence()],
+	behaviors: [
+		{
+			id: '50000000-0000-4000-8000-000000000001',
+			name: 'Command execution',
+			description: 'Executes commands through an interpreter.'
+		}
+	],
+	techniques: [
+		{
+			id: '60000000-0000-4000-8000-000000000001',
+			external_id: 'T1059.001',
+			name: 'PowerShell',
+			description: 'PowerShell command execution.',
+			source
+		}
+	],
+	evidence_truncated: false,
+	behaviors_truncated: false,
+	techniques_truncated: false,
+	...overrides
+});
+
 const searchRecord = (overrides) => ({
 	entity_type: 'actor',
 	id: '20000000-0000-4000-8000-000000000001',
 	title: 'Midnight Blizzard',
 	summary: 'Published actor intelligence from the deterministic test API.',
 	source_id: '10000000-0000-4000-8000-000000000001',
-	actor_id: '20000000-0000-4000-8000-000000000001',
+	actor_id: actorId,
 	external_id: null,
 	observed_at: '2026-01-02T03:04:05Z',
 	intelligence_type: 'observed',
@@ -38,6 +97,113 @@ const searchRecord = (overrides) => ({
 const mockApi = createHttpServer((request, response) => {
 	const requestUrl = new URL(request.url ?? '/', 'http://mock-api');
 	response.setHeader('content-type', 'application/json');
+	const sendError = (status, code, requestId) => {
+		response.statusCode = status;
+		response.end(
+			JSON.stringify({
+				error: {
+					code,
+					message: 'Mock internal detail.',
+					request_id: requestId,
+					details: []
+				}
+			})
+		);
+	};
+
+	if (requestUrl.pathname.startsWith('/api/v1/actors/')) {
+		const [, , , , requestedActorId, panel] = requestUrl.pathname.split('/');
+		if (![actorId, partialActorId].includes(requestedActorId)) {
+			sendError(404, 'not_found', 'mock-actor-404');
+			return;
+		}
+		if (!panel) {
+			response.end(
+				JSON.stringify({
+					data: {
+						id: requestedActorId,
+						canonical_name:
+							requestedActorId === partialActorId
+								? 'Partial Signal'
+								: 'Midnight Blizzard',
+						description: 'Published adversary identity with source-linked evolution.'
+					}
+				})
+			);
+			return;
+		}
+		if (panel === 'aliases') {
+			response.end(
+				JSON.stringify({
+					data: {
+						items: [
+							{
+								id: '70000000-0000-4000-8000-000000000001',
+								name: 'APT29',
+								source_native_id: 'apt29',
+								confidence: 92,
+								source
+							}
+						],
+						truncated: false
+					}
+				})
+			);
+			return;
+		}
+		if (panel === 'associations') {
+			response.end(
+				JSON.stringify({
+					data: {
+						behaviors: timelineRecord().behaviors,
+						techniques: timelineRecord().techniques,
+						behaviors_truncated: false,
+						techniques_truncated: false
+					}
+				})
+			);
+			return;
+		}
+		if (panel === 'references') {
+			if (requestedActorId === partialActorId) {
+				sendError(500, 'server_error', 'mock-reference-500');
+				return;
+			}
+			response.end(
+				JSON.stringify({
+					data: {
+						sources: [source],
+						evidence: [evidence()],
+						sources_truncated: false,
+						evidence_truncated: false
+					}
+				})
+			);
+			return;
+		}
+		if (panel === 'timeline') {
+			const cursor = requestUrl.searchParams.get('cursor');
+			const data = cursor
+				? [
+						timelineRecord({
+							id: '40000000-0000-4000-8000-000000000002',
+							title: 'Earlier credential access',
+							observed_at: '2026-02-08T08:00:00Z',
+							intelligence_type: 'assessed',
+							origin: 'watchtower'
+						})
+					]
+				: [timelineRecord()];
+			response.end(
+				JSON.stringify({
+					data,
+					page: { limit: 25, next_cursor: cursor ? null : 'opaque-earlier' }
+				})
+			);
+			return;
+		}
+	}
+
 	if (requestUrl.pathname !== '/api/v1/search') {
 		response.statusCode = 404;
 		response.end(
@@ -55,31 +221,11 @@ const mockApi = createHttpServer((request, response) => {
 
 	const query = requestUrl.searchParams.get('q')?.trim() ?? '';
 	if (query === 'rate-limited') {
-		response.statusCode = 429;
-		response.end(
-			JSON.stringify({
-				error: {
-					code: 'rate_limited',
-					message: 'Mock detail.',
-					request_id: 'mock-429',
-					details: []
-				}
-			})
-		);
+		sendError(429, 'rate_limited', 'mock-429');
 		return;
 	}
 	if (query === 'server-error') {
-		response.statusCode = 500;
-		response.end(
-			JSON.stringify({
-				error: {
-					code: 'server_error',
-					message: 'Mock detail.',
-					request_id: 'mock-500',
-					details: []
-				}
-			})
-		);
+		sendError(500, 'server_error', 'mock-500');
 		return;
 	}
 
