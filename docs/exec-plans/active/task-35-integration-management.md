@@ -114,6 +114,8 @@ backend origin, operator header and operator endpoint paths. Inspect the page at
 - PASS: GitHub Actions run 44103584749 passed backend, frontend, Python
   dependency-audit, and container build/security-scan jobs for implementation
   commit `e344a9e`.
+- PASS: GitHub Actions run 44104089072 passed the same four required jobs for
+  final documentation commit `69eb7e0`.
 - FIXED DURING VALIDATION: the web `no-referrer` policy caused same-origin form
   posts to send `Origin: null`, which SvelteKit rejected through its CSRF check.
   `same-origin` now retains the required same-origin header while withholding
@@ -122,6 +124,6 @@ backend origin, operator header and operator endpoint paths. Inspect the page at
 - NOTE: an initial full-suite run used the populated development database and
   correctly exposed baseline-data conflicts. The final run used the separate
   migrated `watchtower_test` database; setup guidance now requires this isolation.
-- PENDING: owner review of the integration administration flow. Task 36 must not
-  begin until this checkpoint and hosted CI for the final documentation commit
-  both pass.
+- PASS: the owner accepted the integration administration flow on 2026-11-17
+  by directing work to continue to Task 36. The Task 35 human-review checkpoint
+  is satisfied.
