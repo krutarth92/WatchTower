@@ -56,21 +56,25 @@ the documented authenticated API and CLI flows.
 
 ## Information architecture
 
-The product has two top-level destinations and one stable home redirect:
+The product has six public destinations and contextual detail routes:
 
 | Route | Purpose | Navigation label |
 | --- | --- | --- |
-| `/` | Redirect to `/search` | none |
+| `/` | Latest published intelligence, actor entry points and platform update | Home |
+| `/advisories` | Browse published advisory summaries | Intelligence |
+| `/actors` | Browse published actor entry points | Actors |
+| `/evolution` | Enter actor histories without claiming a complete global timeline | Evolution |
 | `/search` | Search and filter published intelligence | Research |
+| `/technical` | Explain current ATT&CK, Sigma and STIX capabilities | Technical |
 | `/actors/[actorId]` | Actor summary, aliases, associations, timeline and evidence | contextual |
-| `/advisories` | Browse published advisory summaries | Advisories |
 | `/advisories/[slug]` | Read the current published revision and ordered updates | contextual |
 | `/advisories/[slug]/revisions/[version]` | Read a durable historic published revision | contextual |
+| `/updates` | Review shipped WATCHTOWER platform changes | secondary |
 
-The desktop shell uses a compact header with the WATCHTOWER wordmark, Research
-and Advisories links, and a visible `Local/private` environment label. Mobile
-uses the same links in a two-item navigation row; it does not hide primary
-navigation behind a menu.
+The desktop shell uses a compact header with the WATCHTOWER wordmark, the six
+primary links and a visible `Local/private` environment label. Mobile exposes
+the same destinations in a horizontally scrollable labelled navigation row;
+it does not hide primary navigation behind a menu.
 
 ```mermaid
 flowchart LR

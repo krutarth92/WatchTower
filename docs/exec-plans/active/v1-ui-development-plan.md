@@ -18,6 +18,11 @@ Changes to product scope, public visibility, authentication or backend
 semantics require an explicit plan amendment and owner review; they are not
 routine implementation choices.
 
+The owner amended the public information architecture on 2026-10-23 with a
+six-module navigation concept and a platform-update treatment. The reviewed
+mapping and V1 boundaries are recorded in
+[WATCHTOWER public site structure](../../design/public-site-structure.md).
+
 ## References reviewed
 
 The plan was derived from the complete supplied `Instructions/TASK_00` through
@@ -71,6 +76,10 @@ The following current repository references also control the UI work:
 
 V1 UI includes:
 
+- a public home page and coherent Home, Intelligence, Actors, Evolution,
+  Research and Technical navigation;
+- a factual platform-update rail and release archive sourced from one typed
+  content module;
 - deterministic published-intelligence search;
 - actor identity, aliases, techniques, behaviors, timeline and evidence;
 - source/provenance detail adjacent to claims;
@@ -145,8 +154,12 @@ apps/web/
     routes/
       +layout.svelte
       +layout.server.ts
-      +page.server.ts   # redirect / to /search
+      +page.server.ts   # published home composition
+      updates/
+      evolution/
+      technical/
       search/
+      actors/
       actors/[actorId]/
       advisories/
       advisories/[slug]/
@@ -370,14 +383,21 @@ The researcher can move from search to an actor, distinguish observed imported
 facts from WATCHTOWER assessments, follow evidence/provenance and load earlier
 events without losing filters. Owner accepts the core research journey.
 
-## Task 34 — published advisories
+## Task 34 — public site structure and published advisories
 
 ### Goal
 
-Complete the read-only product flow for living intelligence.
+Complete the public information architecture and read-only product flow for
+living intelligence.
 
 ### Deliverables
 
+- Replace the root redirect with a published-data home page and add Home,
+  Intelligence, Actors, Evolution, Research and Technical navigation.
+- Add one typed route map, one typed platform-update source, a latest-update
+  home rail and a dated `/updates` archive.
+- Add useful `/actors`, `/evolution` and `/technical` landing pages within the
+  existing V1 data and security boundary.
 - Implement `/advisories`, current detail and historic published revision
   routes from the UI contract.
 - Render typed sections, linked actors/campaigns/techniques, evidence,
@@ -392,19 +412,24 @@ Complete the read-only product flow for living intelligence.
 ### Explicit exclusions
 
 No draft read, create, revise, publish or withdrawal UI; no operator credential
-or attribution form.
+or attribution form. No live RAG, public STIX/Sigma generation, standalone
+source profile, complete-series chart or V2 environment dashboard.
 
 ### Validation
 
-Run the full frontend suite and production build. Test draft/absent-equivalent
-404 behavior, revision routing, update sequencing, intelligence labels, plain
-text hostile content and actor cross-links. Inspect mobile and desktop.
+Run the full frontend suite and production build. Test all navigation targets,
+partial home data, the platform update source/rail/archive, draft/absent-
+equivalent 404 behavior, revision routing, update sequencing, intelligence
+labels, plain text hostile content and actor cross-links. Inspect 320, 768 and
+1440 CSS pixel layouts.
 
 ### Acceptance gate
 
-Only published advisory material appears, durable historic revisions are
-represented truthfully, and the researcher can reach supporting actor context.
-Owner accepts the advisory journey.
+Every navigation target is useful and truthful, the update rail names only
+shipped capabilities, only published advisory material appears, durable
+historic revisions are represented truthfully, and the researcher can reach
+supporting actor context. Owner accepts the public structure and advisory
+journey.
 
 ## Task 35 — deterministic demo data and Docker integration
 

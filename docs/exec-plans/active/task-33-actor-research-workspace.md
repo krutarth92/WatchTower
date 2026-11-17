@@ -1,6 +1,6 @@
 # Task 33 — actor research workspace
 
-Status: in review after owner review revisions.
+Status: complete; owner accepted the revised workspace and advanced the UI scope on 2026-10-23.
 Date started: 2026-10-23.
 Branch: `codex/task-33-actor-research-workspace`.
 Jira: [`SCRUM-21`](https://kb-ai-projects.atlassian.net/browse/SCRUM-21).
@@ -143,4 +143,6 @@ git diff --check
   `7ff6e71752bdf1f3fbbffa39dc55ffde30fd8887`. The container job emitted two
   non-blocking cache-restore egress-quota warnings; its build, scan and SBOM
   artifact completed successfully.
-- PENDING: owner review of the complete actor workspace.
+- PASS: owner accepted the revised workspace by directing the next public-site
+  task on 2026-10-23. Task 34 may begin from exact commit
+  `072c90f3768667c863547d6efe591d257a9ddb34`.

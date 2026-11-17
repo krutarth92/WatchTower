@@ -1,5 +1,6 @@
 <script lang="ts">
 	import './layout.css';
+	import AppFooter from '#lib/components/AppFooter.svelte';
 	import AppHeader from '#lib/components/AppHeader.svelte';
 	import type { LayoutProps } from './$types';
 
@@ -20,6 +21,7 @@
 <main id="main-content" tabindex="-1">
 	{@render children()}
 </main>
+<AppFooter />
 
 <style>
 	.skip-link {

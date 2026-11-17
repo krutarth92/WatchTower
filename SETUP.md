@@ -74,8 +74,9 @@ pnpm install --frozen-lockfile
 pnpm --dir apps/web dev --host 127.0.0.1
 ```
 
-Open <http://127.0.0.1:5173>. The root redirects to the research shell at
-`/search`. `WATCHTOWER_API_ORIGIN` is a server-only setting and defaults to
+Open <http://127.0.0.1:5173>. The root presents the public intelligence home;
+primary navigation links to Intelligence, Actors, Evolution, Research and
+Technical. `WATCHTOWER_API_ORIGIN` is a server-only setting and defaults to
 `http://127.0.0.1:8000`; it must remain an HTTP(S) origin without credentials,
 path, query or fragment. `WATCHTOWER_UI_ENVIRONMENT` controls the bounded
 local/private environment label. Neither value is exposed as public browser

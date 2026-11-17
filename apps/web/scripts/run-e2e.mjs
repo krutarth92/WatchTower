@@ -21,6 +21,8 @@ const baseUrl = `http://${host}:${port}`;
 
 const actorId = '20000000-0000-4000-8000-000000000001';
 const partialActorId = '20000000-0000-4000-8000-000000000099';
+const advisoryId = '80000000-0000-4000-8000-000000000001';
+const advisorySlug = 'credential-access-evolution';
 const source = {
 	id: '10000000-0000-4000-8000-000000000001',
 	name: 'Northstar Research',
@@ -78,6 +80,77 @@ const timelineRecord = (overrides = {}) => ({
 	...overrides
 });
 
+const advisoryRevision = (version = 2) => ({
+	id: `81000000-0000-4000-8000-00000000000${version}`,
+	version,
+	title: version === 1 ? 'Credential access activity' : 'Credential access activity evolves',
+	summary:
+		'Published analysis of actor behavior, affected techniques and evidence-backed change over time.',
+	created_by: 'watchtower-analyst',
+	created_at: '2026-10-21T09:00:00Z',
+	published_at: version === 1 ? '2026-10-21T10:00:00Z' : '2026-10-22T10:00:00Z',
+	published_by: 'watchtower-publisher',
+	sections: [
+		{
+			section_type: 'what_happened',
+			position: 0,
+			intelligence_type: 'observed',
+			content: 'Published telemetry connected the actor to a new credential access sequence.'
+		},
+		{
+			section_type: 'watchtower_assessment',
+			position: 1,
+			intelligence_type: 'assessed',
+			content:
+				'WATCHTOWER assesses this as an evolution of the previously documented workflow.'
+		}
+	],
+	evidence: [
+		{
+			id: '30000000-0000-4000-8000-000000000001',
+			citation: 'Northstar incident report, section 4',
+			excerpt: 'The operator changed its credential collection sequence.',
+			source_id: source.id
+		}
+	],
+	actors: [{ id: actorId, canonical_name: 'Midnight Blizzard' }],
+	campaigns: [{ id: '82000000-0000-4000-8000-000000000001', name: 'Northstar' }],
+	techniques: [
+		{
+			id: '60000000-0000-4000-8000-000000000001',
+			name: 'PowerShell',
+			external_id: 'T1059.001'
+		}
+	]
+});
+
+const advisoryUpdate = {
+	id: '83000000-0000-4000-8000-000000000001',
+	sequence: 1,
+	revision_version: 2,
+	occurred_at: '2026-10-23T12:00:00Z',
+	title: 'Detection guidance updated',
+	summary: 'A new observed detection pattern was linked.',
+	intelligence_type: 'observed',
+	created_by: 'watchtower-analyst',
+	created_at: '2026-10-23T12:30:00Z',
+	evidence: []
+};
+
+const advisoryResponse = (version = 2) => ({
+	data: {
+		id: advisoryId,
+		slug: advisorySlug,
+		status: 'published',
+		published_revision: 2,
+		published_at: '2026-10-22T10:00:00Z',
+		created_at: '2026-10-21T09:00:00Z',
+		updated_at: '2026-10-23T12:30:00Z',
+		revision: advisoryRevision(version),
+		updates: [advisoryUpdate]
+	}
+});
+
 const searchRecord = (overrides) => ({
 	entity_type: 'actor',
 	id: '20000000-0000-4000-8000-000000000001',
@@ -128,6 +201,48 @@ const mockApi = createHttpServer((request, response) => {
 			popularity_score: 26
 		};
 		response.end(JSON.stringify({ recent: [actor], popular: [actor], limit: 12 }));
+		return;
+	}
+
+	if (requestUrl.pathname === '/api/v1/advisories') {
+		response.end(
+			JSON.stringify({
+				data: [
+					{
+						id: advisoryId,
+						slug: advisorySlug,
+						title: advisoryRevision().title,
+						summary: advisoryRevision().summary,
+						published_revision: 2,
+						published_at: '2026-10-22T10:00:00Z',
+						latest_update_at: advisoryUpdate.occurred_at
+					}
+				],
+				limit: Number(requestUrl.searchParams.get('limit') ?? 25)
+			})
+		);
+		return;
+	}
+
+	if (requestUrl.pathname === `/api/v1/advisories/${advisorySlug}`) {
+		response.end(JSON.stringify(advisoryResponse()));
+		return;
+	}
+
+	if (requestUrl.pathname === `/api/v1/advisories/${advisorySlug}/revisions/1`) {
+		response.end(JSON.stringify(advisoryResponse(1)));
+		return;
+	}
+
+	if (requestUrl.pathname === `/api/v1/advisories/${advisorySlug}/updates`) {
+		const after = Number(requestUrl.searchParams.get('after_sequence') ?? 0);
+		response.end(
+			JSON.stringify({
+				data: after < advisoryUpdate.sequence ? [advisoryUpdate] : [],
+				after_sequence: after,
+				limit: Number(requestUrl.searchParams.get('limit') ?? 25)
+			})
+		);
 		return;
 	}
 

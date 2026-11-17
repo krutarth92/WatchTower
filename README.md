@@ -106,6 +106,7 @@ audits dependencies, and scans the container for high-severity vulnerabilities.
 
 - [V1 scope](docs/product-specs/v1-scope.md)
 - [V2 productionization scope](docs/product-specs/v2-productionization-scope.md)
+- [Integration status](docs/data-sources/integration-status.md)
 - [Intelligence data model](docs/design/intelligence-data-model.md)
 - [Security threat model](docs/security/threat-model.md)
 - [Production security boundary](docs/security/production-boundary.md)

@@ -4,7 +4,7 @@ import AxeBuilder from '@axe-core/playwright';
 const actorId = '20000000-0000-4000-8000-000000000001';
 const partialActorId = '20000000-0000-4000-8000-000000000099';
 
-test('redirects to the research shell', async ({ page }) => {
+test('loads the public home with real module navigation and platform update', async ({ page }) => {
 	const failedAssets: string[] = [];
 	const pageErrors: string[] = [];
 	page.on('response', (response) => {
@@ -17,10 +17,27 @@ test('redirects to the research shell', async ({ page }) => {
 	const navigation = await page.goto('/');
 	await page.waitForLoadState('networkidle');
 
-	await expect(page).toHaveURL(/\/search$/);
-	await expect(page.getByRole('heading', { level: 1, name: 'Research search' })).toBeVisible();
-	await expect(page.getByText('PUBLISHED INTELLIGENCE INDEX')).toBeVisible();
-	await expect(page.locator('.boundary-state').getByText('PUBLISHED ONLY')).toBeVisible();
+	await expect(page).toHaveURL(/\/$/);
+	await expect(page.getByRole('heading', { level: 1, name: /Track the adversary/ })).toBeVisible();
+	await expect(page.getByText('Indicators and CVEs now reveal related actors')).toBeVisible();
+	await expect(page.getByRole('heading', { level: 2, name: 'Latest intelligence' })).toBeVisible();
+	await expect(
+		page.getByRole('link', { name: 'Credential access activity evolves' })
+	).toBeVisible();
+	for (const destination of [
+		'Home',
+		'Intelligence',
+		'Actors',
+		'Evolution',
+		'Research',
+		'Technical'
+	]) {
+		await expect(
+			page
+				.getByRole('navigation', { name: 'Primary navigation' })
+				.getByRole('link', { name: destination })
+		).toBeVisible();
+	}
 	await expect(page.getByText('LOCAL / PRIVATE')).toBeVisible();
 
 	const loadedPresentation = await page.evaluate(() => ({
@@ -40,6 +57,41 @@ test('redirects to the research shell', async ({ page }) => {
 	expect(navigation?.headers()['content-security-policy']).toContain("default-src 'self'");
 	expect(navigation?.headers()['x-frame-options']).toBe('DENY');
 	expect(navigation?.headers()['x-content-type-options']).toBe('nosniff');
+});
+
+test('opens the platform update archive and each primary module', async ({ page }) => {
+	await page.goto('/updates');
+	await expect(page.getByRole('heading', { level: 1, name: 'Platform updates' })).toBeVisible();
+	await expect(page.getByText('Indicators and CVEs now reveal related actors')).toBeVisible();
+
+	for (const [path, heading] of [
+		['/advisories', 'Intelligence'],
+		['/actors', 'Threat actors'],
+		['/evolution', 'Actor evolution'],
+		['/search', 'Research search'],
+		['/technical', 'Technical intelligence']
+	] as const) {
+		await page.goto(path);
+		await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
+	}
+});
+
+test('reads current and historic living intelligence with ordered updates', async ({ page }) => {
+	await page.goto('/advisories');
+	await page.getByRole('link', { name: 'Credential access activity evolves' }).click();
+	await expect(page).toHaveURL(/\/advisories\/credential-access-evolution$/);
+	await expect(
+		page.getByRole('heading', { level: 1, name: 'Credential access activity evolves' })
+	).toBeVisible();
+	await expect(page.getByText('OBSERVED').first()).toBeVisible();
+	await expect(page.getByText('ASSESSED').first()).toBeVisible();
+	await expect(page.getByRole('link', { name: 'Midnight Blizzard' })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Advisory updates' })).toBeVisible();
+	await expect(page.getByText('Detection guidance updated')).toBeVisible();
+
+	await page.getByRole('link', { name: 'Previous · v1' }).click();
+	await expect(page.getByText('Archived published revision v1')).toBeVisible();
+	await expect(page.getByRole('link', { name: 'Open current revision' })).toBeVisible();
 });
 
 test('preserves the research hierarchy at the minimum supported width', async ({ page }) => {
@@ -101,7 +153,10 @@ test('discovers actors and resolves indicators and CVEs to actor context', async
 
 	await page.goto('/search?q=malicious-update.example');
 	await expect(
-		page.getByRole('heading', { level: 2, name: 'malicious-update.example' })
+		page.getByRole('article').getByRole('heading', {
+			level: 2,
+			name: 'malicious-update.example'
+		})
 	).toBeVisible();
 	await expect(page.locator('.result-list article h2 mark')).toHaveText('malicious-update.example');
 	await expect(page.getByText('INDICATOR TYPE')).toBeVisible();
@@ -213,20 +268,19 @@ test('actor workspace is accessible and responsive at review widths', async ({ p
 	}
 });
 
-test('component gallery is accessible and responsive at review widths', async ({ page }) => {
+test('public home and advisory detail are accessible and responsive at review widths', async ({
+	page
+}) => {
 	for (const width of [320, 768, 1440]) {
 		await page.setViewportSize({ width, height: 900 });
-		await page.goto('/components');
-		await page.waitForLoadState('networkidle');
-
-		await expect(
-			page.getByRole('heading', { level: 1, name: 'Intelligence interface primitives' })
-		).toBeVisible();
-		expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
-			true
-		);
-
-		const results = await new AxeBuilder({ page }).analyze();
-		expect(results.violations, `${width}px accessibility violations`).toEqual([]);
+		for (const path of ['/', '/advisories/credential-access-evolution']) {
+			await page.goto(path);
+			await page.waitForLoadState('networkidle');
+			expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+				true
+			);
+			const results = await new AxeBuilder({ page }).analyze();
+			expect(results.violations, `${width}px ${path} accessibility violations`).toEqual([]);
+		}
 	}
 });
