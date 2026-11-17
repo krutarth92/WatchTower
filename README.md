@@ -11,8 +11,8 @@ versioned living intelligence advisories.
 ## Current status
 
 The backend is complete for local development and private evaluation. The V1
-web interface now has a reproducible SvelteKit foundation, centralized design
-tokens and frontend CI; research screens remain the active delivery phase. The
+web interface includes public intelligence, actor research and a local/private
+operator integration register built on centralized design tokens. The
 [V1 readiness audit](docs/exec-plans/active/v1-readiness.md) records the exact
 boundary and remaining UI work.
 
@@ -69,6 +69,7 @@ Open:
 
 - API documentation: <http://127.0.0.1:8000/docs>
 - Web research shell: <http://127.0.0.1:5173/search>
+- Integration administration: <http://127.0.0.1:5173/admin/integrations> when enabled
 - Health check: <http://127.0.0.1:8000/health>
 - Readiness check: <http://127.0.0.1:8000/ready>
 
@@ -80,6 +81,7 @@ The complete setup and configuration reference is in [SETUP.md](SETUP.md).
 - `/api/v1/search` — deterministic cross-entity search
 - `/api/v1/advisories` — published living intelligence advisories
 - `/api/v1/operations/ingestion/jobs` — operator ingestion jobs
+- `/api/v1/operations/integrations` — approved source and enrichment roadmap
 - `/api/v1/operations/artifacts` — faithful technical artifact reads
 - `/api/v1/operations/exports/stix` — actor-centered STIX 2.1 export
 - `/api/v1/operations/research/answers` — disabled-by-default grounded research

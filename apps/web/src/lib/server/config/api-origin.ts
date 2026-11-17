@@ -36,3 +36,10 @@ export function privateEnvironmentLabel(value: string | undefined): string {
 			return 'LOCAL / PRIVATE';
 	}
 }
+
+export function privateBoolean(name: string, value: string | undefined): boolean {
+	if (value === undefined || value.trim() === '') return false;
+	if (value.trim().toLowerCase() === 'true') return true;
+	if (value.trim().toLowerCase() === 'false') return false;
+	throw new Error(`${name} must be true or false`);
+}

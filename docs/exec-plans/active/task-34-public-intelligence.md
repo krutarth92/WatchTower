@@ -129,5 +129,6 @@ operator route or secret.
   backend, Python dependency audit, container scan and SBOM jobs successful.
   The dependency audit now selects Python 3.13 explicitly, matching the
   repository's supported `>=3.12,<3.14` range instead of runner-default 3.14.
-- PENDING: owner review of the public structure and advisory journey. Do not
-  start Task 35 until this checkpoint and hosted CI pass.
+- PASS: owner accepted the Task 34 checkpoint on 2026-11-17 by directing the
+  next implementation task. GitHub Actions run 119 passed on final Task 34
+  commit `633be39` before Task 35 began.

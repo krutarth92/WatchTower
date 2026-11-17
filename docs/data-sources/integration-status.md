@@ -25,7 +25,7 @@ normalization, retries and tests exist in the repository.
 - GitHub stores the repository and GitHub Actions runs frontend, backend,
   dependency, container, Trivy and SBOM checks.
 - Docker Compose defines PostgreSQL/pgvector and Redis for local development.
-  Full API, worker and web composition is scheduled for Task 35.
+  Full API, worker and web composition is scheduled for Task 36.
 - AWS infrastructure templates and staging runbooks exist, but deployment and
   operational proof remain V2 work.
 - Jira tracks project work. Jira credentials belong to the connected project

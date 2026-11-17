@@ -407,8 +407,9 @@ gates are defined in the
 3. **Task 32:** published intelligence search;
 4. **Task 33:** actor research workspace;
 5. **Task 34:** published advisories;
-6. **Task 35:** deterministic demo data and Docker integration; and
-7. **Task 36:** V1 UI acceptance and readiness closure.
+6. **Task 35:** local/private operator integration management;
+7. **Task 36:** deterministic demo data and Docker integration; and
+8. **Task 37:** V1 UI acceptance and readiness closure.
 
 Owner approval of this contract is the review checkpoint before Task 30 starts.
 

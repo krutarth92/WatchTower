@@ -7,9 +7,9 @@ a deterministic PostgreSQL search baseline, a disabled-by-default grounded
 research RAG boundary, faithful technical artifact storage, and a reproducible
 CI/private-staging deployment baseline. It also provides versioned living
 intelligence advisories with an explicit publication boundary. The V1 web
-application now has its reproducible SvelteKit foundation, centralized visual
-tokens and frontend quality gates; product screens are delivered in subsequent
-UI tasks.
+application includes public intelligence, actor research and local/private
+integration administration with centralized visual tokens and frontend quality
+gates.
 
 ## Prerequisites and startup
 
@@ -81,6 +81,29 @@ Technical. `WATCHTOWER_API_ORIGIN` is a server-only setting and defaults to
 path, query or fragment. `WATCHTOWER_UI_ENVIRONMENT` controls the bounded
 local/private environment label. Neither value is exposed as public browser
 configuration.
+
+### Local integration administration
+
+The web integration register reuses the existing `operator` role. To enable it
+locally, set both values in the ignored `.env` file before starting the API and
+web processes:
+
+```dotenv
+WATCHTOWER_OPERATOR_TOKEN=replace-with-at-least-32-random-characters
+WATCHTOWER_ADMIN_ENABLED=true
+```
+
+Open <http://127.0.0.1:5173/admin/integrations>. SvelteKit reads the token only
+on the server and attaches it to an exact allowlist of operator API requests.
+The token is never sent in page data, HTML, browser storage or client assets.
+When the feature flag or token is absent, the route returns 404 and the Admin
+navigation destination is hidden. Keep this static-token browser bridge
+disabled in production; a production UI requires the existing OIDC boundary to
+be extended with a browser sign-in flow.
+
+The page truthfully reports the approved source waves. MITRE ATT&CK is the only
+runnable connector. Planned connectors expose no run or enable control, and
+credential values cannot be edited or read from the page.
 
 All foundational color, typography, spacing, radius, shadow, motion and layout
 values live in `apps/web/src/lib/styles/tokens.css`. Components consume semantic
@@ -212,10 +235,10 @@ method, results and scaling triggers are in
 ## CI and private staging deployment
 
 GitHub Actions in `.github/workflows/ci.yml` install the locked environment and
-run Ruff, Pyright, Alembic checks, the PostgreSQL-backed test suite, package and
-container builds, dependency auditing, and a HIGH/CRITICAL image scan. There is
-no frontend tree or frontend job yet; both are required by the next V1 phase.
-Run the equivalent backend checks locally with the commands in Validation below.
+run Ruff, Pyright, Alembic checks, the PostgreSQL-backed test suite, frontend
+format/lint/type/unit/browser/build checks, package and container builds,
+dependency auditing, and a HIGH/CRITICAL image scan. Run the equivalent checks
+locally with the commands in Validation below.
 The one documented audit exception and its removal criteria are in
 `docs/security/dependency-audit-exceptions.md`.
 
@@ -276,6 +299,7 @@ Do not execute the change set as part of local setup.
 | WATCHTOWER_REDIS_URL | redis://127.0.0.1:6379/0 |
 | WATCHTOWER_OPERATOR_AUTH_MODE | `static` for local/private staging; production requires `oidc` |
 | WATCHTOWER_OPERATOR_TOKEN | Optional local/private token of at least 32 characters; forbidden in production |
+| WATCHTOWER_ADMIN_ENABLED | false; enables the local/private operator integration page only when the operator token is also set |
 | WATCHTOWER_OIDC_ISSUER | Required in OIDC mode; exact HTTPS Cognito user-pool issuer |
 | WATCHTOWER_OIDC_JWKS_URL | Required in OIDC mode; fixed HTTPS Cognito JWKS URL |
 | WATCHTOWER_OIDC_CLIENT_ID | Required in OIDC mode; expected Cognito access-token `client_id` |
@@ -320,14 +344,21 @@ uv run --locked alembic upgrade head --sql
 ```
 
 The PostgreSQL integration check is skipped unless a test database URL is supplied.
-A test run with this skip is not full foundation validation. With the development
-PostgreSQL running, use its URL for this read-only check:
+A test run with this skip is not full foundation validation. Use a migrated,
+otherwise empty test database; the suite wraps each test in a transaction but
+does not delete pre-existing application records. With local Compose running:
 
 ```powershell
-$env:WATCHTOWER_TEST_DATABASE_URL = 'postgresql+psycopg://watchtower:YOUR_PASSWORD@127.0.0.1:5432/watchtower'
+docker compose exec postgres createdb -U watchtower watchtower_test
+$env:WATCHTOWER_DATABASE_URL = 'postgresql+psycopg://watchtower:YOUR_PASSWORD@127.0.0.1:5432/watchtower_test'
+uv run --locked alembic upgrade head
+$env:WATCHTOWER_TEST_DATABASE_URL = $env:WATCHTOWER_DATABASE_URL
 uv run --locked pytest -m integration
 Remove-Item Env:WATCHTOWER_TEST_DATABASE_URL
 ```
+
+If `watchtower_test` already exists, skip `createdb`. Never point the full suite
+at a populated development or staging database.
 
 Verify /ready returns 503 after `docker compose stop postgres`, /health stays 200,
 and /ready recovers after `docker compose up -d --wait postgres`. Use only the

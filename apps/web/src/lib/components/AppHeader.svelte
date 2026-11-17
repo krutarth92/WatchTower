@@ -3,10 +3,12 @@
 
 	let {
 		environmentLabel,
-		currentPath
+		currentPath,
+		adminEnabled = false
 	}: {
 		environmentLabel: string;
 		currentPath: string;
+		adminEnabled?: boolean;
 	} = $props();
 </script>
 
@@ -32,6 +34,15 @@
 		</nav>
 
 		<div class="header-meta">
+			{#if adminEnabled}
+				<a
+					class:active={currentPath.startsWith('/admin')}
+					href="/admin/integrations"
+					aria-label="Admin integrations"
+				>
+					<span aria-hidden="true">◇</span><span class="admin-label">Admin</span>
+				</a>
+			{/if}
 			<a
 				class:active={currentPath.startsWith('/updates')}
 				href="/updates"
@@ -180,7 +191,8 @@
 
 	@media (max-width: 34rem) {
 		.environment-label,
-		.updates-label {
+		.updates-label,
+		.admin-label {
 			display: none;
 		}
 

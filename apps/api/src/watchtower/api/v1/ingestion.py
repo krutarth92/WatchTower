@@ -71,6 +71,16 @@ def submit_ingestion_job(
     service: JobService,
     queue: Queue,
 ) -> IngestionJobSubmissionResponse:
+    return submit_approved_ingestion_job(submission, request, session, service, queue)
+
+
+def submit_approved_ingestion_job(
+    submission: IngestionJobSubmission,
+    request: Request,
+    session: Session,
+    service: IngestionJobService,
+    queue: JobQueue,
+) -> IngestionJobSubmissionResponse:
     source = register_mitre_attack_source(session)
     try:
         result = service.submit(

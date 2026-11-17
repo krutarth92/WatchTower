@@ -16,7 +16,11 @@
 </svelte:head>
 
 <a class="skip-link" href="#main-content">Skip to main content</a>
-<AppHeader environmentLabel={data.environmentLabel} currentPath={data.currentPath} />
+<AppHeader
+	environmentLabel={data.environmentLabel}
+	currentPath={data.currentPath}
+	adminEnabled={data.adminEnabled}
+/>
 
 <main id="main-content" tabindex="-1">
 	{@render children()}

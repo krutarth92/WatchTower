@@ -3,5 +3,6 @@ import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = ({ url }) => ({
 	environmentLabel: runtimeConfig.environmentLabel,
+	adminEnabled: runtimeConfig.adminEnabled,
 	currentPath: url.pathname
 });

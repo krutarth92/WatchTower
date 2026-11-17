@@ -76,6 +76,45 @@ test('opens the platform update archive and each primary module', async ({ page 
 	}
 });
 
+test('operates the private integration register without exposing server credentials', async ({
+	page
+}) => {
+	let adminPostOrigin: string | undefined;
+	page.on('request', (request) => {
+		if (request.method() === 'POST' && request.url().includes('/admin/integrations')) {
+			adminPostOrigin = request.headers().origin;
+		}
+	});
+	for (const width of [320, 768, 1440]) {
+		await page.setViewportSize({ width, height: 1000 });
+		await page.goto('/admin/integrations');
+		await expect(
+			page.getByRole('heading', { level: 1, name: 'Intelligence sources' })
+		).toBeVisible();
+		await expect(page.getByRole('link', { name: 'Admin integrations' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'MITRE ATT&CK Enterprise' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'MISP Galaxy' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Basic GeoIP and ASN' })).toBeVisible();
+		await expect(page.getByText('WATCHTOWER_MALPEDIA_API_KEY')).toBeVisible();
+		await expect(page.getByText('PLANNED').first()).toBeVisible();
+		expect(await page.getByText(/Twitter|AlienVault OTX/i).count()).toBe(0);
+		expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+			true
+		);
+		const results = await new AxeBuilder({ page }).analyze();
+		expect(results.violations, `${width}px integration accessibility violations`).toEqual([]);
+	}
+
+	await page.getByRole('button', { name: 'Queue ATT&CK refresh' }).click();
+	expect(adminPostOrigin).toBe(new URL(page.url()).origin);
+	await expect(page.getByText('MITRE ATT&CK refresh queued.')).toBeVisible();
+	await expect(page.getByText('QUEUED ·')).toBeVisible();
+	const html = await page.content();
+	expect(html).not.toContain('task-35-browser-operator-token');
+	expect(html).not.toContain('X-WATCHTOWER-Operator-Token');
+	expect(html).not.toContain('/api/v1/operations/integrations');
+});
+
 test('reads current and historic living intelligence with ordered updates', async ({ page }) => {
 	await page.goto('/advisories');
 	await page.getByRole('link', { name: 'Credential access activity evolves' }).click();

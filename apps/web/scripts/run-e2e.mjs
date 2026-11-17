@@ -18,6 +18,7 @@ const port = await new Promise((resolve, reject) => {
 	});
 });
 const baseUrl = `http://${host}:${port}`;
+const operatorToken = 'task-35-browser-operator-token-with-32-characters';
 
 const actorId = '20000000-0000-4000-8000-000000000001';
 const partialActorId = '20000000-0000-4000-8000-000000000099';
@@ -173,7 +174,105 @@ const searchRecord = (overrides) => ({
 	...overrides
 });
 
-const mockApi = createHttpServer((request, response) => {
+const integrationJob = (idempotencyKey) => ({
+	id: '90000000-0000-4000-8000-000000000001',
+	job_kind: 'mitre_attack_refresh',
+	source_id: source.id,
+	raw_evidence_id: null,
+	state: 'queued',
+	correlation_id: 'task-35-e2e',
+	idempotency_key: idempotencyKey,
+	attempts: 0,
+	max_attempts: 3,
+	failure_reason: null,
+	next_attempt_at: '2026-11-17T10:00:00Z',
+	started_at: null,
+	finished_at: null,
+	created_at: '2026-11-17T10:00:00Z',
+	updated_at: '2026-11-17T10:00:00Z'
+});
+
+let latestIntegrationJob = null;
+
+const integrationCatalog = () => ({
+	data: [
+		{
+			key: 'mitre-attack',
+			name: 'MITRE ATT&CK Enterprise',
+			wave: 'implemented',
+			description: 'Versioned ATT&CK STIX data for actors, techniques and mappings.',
+			status: 'available',
+			implemented: true,
+			configured: true,
+			can_sync: true,
+			required_settings: [],
+			enrichments: ['ATT&CK mappings', 'alias resolution', 'historical correlation'],
+			latest_job: latestIntegrationJob
+		},
+		...[
+			['misp-galaxy', 'MISP Galaxy', 'first_wave', []],
+			['cisa', 'CISA', 'first_wave', []],
+			['microsoft-threat-intelligence', 'Microsoft Threat Intelligence', 'first_wave', []],
+			['google-tag', 'Google Threat Analysis Group', 'first_wave', []],
+			['unit-42', 'Unit 42', 'first_wave', []],
+			['malpedia', 'Malpedia', 'second_wave', ['WATCHTOWER_MALPEDIA_API_KEY']],
+			['securelist', 'Securelist', 'second_wave', []],
+			['eset-research', 'ESET Research', 'second_wave', []],
+			['selected-news', 'Selected news sources', 'second_wave', []]
+		].map(([key, name, wave, requiredSettings]) => ({
+			key,
+			name,
+			wave,
+			description: `${name} is approved for a later connector stage.`,
+			status: 'planned',
+			implemented: false,
+			configured: false,
+			can_sync: false,
+			required_settings: requiredSettings,
+			enrichments: ['historical correlation'],
+			latest_job: null
+		}))
+	],
+	enrichment_roadmap: [
+		{
+			key: 'attack-mapping',
+			name: 'ATT&CK mappings',
+			wave: 'implemented',
+			description: 'Connect source behaviors to versioned ATT&CK techniques.',
+			implemented: true
+		},
+		{
+			key: 'alias-resolution',
+			name: 'Alias resolution',
+			wave: 'implemented',
+			description: 'Resolve source names to canonical actor identities with provenance.',
+			implemented: true
+		},
+		{
+			key: 'historical-correlation',
+			name: 'Historical correlation',
+			wave: 'implemented',
+			description: 'Retain observations for comparison over time.',
+			implemented: true
+		},
+		{
+			key: 'geoip-asn',
+			name: 'Basic GeoIP and ASN',
+			wave: 'first_wave',
+			description: 'Add network ownership and geography context with provenance.',
+			implemented: false
+		},
+		{
+			key: 'external-reputation',
+			name: 'External reputation APIs',
+			wave: 'later',
+			description: 'Add when a defined use case justifies the dependency.',
+			implemented: false
+		}
+	]
+});
+
+const mockApi = createHttpServer(async (request, response) => {
 	const requestUrl = new URL(request.url ?? '/', 'http://mock-api');
 	response.setHeader('content-type', 'application/json');
 	const sendError = (status, code, requestId) => {
@@ -189,6 +288,30 @@ const mockApi = createHttpServer((request, response) => {
 			})
 		);
 	};
+
+	if (requestUrl.pathname === '/api/v1/operations/integrations') {
+		if (request.headers['x-watchtower-operator-token'] !== operatorToken) {
+			sendError(401, 'operator_auth_failed', 'mock-operator-401');
+			return;
+		}
+		response.end(JSON.stringify(integrationCatalog()));
+		return;
+	}
+
+	if (requestUrl.pathname === '/api/v1/operations/integrations/mitre-attack/sync') {
+		if (request.headers['x-watchtower-operator-token'] !== operatorToken) {
+			sendError(401, 'operator_auth_failed', 'mock-operator-401');
+			return;
+		}
+		const chunks = [];
+		for await (const chunk of request) chunks.push(chunk);
+		const body = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+		const duplicate = latestIntegrationJob?.idempotency_key === body.idempotency_key;
+		latestIntegrationJob = integrationJob(body.idempotency_key);
+		response.statusCode = 202;
+		response.end(JSON.stringify({ data: { job: latestIntegrationJob, duplicate } }));
+		return;
+	}
 
 	if (requestUrl.pathname === '/api/v1/search/discovery') {
 		const actor = {
@@ -461,14 +584,14 @@ const run = (command, args, options = {}) =>
 		...options
 	});
 
-const waitForServer = async (server) => {
+const waitForServer = async (server, origin = baseUrl) => {
 	for (let attempt = 0; attempt < 100; attempt += 1) {
 		if (server.exitCode !== null) {
 			throw new Error(`The production server exited with code ${server.exitCode}.`);
 		}
 
 		try {
-			const response = await fetch(`${baseUrl}/search`);
+			const response = await fetch(`${origin}/search`);
 			if (response.ok) return;
 		} catch {
 			// The server is still starting.
@@ -477,7 +600,7 @@ const waitForServer = async (server) => {
 		await new Promise((resolve) => setTimeout(resolve, 100));
 	}
 
-	throw new Error(`The production server did not become ready at ${baseUrl}.`);
+	throw new Error(`The production server did not become ready at ${origin}.`);
 };
 
 const waitForExit = (child) =>
@@ -486,8 +609,52 @@ const waitForExit = (child) =>
 		child.once('exit', (code, signal) => resolve({ code, signal }));
 	});
 
+const disabledPort = await new Promise((resolve, reject) => {
+	const probe = createNetServer();
+	probe.once('error', reject);
+	probe.listen(0, host, () => {
+		const address = probe.address();
+		if (!address || typeof address === 'string') {
+			probe.close();
+			reject(new Error('Could not reserve a local port for the disabled admin check.'));
+			return;
+		}
+		probe.close((error) => (error ? reject(error) : resolve(String(address.port))));
+	});
+});
+const disabledBaseUrl = `http://${host}:${disabledPort}`;
+const disabledServer = run(process.execPath, ['build/index.js'], {
+	env: {
+		...process.env,
+		HOST: host,
+		PORT: disabledPort,
+		ORIGIN: disabledBaseUrl,
+		PROTOCOL_HEADER: 'x-forwarded-proto',
+		WATCHTOWER_API_ORIGIN: mockApiOrigin,
+		WATCHTOWER_ADMIN_ENABLED: 'false',
+		WATCHTOWER_OPERATOR_TOKEN: ''
+	}
+});
+const disabledServerExit = waitForExit(disabledServer);
+await waitForServer(disabledServer, disabledBaseUrl);
+const disabledResponse = await fetch(`${disabledBaseUrl}/admin/integrations`);
+if (disabledResponse.status !== 404) {
+	throw new Error(`Disabled admin route returned ${disabledResponse.status}; expected 404.`);
+}
+disabledServer.kill();
+await disabledServerExit;
+
 const server = run(process.execPath, ['build/index.js'], {
-	env: { ...process.env, HOST: host, PORT: port, WATCHTOWER_API_ORIGIN: mockApiOrigin }
+	env: {
+		...process.env,
+		HOST: host,
+		PORT: port,
+		ORIGIN: baseUrl,
+		PROTOCOL_HEADER: 'x-forwarded-proto',
+		WATCHTOWER_API_ORIGIN: mockApiOrigin,
+		WATCHTOWER_ADMIN_ENABLED: 'true',
+		WATCHTOWER_OPERATOR_TOKEN: operatorToken
+	}
 });
 const serverExit = waitForExit(server);
 
@@ -504,7 +671,11 @@ try {
 	]);
 
 	const playwright = run(process.execPath, ['node_modules/@playwright/test/cli.js', 'test'], {
-		env: { ...process.env, WATCHTOWER_E2E_BASE_URL: baseUrl }
+		env: {
+			...process.env,
+			WATCHTOWER_E2E_BASE_URL: baseUrl,
+			WATCHTOWER_E2E_FORWARDED_PROTO: 'http'
+		}
 	});
 	playwrightResult = await waitForExit(playwright);
 } finally {

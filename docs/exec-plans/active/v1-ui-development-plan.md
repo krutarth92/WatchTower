@@ -23,6 +23,11 @@ six-module navigation concept and a platform-update treatment. The reviewed
 mapping and V1 boundaries are recorded in
 [WATCHTOWER public site structure](../../design/public-site-structure.md).
 
+The owner amended the local/private operator boundary on 2026-11-17 to add an
+integration-management page using the existing operator role. Task 35 records
+the server-only credential and production-disable boundaries. The previous
+demo/Docker and acceptance tasks move to Tasks 36 and 37.
+
 ## References reviewed
 
 The plan was derived from the complete supplied `Instructions/TASK_00` through
@@ -431,7 +436,43 @@ historic revisions are represented truthfully, and the researcher can reach
 supporting actor context. Owner accepts the public structure and advisory
 journey.
 
-## Task 35 — deterministic demo data and Docker integration
+## Task 35 — operator integration management
+
+### Goal
+
+Add a local/private operator page for the approved integration catalog and the
+implemented MITRE ATT&CK refresh without exposing credentials or enabling
+planned connectors.
+
+### Deliverables
+
+- Add an operator-protected integration catalog from one backend source.
+- Use the existing operator role and durable ingestion job boundary.
+- Add a server-only operator client and `/admin/integrations` page gated by
+  explicit local configuration.
+- Display the approved source waves, implementation/configuration state,
+  required setting names and latest job state.
+- Permit a replay-safe MITRE ATT&CK refresh; planned connectors have no action.
+- Cover authorization, secret non-disclosure, disabled 404, mutation,
+  accessibility and responsive behavior.
+
+### Explicit exclusions
+
+No new connector, browser credential, editable secret, admin role, schedule
+editor, production OIDC UI or arbitrary source URL.
+
+### Validation
+
+Run the complete backend and frontend suites, production build, browser journey
+and client-asset secret scan. Hosted CI must pass the final commit.
+
+### Acceptance gate
+
+The operator can inspect truthful integration state and start an idempotent
+MITRE refresh, planned sources cannot run, and no secret reaches browser state.
+Owner accepts the admin flow.
+
+## Task 36 — deterministic demo data and Docker integration
 
 ### Goal
 
@@ -483,7 +524,7 @@ A new developer can follow the documented commands, see meaningful published
 data at `http://127.0.0.1:3000`, complete the researcher journey, and clean up
 without affecting other data. Owner accepts the browser startup flow.
 
-## Task 36 — V1 UI acceptance and readiness closure
+## Task 37 — V1 UI acceptance and readiness closure
 
 ### Goal
 
@@ -528,7 +569,7 @@ commit.
 
 The owner reviews the rendered desktop and mobile flow and accepts V1 for
 local/private use. Only then may the readiness audit mark the frontend complete,
-Task 29/30-36 close, and V2 productionization become the next program.
+Task 29/30-37 close, and V2 productionization become the next program.
 
 ## Dependency and sequence map
 
@@ -539,9 +580,10 @@ flowchart LR
     T31 --> T32[32 Search]
     T32 --> T33[33 Actor workspace]
     T31 --> T34[34 Advisories]
-    T33 --> T35[35 Demo + Docker]
+    T33 --> T35[35 Integration management]
     T34 --> T35
-    T35 --> T36[36 Acceptance]
+    T35 --> T36[36 Demo + Docker]
+    T36 --> T37[37 Acceptance]
 ```
 
 Tasks 32 and 34 are technically parallel after Task 31, but the default sequence
