@@ -35,11 +35,19 @@ normalization, retries and tests exist in the repository.
 
 | Candidate source | Status | Main decision before implementation |
 | --- | --- | --- |
+| MISP Galaxy | Approved first wave; no connector | Select versioned galaxy collections and preserve cluster, synonym and source metadata |
+| CISA | Approved first wave; no connector | Start with KEV and define source-version, CVE update and checkpoint behavior |
+| Microsoft Threat Intelligence | Approved first wave; no connector | Select official feeds/publications and define stable retrieval and attribution boundaries |
+| Google Threat Analysis Group | Approved first wave; no connector | Define publication discovery, article versioning and actor/alias evidence mapping |
+| Unit 42 | Approved first wave; no connector | Define publication discovery, attribution and campaign/technique extraction rules |
+| Malpedia | Approved second wave; no connector | Confirm access, license, attribution and family/actor relationship mapping |
+| Securelist | Approved second wave; no connector | Define publication discovery, versioning and source attribution |
+| ESET Research | Approved second wave; no connector | Define publication discovery, versioning and source attribution |
+| Selected news sources | Approved second wave; source list not yet selected | Establish editorial selection, licensing, deduplication and reliability criteria |
 | AlienVault OTX | No client, API-key setting, pulse cursor or normalization adapter | Define allowed pulse/indicator scope, attribution and polling limits |
 | X/Twitter | No API client, credentials, collection job or normalization adapter | Confirm API access, licensing, retention and permitted content before design |
-| CISA Known Exploited Vulnerabilities | No connector | Define CVE update/checkpoint behavior and source-version retention |
 | abuse.ch feeds | No connector | Select feeds and document redistribution, confidence and expiry semantics |
-| MISP or OpenCTI | No connector | Choose push/pull ownership and map source identity and marking rules |
+| MISP/OpenCTI platform exchange | No connector | Choose push/pull ownership and map source identity and marking rules; distinct from MISP Galaxy content |
 | VirusTotal | No connector | Approve account tier, quotas, data handling and indicator lookup policy |
 | Generic STIX/TAXII | No inbound connector | Define collection allowlists, trust markings, cursors and schema limits |
 
@@ -47,13 +55,36 @@ Live RAG is also not integrated with a model provider. The retrieval boundary is
 disabled by default and no LangChain, Semantic Kernel or AutoGen dependency is
 present.
 
-## Recommended connector sequence
+## Approved source sequence
 
-After V1 UI acceptance, plan connectors separately from Task 35's Docker/demo
-work. Start with CISA KEV, AlienVault OTX and selected abuse.ch feeds because
-they directly improve CVE and indicator discovery without depending on social
-media access. Add X only after its access, cost, licensing and retention policy
-are approved.
+The owner-approved source scope is centered on understanding how an adversary
+changes over time. It does not optimize for collecting the largest possible IOC
+volume.
+
+After V1 UI acceptance, plan these connectors separately from Task 35's
+Docker/demo work:
+
+1. MITRE ATT&CK, MISP Galaxy, CISA, Microsoft Threat Intelligence, Google TAG
+   and Unit 42 form the first source wave. MITRE ATT&CK is already implemented;
+   the other five sources still require source-specific contracts.
+2. Malpedia, Securelist, ESET and a deliberately selected set of news sources
+   follow as the pipeline and editorial controls mature.
+
+X/Twitter, AlienVault OTX, abuse.ch, VirusTotal and generic MISP/OpenCTI or
+STIX/TAXII exchange remain unimplemented candidates. They are not part of the
+approved first or second source wave and must not displace it without a later
+product decision.
+
+## Approved enrichment sequence
+
+Start with ATT&CK mappings, conservative alias resolution, historical
+correlation and basic GeoIP/ASN context. These enrichments directly support the
+adversary-evolution workflow while preserving provenance and uncertainty.
+
+External reputation APIs are deferred until a concrete research or detection
+use case requires them. Any later reputation provider needs a separate review
+of quotas, licensing, permitted retention, confidence semantics and how its
+result affects the evidence trail.
 
 Every connector should reuse the existing raw-evidence, normalization and job
 boundaries while owning its fixed source allowlist, credentials, rate limits,

@@ -120,9 +120,14 @@ operator route or secret.
   backend contract, and the frontend advisory journey is covered by typed unit
   fixtures and the production-browser suite. Hosted backend CI remains required
   on the committed revision.
-- PASS: integration inventory rechecked on 2026-11-17. MITRE ATT&CK remains the
-  only external intelligence connector; candidate feeds including AlienVault
-  OTX and X/Twitter are explicitly recorded as not integrated in
-  `docs/data-sources/integration-status.md`.
+- PASS: integration inventory rechecked and owner-corrected on 2026-11-17.
+  MITRE ATT&CK remains the only implemented external intelligence connector.
+  The approved source waves and enrichment sequence are recorded in
+  `docs/data-sources/integration-status.md`; X/Twitter and AlienVault OTX are
+  explicitly outside those approved priority waves.
+- PASS: GitHub Actions CI run 118 completed on commit `aa27670` with frontend,
+  backend, Python dependency audit, container scan and SBOM jobs successful.
+  The dependency audit now selects Python 3.13 explicitly, matching the
+  repository's supported `>=3.12,<3.14` range instead of runner-default 3.14.
 - PENDING: owner review of the public structure and advisory journey. Do not
   start Task 35 until this checkpoint and hosted CI pass.
