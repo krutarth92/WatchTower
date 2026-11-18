@@ -26,6 +26,7 @@ dependencies = [
 
 [project.scripts]
 watchtower-audit-evidence = "watchtower.operations.evidence_integrity:main"
+watchtower-demo-data = "watchtower.operations.demo_data:main"
 
 [dependency-groups]
 dev = ["httpx2>=2.0,<3", "pytest>=8.3,<9", "ruff>=0.6,<1", "pyright>=1.1,<2"]

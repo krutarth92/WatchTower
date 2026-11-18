@@ -150,23 +150,65 @@ jobs:
   container:
     name: Container build and scan
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
+    env:
+      POSTGRES_PASSWORD: ci-only-password
+      WATCHTOWER_CONTAINER_DATABASE_URL: postgresql+psycopg://watchtower:ci-only-password@postgres:5432/watchtower
+      WATCHTOWER_OPERATOR_TOKEN: ci-only-operator-token-at-least-32-characters
     steps:
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      - name: Validate local composition
+        run: docker compose config --quiet
+
       - name: Build backend image
         run: docker build --tag watchtower:${{ github.sha }} .
+
+      - name: Build web image
+        run: >-
+          docker build --file apps/web/Dockerfile
+          --tag watchtower-web:${{ github.sha }} .
 
       - name: Smoke-test installed application
         run: >-
           docker run --rm --entrypoint python watchtower:${{ github.sha }}
           -c "import watchtower; from watchtower.main import create_app; print(watchtower.__name__, create_app.__name__)"
 
+      - name: Smoke-test non-root web application
+        shell: bash
+        run: |
+          test "$(docker image inspect --format='{{.Config.User}}' watchtower-web:${{ github.sha }})" = "watchtower"
+          docker run --detach --rm --name watchtower-web-smoke \
+            --read-only --tmpfs /tmp:rw,noexec,nosuid,size=64m \
+            --publish 127.0.0.1:3000:3000 \
+            --env ORIGIN=http://127.0.0.1:3000 \
+            --env WATCHTOWER_API_ORIGIN=http://127.0.0.1:9 \
+            --env WATCHTOWER_OPERATOR_TOKEN=ci-only-operator-token-at-least-32-characters \
+            watchtower-web:${{ github.sha }}
+          trap 'docker stop watchtower-web-smoke >/dev/null 2>&1 || true' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent --show-error http://127.0.0.1:3000/search >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs watchtower-web-smoke
+          exit 1
+
       - name: Scan backend image
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: watchtower:${{ github.sha }}
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL
+
+      - name: Scan web image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: watchtower-web:${{ github.sha }}
           format: table
           exit-code: "1"
           ignore-unfixed: true

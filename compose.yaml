@@ -1,4 +1,26 @@
 name: watchtower
+
+x-watchtower-api: &watchtower-api
+  image: watchtower-api:local
+  build:
+    context: .
+    dockerfile: Dockerfile
+  environment:
+    WATCHTOWER_DATABASE_URL: ${WATCHTOWER_CONTAINER_DATABASE_URL:?Set WATCHTOWER_CONTAINER_DATABASE_URL in .env}
+    WATCHTOWER_ENVIRONMENT: development
+    WATCHTOWER_LOG_LEVEL: ${WATCHTOWER_LOG_LEVEL:-INFO}
+    WATCHTOWER_RAW_STORAGE_BACKEND: local
+    WATCHTOWER_RAW_STORAGE_PATH: /var/lib/watchtower/raw
+    WATCHTOWER_REDIS_URL: redis://redis:6379/0
+    WATCHTOWER_OPERATOR_AUTH_MODE: static
+    WATCHTOWER_OPERATOR_TOKEN: ${WATCHTOWER_OPERATOR_TOKEN:?Set WATCHTOWER_OPERATOR_TOKEN in .env}
+  init: true
+  read_only: true
+  tmpfs:
+    - /tmp:size=64m,mode=1777
+  networks:
+    - backend
+
 services:
   postgres:
     image: pgvector/pgvector:pg17
@@ -10,6 +32,9 @@ services:
       - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
+      - ingress
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
       interval: 5s
@@ -17,12 +42,109 @@ services:
       retries: 10
   redis:
     image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
     ports:
       - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - backend
+      - ingress
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 10
+
+  migrate:
+    <<: *watchtower-api
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      disable: true
+    restart: "no"
+
+  api:
+    <<: *watchtower-api
+    command:
+      - uvicorn
+      - watchtower.main:create_app
+      - --factory
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --no-proxy-headers
+    ports:
+      - "127.0.0.1:8000:8000"
+    networks:
+      - backend
+      - frontend
+      - ingress
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  worker:
+    <<: *watchtower-api
+    command: ["python", "-m", "watchtower.workers.run"]
+    volumes:
+      - raw_storage:/var/lib/watchtower/raw
+    networks:
+      - backend
+      - egress
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      disable: true
+    restart: unless-stopped
+
+  web:
+    image: watchtower-web:local
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    environment:
+      WATCHTOWER_API_ORIGIN: http://api:8000
+      WATCHTOWER_UI_ENVIRONMENT: local
+      WATCHTOWER_OPERATOR_TOKEN: ${WATCHTOWER_OPERATOR_TOKEN:?Set WATCHTOWER_OPERATOR_TOKEN in .env}
+      WATCHTOWER_ADMIN_ENABLED: ${WATCHTOWER_ADMIN_ENABLED:-true}
+      ORIGIN: http://127.0.0.1:3000
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    ports:
+      - "127.0.0.1:3000:3000"
+    networks:
+      - frontend
+      - ingress
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+networks:
+  backend:
+    internal: true
+  frontend:
+    internal: true
+  ingress:
+  egress:
+
 volumes:
   postgres_data:
+  redis_data:
+  raw_storage:

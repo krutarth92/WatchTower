@@ -14,7 +14,13 @@ export default defineConfig({
 				directives: {
 					'default-src': ['self'],
 					'script-src': ['self'],
-					'style-src': ['self'],
+					// SvelteKit's screen-reader route announcer has this one fixed style
+					// attribute. Allow only its exact hash, never general inline styles.
+					'style-src': [
+						'self',
+						'unsafe-hashes',
+						'sha256-S8qMpvofolR8Mpjy4kQvEm7m1q8clzU4dfDH0AmvZjo='
+					],
 					'img-src': ['self', 'data:'],
 					'font-src': ['self'],
 					'connect-src': ['self'],

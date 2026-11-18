@@ -26,54 +26,54 @@ and remain validation-only until an AWS deployment is authorized.
 
 Requirements:
 
-- Python 3.12 or 3.13
-- [uv](https://docs.astral.sh/uv/)
-- Docker with Compose
-- Node.js 24 and pnpm 12.14.0 for the web application
+- Docker Desktop or Docker Engine with Compose for the complete local stack
+- Python 3.12 or 3.13, [uv](https://docs.astral.sh/uv/), Node.js 24 and
+  pnpm 12.14.0 only for host development
 
 From the repository root:
 
 ```powershell
-uv sync --locked
 Copy-Item .env.example .env
 ```
 
-Replace the password and operator-token placeholders in `.env`, then start the
-database and Redis:
+Replace the password in `POSTGRES_PASSWORD`, `WATCHTOWER_DATABASE_URL` and
+`WATCHTOWER_CONTAINER_DATABASE_URL` with the same local password. Replace the
+operator-token placeholder with at least 32 random characters. Then run the
+complete application:
 
 ```powershell
+docker compose config --quiet
+docker compose build
 docker compose up -d --wait
-uv run --locked alembic upgrade head
-```
-
-Start the API:
-
-```powershell
-uv run --locked uvicorn watchtower.main:create_app --factory --host 127.0.0.1 --port 8000
-```
-
-Install and start the web foundation in another terminal:
-
-```powershell
-pnpm install --frozen-lockfile
-pnpm --dir apps/web dev --host 127.0.0.1
-```
-
-Start the worker in another terminal:
-
-```powershell
-uv run --locked python -m watchtower.workers.run
+docker compose run --rm --no-deps api watchtower-demo-data seed
 ```
 
 Open:
 
+- Web application: <http://127.0.0.1:3000>
+- Search: <http://127.0.0.1:3000/search>
+- Demo actor: search for `Frost Lantern`
+- Demo indicator: search for `telemetry-cdn.example`
+- Demo CVE: search for `CVE-2026-45123`
+- Integration administration: <http://127.0.0.1:3000/admin/integrations>
 - API documentation: <http://127.0.0.1:8000/docs>
-- Web research shell: <http://127.0.0.1:5173/search>
-- Integration administration: <http://127.0.0.1:5173/admin/integrations> when enabled
-- Health check: <http://127.0.0.1:8000/health>
-- Readiness check: <http://127.0.0.1:8000/ready>
 
-The complete setup and configuration reference is in [SETUP.md](SETUP.md).
+The fictional `watchtower_demo/v1` graph is deterministic and explicitly
+marked. Repeating `seed` is a no-op. Inspect or remove only that graph with:
+
+```powershell
+docker compose run --rm --no-deps api watchtower-demo-data status
+docker compose run --rm --no-deps api watchtower-demo-data cleanup
+```
+
+Stop the stack without deleting PostgreSQL data:
+
+```powershell
+docker compose down
+```
+
+For API/web development on the host while PostgreSQL and Redis remain in
+Docker, follow the separate workflow in [SETUP.md](SETUP.md).
 
 ## Main API areas
 

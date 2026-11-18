@@ -1,6 +1,6 @@
 # WATCHTOWER integration status
 
-Status: audited 2026-11-17.
+Status: audited 2026-11-18.
 
 This inventory distinguishes working application integrations from repository
 infrastructure and possible future data sources. A source is not described as
@@ -24,8 +24,10 @@ normalization, retries and tests exist in the repository.
 
 - GitHub stores the repository and GitHub Actions runs frontend, backend,
   dependency, container, Trivy and SBOM checks.
-- Docker Compose defines PostgreSQL/pgvector and Redis for local development.
-  Full API, worker and web composition is scheduled for Task 36.
+- Docker Compose runs PostgreSQL/pgvector, Redis, migrations, the API, worker
+  and production web build for a loopback-only local demonstration. A
+  deterministic development-only seed command supplies the fictional V1
+  researcher journey and can safely remove only its marked graph.
 - AWS infrastructure templates and staging runbooks exist, but deployment and
   operational proof remain V2 work.
 - Jira tracks project work. Jira credentials belong to the connected project
@@ -61,8 +63,8 @@ The owner-approved source scope is centered on understanding how an adversary
 changes over time. It does not optimize for collecting the largest possible IOC
 volume.
 
-After V1 UI acceptance, plan these connectors separately from Task 35's
-Docker/demo work:
+After V1 UI acceptance, plan these connectors separately from the integration
+administration and Docker/demo work:
 
 1. MITRE ATT&CK, MISP Galaxy, CISA, Microsoft Threat Intelligence, Google TAG
    and Unit 42 form the first source wave. MITRE ATT&CK is already implemented;

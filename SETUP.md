@@ -13,42 +13,80 @@ gates.
 
 ## Prerequisites and startup
 
-Use Python 3.12, uv, Git, Docker with Compose and Linux-container support,
-Node.js 24 and pnpm 12.14.0.
-Pyright needs Node.js on PATH (its Python wrapper can download Node if absent).
-Python 3.12–3.13 are supported; validation used 3.12. Run from the repository root:
+Docker Desktop or Docker Engine with Compose and Linux-container support is
+enough for the full local stack. Host development additionally requires Python
+3.12 or 3.13, uv, Git, Node.js 24 and pnpm 12.14.0. Pyright needs Node.js on
+PATH. Run from the repository root:
 
 ```powershell
-uv sync --locked
 Copy-Item .env.example .env
 ```
 
-Replace the placeholder password in BOTH POSTGRES_PASSWORD and
-WATCHTOWER_DATABASE_URL in .env. URL-encode special characters in the URL password.
-Keep the database/user names consistent. Shell variables override .env settings.
-The .env file is ignored by Git.
+Replace the placeholder password in `POSTGRES_PASSWORD`,
+`WATCHTOWER_DATABASE_URL` and `WATCHTOWER_CONTAINER_DATABASE_URL` in `.env`.
+Use the same password in all three places and URL-encode special characters in
+both URLs. Replace `WATCHTOWER_OPERATOR_TOKEN` with at least 32 random
+characters. Keep the database/user names consistent. Shell variables override
+`.env`; the file is ignored by Git.
+
+### Complete container workflow
 
 ```powershell
 docker compose config --quiet
+docker compose build
 docker compose up -d --wait
-uv run --locked alembic upgrade head
-uv run --locked uvicorn watchtower.main:create_app --factory --host 127.0.0.1 --port 8000
+docker compose run --rm --no-deps api watchtower-demo-data seed
 ```
 
-Start the ingestion worker in another terminal after PostgreSQL, Redis and the
-latest migration are ready:
+Compose migrates the database, starts the API, worker and production web build,
+and waits for their health checks. All published ports bind only to loopback:
+web 3000, API 8000, PostgreSQL 5432 and Redis 6379. Open
+<http://127.0.0.1:3000> and use the fictional local demo searches `Frost
+Lantern`, `telemetry-cdn.example` and `CVE-2026-45123`.
+
+The demo command is development-only. Every row belongs to the versioned
+`watchtower_demo/v1` graph; a repeated seed does not duplicate it. Status and
+cleanup are explicit:
 
 ```powershell
-uv run --locked python -m watchtower.workers.run
+docker compose run --rm --no-deps api watchtower-demo-data status
+docker compose run --rm --no-deps api watchtower-demo-data cleanup
 ```
+
+Cleanup validates deterministic identities and ownership markers before making
+changes and removes only the demo graph. It fails closed on partial or modified
+ownership. Stop the stack with `docker compose down`; this preserves the
+PostgreSQL volume. Do not add `--volumes` merely to refresh demo data.
+
+### Host development workflow
+
+Install locked host dependencies and start only the data services:
+
+```powershell
+uv sync --locked
+pnpm install --frozen-lockfile
+docker compose up -d --wait postgres redis
+uv run --locked alembic upgrade head
+```
+
+Run the API, worker and web application in separate terminals:
+
+```powershell
+uv run --locked uvicorn watchtower.main:create_app --factory --host 127.0.0.1 --port 8000
+uv run --locked python -m watchtower.workers.run
+pnpm --dir apps/web dev --host 127.0.0.1
+```
+
+For host-run demo data, use `uv run --locked watchtower-demo-data seed`; use the
+same `status` and `cleanup` subcommands when required.
 
 The worker requeues expired processing leases and dispatches due durable jobs
 when it starts. PostgreSQL is the job source of truth; Redis messages contain
 only a job UUID. Stopping and restarting the worker is safe: an interrupted job
 becomes eligible for recovery after `WATCHTOWER_INGESTION_JOB_LEASE_SECONDS`.
 
-PostgreSQL and Redis bind only to localhost on 5432 and 6379. Adjust the Compose
-bindings and database URL together if ports conflict. The PostgreSQL volume
+All Compose ports bind only to localhost. Adjust the bindings and corresponding
+URLs together if ports conflict. The PostgreSQL volume
 persists across `docker compose down`. Changing .env credentials does not change
 users/passwords in an initialized database; do not delete volumes to fix this.
 
@@ -74,7 +112,8 @@ pnpm install --frozen-lockfile
 pnpm --dir apps/web dev --host 127.0.0.1
 ```
 
-Open <http://127.0.0.1:5173>. The root presents the public intelligence home;
+Open <http://127.0.0.1:5173> for host development or
+<http://127.0.0.1:3000> for the complete container workflow. The root presents the public intelligence home;
 primary navigation links to Intelligence, Actors, Evolution, Research and
 Technical. `WATCHTOWER_API_ORIGIN` is a server-only setting and defaults to
 `http://127.0.0.1:8000`; it must remain an HTTP(S) origin without credentials,

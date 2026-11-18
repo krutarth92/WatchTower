@@ -1,6 +1,10 @@
 @import 'tailwindcss';
 @import '../lib/styles/tokens.css';
 
+.sveltekit-body {
+	display: contents;
+}
+
 *,
 *::before,
 *::after {

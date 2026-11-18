@@ -8,16 +8,9 @@
 		<span>CONFIDENCE</span><strong>{value === null ? 'Not supplied' : `${bounded}%`}</strong>
 	</div>
 	{#if value !== null}
-		<div
-			class="track"
-			role="meter"
-			aria-label="Confidence"
-			aria-valuenow={bounded}
-			aria-valuemin="0"
-			aria-valuemax="100"
-		>
-			<span style={`--confidence: ${bounded}%`}></span>
-		</div>
+		<progress class="track" aria-label="Confidence" value={bounded} max="100">
+			{bounded}%
+		</progress>
 	{/if}
 </div>
 
@@ -45,16 +38,24 @@
 	}
 
 	.track {
+		width: 100%;
 		height: 0.35rem;
 		overflow: hidden;
+		appearance: none;
+		border: 0;
 		border-radius: var(--radius-sm);
 		background: var(--color-border);
 	}
 
-	.track span {
-		display: block;
-		width: var(--confidence);
-		height: 100%;
+	.track::-webkit-progress-bar {
+		background: var(--color-border);
+	}
+
+	.track::-webkit-progress-value {
+		background: var(--gradient-brand);
+	}
+
+	.track::-moz-progress-bar {
 		background: var(--gradient-brand);
 	}
 </style>

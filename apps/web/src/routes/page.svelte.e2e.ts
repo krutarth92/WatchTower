@@ -7,12 +7,16 @@ const partialActorId = '20000000-0000-4000-8000-000000000099';
 test('loads the public home with real module navigation and platform update', async ({ page }) => {
 	const failedAssets: string[] = [];
 	const pageErrors: string[] = [];
+	const consoleErrors: string[] = [];
 	page.on('response', (response) => {
 		if (response.url().includes('/_app/') && !response.ok()) {
 			failedAssets.push(`${response.status()} ${response.url()}`);
 		}
 	});
 	page.on('pageerror', (error) => pageErrors.push(error.message));
+	page.on('console', (message) => {
+		if (message.type() === 'error') consoleErrors.push(message.text());
+	});
 
 	const navigation = await page.goto('/');
 	await page.waitForLoadState('networkidle');
@@ -51,10 +55,15 @@ test('loads the public home with real module navigation and platform update', as
 	}));
 	expect(failedAssets).toEqual([]);
 	expect(pageErrors).toEqual([]);
+	expect(consoleErrors).toEqual([]);
 	expect(loadedPresentation.primaryColor).not.toBe('');
 	expect(loadedPresentation.stylesheets).toBeGreaterThan(0);
 	expect(loadedPresentation.javascriptResources).toBeGreaterThan(0);
-	expect(navigation?.headers()['content-security-policy']).toContain("default-src 'self'");
+	const contentSecurityPolicy = navigation?.headers()['content-security-policy'];
+	expect(contentSecurityPolicy).toContain("default-src 'self'");
+	expect(contentSecurityPolicy).toContain(
+		"style-src 'self' 'unsafe-hashes' 'sha256-S8qMpvofolR8Mpjy4kQvEm7m1q8clzU4dfDH0AmvZjo='"
+	);
 	expect(navigation?.headers()['x-frame-options']).toBe('DENY');
 	expect(navigation?.headers()['x-content-type-options']).toBe('nosniff');
 });
