@@ -1,7 +1,7 @@
 # Task 36 — deterministic demo data and Docker integration
 
-Status: implementation validated locally; hosted CI remediation and owner
-review pending, updated 2026-11-21.
+Status: implementation and hosted CI validated; owner review pending, updated
+2026-11-21.
 
 ## Prior-task verification
 
@@ -149,7 +149,12 @@ removes npm and its CLI links only from the final web image, asserts their
 absence in the container smoke test, and raises the audit network timeout to
 60 seconds without weakening either security gate.
 
-`git diff --check` passed for the remediation. Docker is no longer available
-on the current Windows PATH, so the remediated image cannot be rebuilt locally
-in this follow-up session; a fresh hosted build, smoke test and Trivy scan are
-required before this task can pass.
+`git diff --check` and Prettier passed for the remediation. Docker is no longer
+available on the current Windows PATH, so the remediated image could not be
+rebuilt locally in this follow-up session. GitHub Actions run 44923042869 then
+passed the backend, frontend, Python dependency-audit and container jobs at
+commit `cea5fe9`. The container job rebuilt both images, confirmed the web
+runtime is non-root and has no npm executable, served the read-only smoke
+container, passed both HIGH/CRITICAL Trivy gates, and retained the backend
+CycloneDX SBOM evidence. Only owner browser-flow acceptance remains before
+Task 37.
