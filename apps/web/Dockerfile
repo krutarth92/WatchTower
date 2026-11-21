@@ -23,7 +23,9 @@ ENV NODE_ENV=production \
 WORKDIR /app
 
 RUN groupadd --system --gid 10001 watchtower \
-    && useradd --system --uid 10001 --gid watchtower --home-dir /app watchtower
+    && useradd --system --uid 10001 --gid watchtower --home-dir /app watchtower \
+    && rm -rf /usr/local/lib/node_modules/npm \
+    && rm -f /usr/local/bin/npm /usr/local/bin/npx
 
 COPY --from=build --chown=watchtower:watchtower /app/apps/web/build ./build
 

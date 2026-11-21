@@ -1,7 +1,7 @@
 # Task 36 — deterministic demo data and Docker integration
 
-Status: implementation validated locally; hosted CI and owner review pending,
-2026-11-18.
+Status: implementation validated locally; hosted CI remediation and owner
+review pending, updated 2026-11-21.
 
 ## Prior-task verification
 
@@ -133,6 +133,23 @@ Validation on 2026-11-18 used the current working tree:
   eight-page real-data journey then rendered with zero console/page errors and
   no horizontal overflow at the desktop review width.
 
-The stack remains running with the deterministic graph seeded for owner review
-at `http://127.0.0.1:3000`. Hosted GitHub Actions must pass the final pushed
-commit, and owner acceptance remains required before Task 37.
+The stack was left running with the deterministic graph seeded for owner review
+at `http://127.0.0.1:3000` on 2026-11-18. Its current process state must be
+rechecked when Docker is available again. Hosted GitHub Actions must pass the
+final pushed commit, and owner acceptance remains required before Task 37.
+
+### Hosted-CI follow-up
+
+GitHub Actions run 44227157250 passed the backend and frontend jobs. Its Python
+dependency audit failed because the PyPI vulnerability service exceeded the
+action's 15-second read timeout; the log contained no vulnerability result.
+The web-image scan separately found six fixed HIGH findings in npm packages
+bundled by the Node base image. npm is not used at runtime, so the remediation
+removes npm and its CLI links only from the final web image, asserts their
+absence in the container smoke test, and raises the audit network timeout to
+60 seconds without weakening either security gate.
+
+`git diff --check` passed for the remediation. Docker is no longer available
+on the current Windows PATH, so the remediated image cannot be rebuilt locally
+in this follow-up session; a fresh hosted build, smoke test and Trivy scan are
+required before this task can pass.

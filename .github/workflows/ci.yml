@@ -146,6 +146,7 @@ jobs:
           inputs: requirements.txt
           no-deps: true
           ignore-vulns: PYSEC-2026-2447 GHSA-w8v5-vhqr-4h9v
+          internal-be-careful-extra-flags: --timeout 60
 
   container:
     name: Container build and scan
@@ -179,6 +180,7 @@ jobs:
         shell: bash
         run: |
           test "$(docker image inspect --format='{{.Config.User}}' watchtower-web:${{ github.sha }})" = "watchtower"
+          test "$(docker run --rm --entrypoint /bin/sh watchtower-web:${{ github.sha }} -c 'command -v npm || true')" = ""
           docker run --detach --rm --name watchtower-web-smoke \
             --read-only --tmpfs /tmp:rw,noexec,nosuid,size=64m \
             --publish 127.0.0.1:3000:3000 \
