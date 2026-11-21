@@ -1,7 +1,7 @@
 # Task 37 — V1 UI acceptance and readiness closure
 
-Status: in progress; local implementation and acceptance evidence passed,
-hosted CI and owner review pending, 2026-11-21.
+Status: in progress; local and hosted acceptance evidence passed, owner review
+pending, 2026-11-21.
 
 Tracking: Jira `SCRUM-24`; branch `codex/task-37-v1-acceptance`.
 
@@ -75,8 +75,8 @@ acceptance without introducing a new product feature or production claim.
 | Visual contract      | Directional qualities present, prohibited copying absent            | PASS                                               |
 | Security             | Headers, links, plain text, storage, HTML/assets and secret scan    | PASS                                               |
 | Performance          | Documented local dataset/environment and navigation/resource timing | PASS: local-only baseline recorded                 |
-| Backend              | Ruff, format, Pyright, Alembic, pytest and package build            | Local checks PASS; package build pending hosted CI |
-| Supply chain         | Dependency audit, both image builds/scans and CycloneDX evidence    | Pending final commit CI                            |
+| Backend              | Ruff, format, Pyright, Alembic, pytest and package build            | PASS                                               |
+| Supply chain         | Dependency audit, both image builds/scans and CycloneDX evidence    | PASS                                               |
 | Documentation        | README, SETUP and readiness report match evidence and limitations   | PASS                                               |
 | Owner review         | Desktop/mobile rendered flow accepted for local/private V1          | Pending                                            |
 
@@ -123,10 +123,9 @@ such and never reported as passed.
 
 ## Remaining gates
 
-There is no local implementation blocker. The stack is healthy and remains
-available at `http://127.0.0.1:3000` with deterministic data for owner review.
-The final commit still requires hosted package/dependency/image/Trivy/SBOM
-validation and owner acceptance before Task 37 can close.
+There is no implementation or validation blocker. The stack is healthy and
+remains available at `http://127.0.0.1:3000` with deterministic data for owner
+review. Owner acceptance is the remaining Task 37 gate.
 
 ## Acceptance gate
 
@@ -218,6 +217,12 @@ program close and V2 productionization become the next program.
   capacity/SLO extrapolation.
 - PASS: README, SETUP, the web README and the V1 readiness audit now match the
   proved local/private product and preserve all named V1 limitations.
+- PASS: GitHub Actions run 44928811897 completed successfully on implementation
+  commit `78930f0`. Backend, frontend, Python dependency-audit and container
+  build/Trivy/SBOM jobs all passed. This documents the local package-build
+  substitute and the required supply-chain proof without changing application
+  behavior.
 
-Remaining work is final formatting/static validation, commit/push, the exact
-commit hosted workflow and owner acceptance.
+Remaining work is owner acceptance of the live desktop/mobile flow. The
+documentation-only CI-evidence commit will also receive the required hosted
+workflow before it is presented as the exact final state.

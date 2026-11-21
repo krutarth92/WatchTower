@@ -1,7 +1,7 @@
 # WATCHTOWER V1 readiness audit
 
-Status: local/private V1 acceptance candidate; local validation passed on
-2026-11-21, with final hosted CI and owner review pending.
+Status: local/private V1 acceptance candidate; local and hosted validation
+passed on 2026-11-21, with owner review pending.
 
 Scope: the V1 backend and local/private SvelteKit UI. Internet-facing AWS
 deployment and operational proof are explicitly deferred to
@@ -11,8 +11,8 @@ deployment and operational proof are explicitly deferred to
 
 WATCHTOWER is implemented and validated as a **local/private V1 candidate**.
 The deterministic Docker workflow serves the complete researcher journey over
-real APIs and data. The final V1 gate is a passing hosted workflow on the exact
-acceptance commit plus owner approval of the rendered desktop/mobile flow.
+real APIs and data. The remaining V1 gate is owner approval of the rendered
+desktop/mobile flow.
 
 This verdict is intentionally narrower than production readiness. There is no
 AWS deployment proof, public service, production identity flow, shared durable
@@ -32,7 +32,7 @@ provider. Those remain V2 or separately approved product decisions.
 
 | Area | Status | Evidence and finding |
 | --- | --- | --- |
-| Repository and CI | **Complete for V1** | Tracked repository, protected `main`, branch-neutral required checks, locked dependencies, package/image builds, dependency audits, Trivy gates and commit-specific CycloneDX evidence. Final Task 37 commit still requires its hosted run. |
+| Repository and CI | **Complete for V1** | Tracked repository, protected `main`, branch-neutral required checks, locked dependencies, package/image builds, dependency audits, Trivy gates and commit-specific CycloneDX evidence. GitHub Actions run 44928811897 passed every required job on Task 37 implementation commit `78930f0`. |
 | Data model and provenance | **Complete** | Actors, aliases, sources, raw evidence, observations, behaviors, techniques, campaigns, relationships, resolution audit, jobs, embeddings, artifacts, advisories and publication visibility are migrated and tested. Evidence remains traceable through reads and exports. |
 | Ingestion and integrations | **Complete for approved V1 scope** | MITRE ATT&CK is the runnable fixed-source connector. MISP Galaxy, CISA, Microsoft Threat Intelligence, Google TAG and Unit 42 are accurately presented as the next source wave; Malpedia, Securelist, ESET and selected news remain later. Planned sources expose no false run control. |
 | Normalization and actor resolution | **Complete** | Deterministic parse/normalize/validate/deduplicate/persist behavior, alias resolution, ambiguity handling and immutable resolution audit are tested. Fuzzy similarity never auto-links actors. |
@@ -103,17 +103,16 @@ Local final-state evidence on 2026-11-21:
   for methodology and exact measurements.
 
 Skipped or unavailable checks are not counted as passed. The disposable S3
-test is the only local suite skip. Package build, dependency audit, both image
-scans and CycloneDX generation are required from hosted CI on the exact final
-commit.
+test is the only local suite skip. GitHub Actions run 44928811897 supplied the
+locked package build, dependency audit, both image scans and CycloneDX evidence
+on Task 37 implementation commit `78930f0`; all four jobs passed.
 
 ## Remaining acceptance gate
 
-1. Push the exact Task 37 commit and obtain a fully passing GitHub Actions run.
-2. Obtain owner approval of the live desktop/mobile local/private flow.
-3. Record both results in the Task 37 plan and close its Jira issue.
+1. Obtain owner approval of the live desktop/mobile local/private flow.
+2. Record the result in the Task 37 plan and close its Jira issue.
 
-Only after all three are recorded may the local/private V1 UI program be marked
+Only after both are recorded may the local/private V1 UI program be marked
 accepted and V2 productionization become the next program.
 
 ## V2 and optional follow-up
