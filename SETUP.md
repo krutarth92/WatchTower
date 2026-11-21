@@ -155,7 +155,14 @@ pnpm --dir apps/web lint
 pnpm --dir apps/web check
 pnpm --dir apps/web test:unit
 pnpm --dir apps/web build
+pnpm --dir apps/web test:e2e
 ```
+
+The browser suite exercises the production adapter build, accessibility scans,
+keyboard/focus behavior, reduced motion, security headers, safe links and the
+320/768/1440 px review widths. The measured deterministic-stack response times
+and their limits are recorded in
+`docs/performance/v1-ui-baseline.md`.
 
 Responses of at least 1 KiB are gzip-compressed when the client advertises gzip.
 Database pool size, overflow, recycling and slow-request logging are configurable;
@@ -312,59 +319,59 @@ Do not execute the change set as part of local setup.
 
 ## Configuration
 
-| Variable | Default / requirement |
-| --- | --- |
-| WATCHTOWER_DATABASE_URL | Required; postgresql+psycopg URL with host and database |
-| WATCHTOWER_ENVIRONMENT | development; also test, staging or production |
-| WATCHTOWER_LOG_LEVEL | INFO |
-| WATCHTOWER_DB_CONNECT_TIMEOUT | 3 seconds, range 1–30 |
-| WATCHTOWER_DB_POOL_TIMEOUT | 3 seconds, range 1–30 |
-| WATCHTOWER_DB_POOL_SIZE | 10 persistent connections per process, range 1–50 |
-| WATCHTOWER_DB_MAX_OVERFLOW | 10 temporary connections per process, range 0–100 |
-| WATCHTOWER_DB_POOL_RECYCLE_SECONDS | 1800 seconds, range 60–86400 |
-| WATCHTOWER_DB_STATEMENT_TIMEOUT_MS | 3000 milliseconds, range 100–30000 |
-| WATCHTOWER_RESPONSE_GZIP_MINIMUM_SIZE | 1024 bytes, range 256–1048576 |
-| WATCHTOWER_RESPONSE_GZIP_COMPRESSLEVEL | 5, range 1–9 |
-| WATCHTOWER_API_SLOW_REQUEST_MS | 500 milliseconds, range 50–60000 |
-| WATCHTOWER_MAX_REQUEST_BODY_BYTES | 65536 bytes, range 1 KiB–10 MiB |
-| WATCHTOWER_RAW_STORAGE_BACKEND | `local`; production requires `s3` |
-| WATCHTOWER_RAW_STORAGE_PATH | storage/raw |
-| WATCHTOWER_MAX_RAW_EVIDENCE_BYTES | 10485760 (10 MiB), range 1 KiB–100 MiB |
-| WATCHTOWER_S3_BUCKET | Required with the `s3` backend; private DNS-compatible bucket name |
-| WATCHTOWER_S3_REGION | Required with the `s3` backend; AWS region such as `ap-south-1` |
-| WATCHTOWER_S3_KMS_KEY_ID | Required with the `s3` backend; customer-managed KMS key ID or ARN |
-| WATCHTOWER_S3_ENDPOINT_URL | Optional non-production test endpoint; forbidden in production |
-| WATCHTOWER_S3_REQUEST_TIMEOUT_SECONDS | 5 seconds for connect/read operations, range 1–30 |
-| WATCHTOWER_REDIS_URL | redis://127.0.0.1:6379/0 |
-| WATCHTOWER_OPERATOR_AUTH_MODE | `static` for local/private staging; production requires `oidc` |
-| WATCHTOWER_OPERATOR_TOKEN | Optional local/private token of at least 32 characters; forbidden in production |
-| WATCHTOWER_ADMIN_ENABLED | false; enables the local/private operator integration page only when the operator token is also set |
-| WATCHTOWER_OIDC_ISSUER | Required in OIDC mode; exact HTTPS Cognito user-pool issuer |
-| WATCHTOWER_OIDC_JWKS_URL | Required in OIDC mode; fixed HTTPS Cognito JWKS URL |
-| WATCHTOWER_OIDC_CLIENT_ID | Required in OIDC mode; expected Cognito access-token `client_id` |
-| WATCHTOWER_OIDC_OPERATOR_GROUP | `operator`; grants protected-route access |
-| WATCHTOWER_OIDC_PUBLISHER_GROUP | `publisher`; grants operator access plus publication |
-| WATCHTOWER_OIDC_JWKS_CACHE_SECONDS | 300, range 60–3600 |
-| WATCHTOWER_OIDC_HTTP_TIMEOUT_SECONDS | 3, range 1–10 |
-| WATCHTOWER_OIDC_CLOCK_SKEW_SECONDS | 30, range 0–120 |
-| WATCHTOWER_TRUSTED_HOSTS | JSON host allowlist; required and non-wildcard in production |
-| WATCHTOWER_PROXY_TRUSTED_HOSTS | JSON IP/CIDR allowlist for trusted proxy headers; required and non-wildcard in production |
-| WATCHTOWER_INGESTION_JOB_MAX_ATTEMPTS | 3, range 1–10 |
-| WATCHTOWER_INGESTION_JOB_LEASE_SECONDS | 300 seconds, range 30–3600 |
-| WATCHTOWER_INGESTION_JOB_TIMEOUT_SECONDS | 240 seconds, range 10–3595; must leave 5 seconds before lease expiry |
-| WATCHTOWER_INGESTION_JOB_RETRY_BASE_SECONDS | 5 seconds, range 1–300 |
-| WATCHTOWER_INGESTION_MAX_ACTIVE_JOBS | 1000 queued plus processing jobs, range 1–100000 |
-| WATCHTOWER_INGESTION_RECOVERY_BATCH_SIZE | 100 durable jobs per startup recovery/dispatch pass, range 1–1000 |
-| WATCHTOWER_INGESTION_WORKER_PROCESSES | 1, range 1–16 |
-| WATCHTOWER_INGESTION_WORKER_THREADS | 2 per process, range 1–32 |
-| WATCHTOWER_INGESTION_FETCH_TIMEOUT_SECONDS | 30 total seconds, range 5–300 |
-| WATCHTOWER_INGESTION_FETCH_CONNECT_TIMEOUT_SECONDS | 10 seconds, range 1–60; cannot exceed total fetch timeout |
-| WATCHTOWER_RAG_ENABLED | false; endpoint also requires an explicitly configured provider |
-| WATCHTOWER_RAG_CONTEXT_TOKEN_BUDGET | 4000 approximate tokens, range 500–32000 |
-| WATCHTOWER_RAG_RETRIEVAL_LIMIT | 12 candidate evidence records, range 1–50 |
-| WATCHTOWER_RAG_MAX_COSINE_DISTANCE | 0.45 relevance cutoff, range 0–2 |
-| POSTGRES_DB / POSTGRES_USER | watchtower; used by Compose |
-| POSTGRES_PASSWORD | Required by Compose |
+| Variable                                           | Default / requirement                                                                               |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| WATCHTOWER_DATABASE_URL                            | Required; postgresql+psycopg URL with host and database                                             |
+| WATCHTOWER_ENVIRONMENT                             | development; also test, staging or production                                                       |
+| WATCHTOWER_LOG_LEVEL                               | INFO                                                                                                |
+| WATCHTOWER_DB_CONNECT_TIMEOUT                      | 3 seconds, range 1–30                                                                               |
+| WATCHTOWER_DB_POOL_TIMEOUT                         | 3 seconds, range 1–30                                                                               |
+| WATCHTOWER_DB_POOL_SIZE                            | 10 persistent connections per process, range 1–50                                                   |
+| WATCHTOWER_DB_MAX_OVERFLOW                         | 10 temporary connections per process, range 0–100                                                   |
+| WATCHTOWER_DB_POOL_RECYCLE_SECONDS                 | 1800 seconds, range 60–86400                                                                        |
+| WATCHTOWER_DB_STATEMENT_TIMEOUT_MS                 | 3000 milliseconds, range 100–30000                                                                  |
+| WATCHTOWER_RESPONSE_GZIP_MINIMUM_SIZE              | 1024 bytes, range 256–1048576                                                                       |
+| WATCHTOWER_RESPONSE_GZIP_COMPRESSLEVEL             | 5, range 1–9                                                                                        |
+| WATCHTOWER_API_SLOW_REQUEST_MS                     | 500 milliseconds, range 50–60000                                                                    |
+| WATCHTOWER_MAX_REQUEST_BODY_BYTES                  | 65536 bytes, range 1 KiB–10 MiB                                                                     |
+| WATCHTOWER_RAW_STORAGE_BACKEND                     | `local`; production requires `s3`                                                                   |
+| WATCHTOWER_RAW_STORAGE_PATH                        | storage/raw                                                                                         |
+| WATCHTOWER_MAX_RAW_EVIDENCE_BYTES                  | 10485760 (10 MiB), range 1 KiB–100 MiB                                                              |
+| WATCHTOWER_S3_BUCKET                               | Required with the `s3` backend; private DNS-compatible bucket name                                  |
+| WATCHTOWER_S3_REGION                               | Required with the `s3` backend; AWS region such as `ap-south-1`                                     |
+| WATCHTOWER_S3_KMS_KEY_ID                           | Required with the `s3` backend; customer-managed KMS key ID or ARN                                  |
+| WATCHTOWER_S3_ENDPOINT_URL                         | Optional non-production test endpoint; forbidden in production                                      |
+| WATCHTOWER_S3_REQUEST_TIMEOUT_SECONDS              | 5 seconds for connect/read operations, range 1–30                                                   |
+| WATCHTOWER_REDIS_URL                               | redis://127.0.0.1:6379/0                                                                            |
+| WATCHTOWER_OPERATOR_AUTH_MODE                      | `static` for local/private staging; production requires `oidc`                                      |
+| WATCHTOWER_OPERATOR_TOKEN                          | Optional local/private token of at least 32 characters; forbidden in production                     |
+| WATCHTOWER_ADMIN_ENABLED                           | false; enables the local/private operator integration page only when the operator token is also set |
+| WATCHTOWER_OIDC_ISSUER                             | Required in OIDC mode; exact HTTPS Cognito user-pool issuer                                         |
+| WATCHTOWER_OIDC_JWKS_URL                           | Required in OIDC mode; fixed HTTPS Cognito JWKS URL                                                 |
+| WATCHTOWER_OIDC_CLIENT_ID                          | Required in OIDC mode; expected Cognito access-token `client_id`                                    |
+| WATCHTOWER_OIDC_OPERATOR_GROUP                     | `operator`; grants protected-route access                                                           |
+| WATCHTOWER_OIDC_PUBLISHER_GROUP                    | `publisher`; grants operator access plus publication                                                |
+| WATCHTOWER_OIDC_JWKS_CACHE_SECONDS                 | 300, range 60–3600                                                                                  |
+| WATCHTOWER_OIDC_HTTP_TIMEOUT_SECONDS               | 3, range 1–10                                                                                       |
+| WATCHTOWER_OIDC_CLOCK_SKEW_SECONDS                 | 30, range 0–120                                                                                     |
+| WATCHTOWER_TRUSTED_HOSTS                           | JSON host allowlist; required and non-wildcard in production                                        |
+| WATCHTOWER_PROXY_TRUSTED_HOSTS                     | JSON IP/CIDR allowlist for trusted proxy headers; required and non-wildcard in production           |
+| WATCHTOWER_INGESTION_JOB_MAX_ATTEMPTS              | 3, range 1–10                                                                                       |
+| WATCHTOWER_INGESTION_JOB_LEASE_SECONDS             | 300 seconds, range 30–3600                                                                          |
+| WATCHTOWER_INGESTION_JOB_TIMEOUT_SECONDS           | 240 seconds, range 10–3595; must leave 5 seconds before lease expiry                                |
+| WATCHTOWER_INGESTION_JOB_RETRY_BASE_SECONDS        | 5 seconds, range 1–300                                                                              |
+| WATCHTOWER_INGESTION_MAX_ACTIVE_JOBS               | 1000 queued plus processing jobs, range 1–100000                                                    |
+| WATCHTOWER_INGESTION_RECOVERY_BATCH_SIZE           | 100 durable jobs per startup recovery/dispatch pass, range 1–1000                                   |
+| WATCHTOWER_INGESTION_WORKER_PROCESSES              | 1, range 1–16                                                                                       |
+| WATCHTOWER_INGESTION_WORKER_THREADS                | 2 per process, range 1–32                                                                           |
+| WATCHTOWER_INGESTION_FETCH_TIMEOUT_SECONDS         | 30 total seconds, range 5–300                                                                       |
+| WATCHTOWER_INGESTION_FETCH_CONNECT_TIMEOUT_SECONDS | 10 seconds, range 1–60; cannot exceed total fetch timeout                                           |
+| WATCHTOWER_RAG_ENABLED                             | false; endpoint also requires an explicitly configured provider                                     |
+| WATCHTOWER_RAG_CONTEXT_TOKEN_BUDGET                | 4000 approximate tokens, range 500–32000                                                            |
+| WATCHTOWER_RAG_RETRIEVAL_LIMIT                     | 12 candidate evidence records, range 1–50                                                           |
+| WATCHTOWER_RAG_MAX_COSINE_DISTANCE                 | 0.45 relevance cutoff, range 0–2                                                                    |
+| POSTGRES_DB / POSTGRES_USER                        | watchtower; used by Compose                                                                         |
+| POSTGRES_PASSWORD                                  | Required by Compose                                                                                 |
 
 Application lifecycle/readiness logs are JSON. Driver exception messages are
 omitted from application logs; only exception classes are recorded. Uvicorn keeps
@@ -380,6 +387,12 @@ uv run --locked ruff format --check .
 uv run --locked pyright
 uv run --locked alembic heads
 uv run --locked alembic upgrade head --sql
+pnpm --dir apps/web format:check
+pnpm --dir apps/web lint
+pnpm --dir apps/web check
+pnpm --dir apps/web test:unit
+pnpm --dir apps/web build
+pnpm --dir apps/web test:e2e
 ```
 
 The PostgreSQL integration check is skipped unless a test database URL is supplied.

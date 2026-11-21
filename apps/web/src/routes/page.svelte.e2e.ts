@@ -107,9 +107,11 @@ test('operates the private integration register without exposing server credenti
 		await expect(page.getByText('WATCHTOWER_MALPEDIA_API_KEY')).toBeVisible();
 		await expect(page.getByText('PLANNED').first()).toBeVisible();
 		expect(await page.getByText(/Twitter|AlienVault OTX/i).count()).toBe(0);
-		expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
-			true
-		);
+		expect(
+			await page.evaluate(
+				() => document.documentElement.scrollWidth <= document.documentElement.clientWidth
+			)
+		).toBe(true);
 		const results = await new AxeBuilder({ page }).analyze();
 		expect(results.violations, `${width}px integration accessibility violations`).toEqual([]);
 	}
@@ -152,9 +154,57 @@ test('preserves the research hierarchy at the minimum supported width', async ({
 	).toBeVisible();
 
 	const viewportFits = await page.evaluate(
-		() => document.documentElement.scrollWidth <= innerWidth
+		() => document.documentElement.scrollWidth <= document.documentElement.clientWidth
 	);
 	expect(viewportFits).toBe(true);
+});
+
+test('supports keyboard landmarks, dialog focus and reduced motion', async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: 'reduce' });
+	await page.goto('/search?q=midnight');
+
+	await expect(page.locator('main')).toHaveCount(1);
+	await expect(page.getByRole('contentinfo')).toHaveCount(1);
+	await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+
+	await page.keyboard.press('Tab');
+	const skipLink = page.getByRole('link', { name: 'Skip to main content' });
+	await expect(skipLink).toBeFocused();
+	await expect(skipLink).toBeVisible();
+	expect(await skipLink.evaluate((element) => getComputedStyle(element).outlineStyle)).toBe(
+		'solid'
+	);
+	await page.keyboard.press('Enter');
+	await expect(page.locator('main')).toBeFocused();
+
+	const motionDurations = await page.evaluate(() => {
+		const styles = getComputedStyle(document.documentElement);
+		return {
+			fast: styles.getPropertyValue('--motion-fast').trim(),
+			standard: styles.getPropertyValue('--motion-standard').trim()
+		};
+	});
+	expect(motionDurations).toEqual({ fast: '0s', standard: '0s' });
+
+	const filters = page.getByRole('button', { name: 'Filters' });
+	await filters.focus();
+	await expect(filters).toBeFocused();
+	await page.keyboard.press('Enter');
+	const dialog = page.getByRole('dialog', { name: 'Filter published intelligence' });
+	await expect(dialog).toBeVisible();
+	await expect(dialog.getByRole('checkbox', { name: 'indicator' })).toBeFocused();
+	await page.keyboard.press('Escape');
+	await expect(dialog).not.toBeVisible();
+
+	await page.goto(`/actors/${actorId}`);
+	const evidenceDisclosure = page
+		.locator('summary')
+		.filter({ hasText: 'Evidence · Northstar incident report, section 4' })
+		.first();
+	await evidenceDisclosure.focus();
+	await expect(evidenceDisclosure).toBeFocused();
+	await page.keyboard.press('Enter');
+	await expect(page.getByRole('link', { name: 'Open source' }).first()).toBeVisible();
 });
 
 test('runs a reproducible search, filters it and appends opaque cursor results', async ({
@@ -246,9 +296,11 @@ test('search results are accessible and responsive at review widths', async ({ p
 		await expect(
 			page.getByRole('heading', { level: 2, name: 'midnight', exact: true })
 		).toBeVisible();
-		expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
-			true
-		);
+		expect(
+			await page.evaluate(
+				() => document.documentElement.scrollWidth <= document.documentElement.clientWidth
+			)
+		).toBe(true);
 		const results = await new AxeBuilder({ page }).analyze();
 		expect(results.violations, `${width}px search accessibility violations`).toEqual([]);
 	}
@@ -308,9 +360,11 @@ test('actor workspace is accessible and responsive at review widths', async ({ p
 		await page.goto(`/actors/${actorId}?fromSearch=%2Fsearch%3Fq%3Dmidnight`);
 		await page.waitForLoadState('networkidle');
 		await expect(page.getByRole('heading', { level: 1, name: 'Midnight Blizzard' })).toBeVisible();
-		expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
-			true
-		);
+		expect(
+			await page.evaluate(
+				() => document.documentElement.scrollWidth <= document.documentElement.clientWidth
+			)
+		).toBe(true);
 		const results = await new AxeBuilder({ page }).analyze();
 		expect(results.violations, `${width}px actor accessibility violations`).toEqual([]);
 	}
@@ -324,9 +378,11 @@ test('public home and advisory detail are accessible and responsive at review wi
 		for (const path of ['/', '/advisories/credential-access-evolution']) {
 			await page.goto(path);
 			await page.waitForLoadState('networkidle');
-			expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
-				true
-			);
+			expect(
+				await page.evaluate(
+					() => document.documentElement.scrollWidth <= document.documentElement.clientWidth
+				)
+			).toBe(true);
 			const results = await new AxeBuilder({ page }).analyze();
 			expect(results.violations, `${width}px ${path} accessibility violations`).toEqual([]);
 		}

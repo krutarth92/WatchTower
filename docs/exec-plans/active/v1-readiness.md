@@ -1,187 +1,131 @@
 # WATCHTOWER V1 readiness audit
 
-Status: backend audit complete; release boundary updated through Task 28.
-Date: 2026-10-21.
-Scope: V1 backend plus local/private UI, with AWS productionization deferred to
+Status: local/private V1 acceptance candidate; local validation passed on
+2026-11-21, with final hosted CI and owner review pending.
+
+Scope: the V1 backend and local/private SvelteKit UI. Internet-facing AWS
+deployment and operational proof are explicitly deferred to
 `docs/product-specs/v2-productionization-scope.md`.
 
 ## Verdict
 
-The WATCHTOWER backend is **ready for local development and private evaluation**.
-Product V1 is **not complete until its first-party UI is implemented and
-accepted**. Internet-facing AWS production readiness is a V2 objective.
+WATCHTOWER is implemented and validated as a **local/private V1 candidate**.
+The deterministic Docker workflow serves the complete researcher journey over
+real APIs and data. The final V1 gate is a passing hosted workflow on the exact
+acceptance commit plus owner approval of the rendered desktop/mobile flow.
 
-The core backend contracts are implemented and pass the complete local
-PostgreSQL-backed suite. Repository, public-read visibility and the
-identity-aware application boundary are in place. The next V1 work is the UI
-experience, frontend foundation and tested researcher flow over these APIs.
-
-The owner changed the release sequence on 2026-10-21: the absent frontend is now
-the remaining V1 product gap. Deployed Cognito/ALB/WAF, shared object storage,
-backup/restore operations, monitored infrastructure and release attestation are
-preserved as V2 productionization work. Disabled live RAG remains a separately
-gated product decision; provider-neutral grounding is evaluated and live
-execution correctly remains off.
+This verdict is intentionally narrower than production readiness. There is no
+AWS deployment proof, public service, production identity flow, shared durable
+storage exercise, monitored staging environment, capacity SLO or live RAG
+provider. Those remain V2 or separately approved product decisions.
 
 ## Release boundary
 
-- **V1:** completed backend plus an accepted SvelteKit/TypeScript UI for
-  local/private use. V1 must remain truthful about local storage, static local
-  operator authentication and the absence of a public service.
-- **V2:** deploy and prove the existing AWS identity, edge, durable-data,
-  recovery, staging, monitoring, capacity and immutable-release contracts.
-
-The production capability matrix below remains useful evidence, but its
-deployment gaps no longer block V1 acceptance. They gate V2 and any claim of an
-internet-facing release.
-
-## Status definitions
-
-- **Complete:** the approved V1 requirement is implemented, documented and
-  validated in the current workspace.
-- **Partial:** a usable implementation exists, but a named V1 or release
-  requirement remains.
-- **Missing:** no implementation or usable contract exists.
-- **Blocked:** completion depends on an unresolved human decision or external
-  environment that is unavailable in this workspace.
+- **V1:** local/private Docker Compose product; read-only public intelligence
+  and research surfaces; server-side local operator bridge for the integration
+  register; deterministic demo data; verified backend/frontend/container
+  workflow.
+- **V2:** deploy and prove AWS identity, edge, durable data, backup/restore,
+  staging, monitoring, capacity and immutable release contracts.
 
 ## Evidence-based requirement matrix
 
 | Area | Status | Evidence and finding |
 | --- | --- | --- |
-| Repository structure | **Complete** | The Python package, migrations, tests, scripts, Docker, workflows and documentation are tracked on protected `main`, with branch-neutral hosted CI and a clean local/remote baseline. |
-| Data model | **Complete** | `db/models.py` and eleven Alembic revisions cover actors, aliases, sources, raw evidence, observations, behaviors, techniques, campaigns, relationships, normalization, resolution audit, jobs, embeddings, artifacts, advisories and publication visibility. Database constraint tests pass. |
-| Provenance | **Complete** | Source, RawEvidence and Evidence references persist across normalization, actor timelines, artifacts, RAG citations and STIX export. Tests cover end-to-end provenance and separate imported observations from WATCHTOWER assessments. |
-| Ingestion | **Complete** | The fixed, versioned MITRE ATT&CK STIX connector validates destination, HTTPS response, redirects, encoding, media type, timeouts and size. Fixture tests cover success, failure, replay and partial record rejection without requiring internet access. |
-| Raw evidence | **Partial** | Immutable hashing, source-scoped deduplication, replay state, local storage and a private KMS-encrypted S3 adapter are implemented. The AWS template defines versioning, governance Object Lock, blocked public access and a no-delete runtime role. Deployment, source-policy review for future connectors and recovery evidence remain open. |
-| Normalization | **Complete** | The parse → normalize → validate → deduplicate → persist ledger is deterministic and replay-safe. Conflict, older-version, malformed and unsupported-record behavior is tested. The deliberate intrusion-set-only mapping matches the approved narrow reference connector. |
-| Actor resolution | **Complete** | Exact/known rules, unresolved ambiguity, review-only similarity candidates, manual correction and immutable decision audit are implemented and tested. Fuzzy similarity never auto-links an actor. |
-| Actor timeline | **Complete** | Stable actor lookup, aliases, observations, evidence, techniques, date/type filtering and opaque cursor pagination are implemented with bounded eager loading. Public reads fail closed and include only explicitly published records with published provenance. |
-| API quality | **Partial** | Versioned routes, strict validation, stable error envelopes, request IDs, body limits, gzip, bounded queries, publication filtering, cursor-paginated search, OpenAPI, trusted-host enforcement and explicit proxy trust are present. Production rate limits and TLS still require the approved AWS edge deployment. |
-| Search | **Partial** | PostgreSQL full-text search has stable ranking, publication filters, GIN/generated-vector support, 11 rank-1 evaluation cases and scoped keyset pagination. It lacks a production-scale relevance corpus and production-like latency result. |
-| RAG grounding | **Partial** | pgvector storage, actor/time filtering, deterministic reranking, context budgets, citations, OBSERVED/ASSESSED enforcement and insufficient-evidence behavior are evaluated with deterministic providers. No approved live provider, automatic embedding ingestion/backfill or measured vector index exists; the endpoint correctly returns unavailable by default. |
-| Technical artifacts | **Complete** | STIX 2.1, Sigma and ATT&CK technique records preserve exact original content, hashes, parsed structure, validation failures and provenance. Reads are operator-only and tests cover valid, invalid, duplicate and provenance behavior. |
-| STIX export | **Complete** | The documented actor-centered STIX 2.1 subset is deterministic, conservative, operator-only and validates with the official library. Unsupported semantics are deliberately omitted rather than guessed. |
-| Async jobs | **Complete** | Durable PostgreSQL state, UUID-only Redis messages, idempotent submission, leases, bounded retry/backoff, restart recovery, backpressure and queue metrics are implemented and tested. Redis is transport rather than the source of truth. |
-| Living advisories | **Complete** | Draft privacy, immutable published revisions, typed sections, evidence/entity links and sequenced timestamped updates are implemented and tested. Earlier published revisions remain intentionally durable. |
-| Tests | **Complete** | The current suite contains 114 passing tests covering the database, API, workers, OIDC/static authentication, roles, attribution, security boundaries, infrastructure contracts, evaluations and migrations. One external disposable-S3 integration remains environment-gated and is not counted as passed. The suite runs against PostgreSQL with every warning treated as an error; Ruff, formatting and Pyright pass. |
-| Frontend | **Missing** | The V1 UI is approved in scope. Its proposed [experience/API contract](../../design/v1-ui-experience.md) and [complete Tasks 30-36 development plan](v1-ui-development-plan.md) are documented before implementation. No frontend application, API client, screen, accessibility check or frontend CI job exists yet; owner review of both documents gates implementation. |
-| Security | **Partial** | Application controls include strict input boundaries, stable errors, Cognito-compatible access-token verification, `operator`/`publisher` roles, authenticated advisory attribution, production host/proxy fail-closed settings, safe fixed-source fetching, publication filtering, log redaction and security headers. Deployed Cognito/MFA/account lifecycle, ALB/ACM/WAF, private production services, egress control and operational incident ownership remain release gates. |
-| CI/CD | **Partial** | Protected `main` requires branch-neutral hosted backend, dependency-audit and container checks. Actions are commit-pinned; CI performs locked install, lint, type/migration/tests, package build, dependency audit, image build/smoke/Trivy scan, and retains a verified commit-specific CycloneDX SBOM for 30 days. Durable image publication/attestation and staging environment validation remain open. |
-| Deployment | **Blocked** | A careful private Ubuntu EC2 staging runbook and SHA-based deployment/rollback script exist. No approved/available staging host, secrets, identity provider, production network/storage design, backup service or monitoring environment is evidenced. The runbook explicitly forbids public exposure. |
-| Observability | **Partial** | JSON logs, request/correlation IDs, slow-request logs, health/readiness, durable job states and queue metrics exist. There is no production metrics exporter/dashboard, alert routing, log retention/access policy, backup-age alert or exercised incident response. |
-| Documentation | **Partial** | Setup, model, ingestion, normalization, resolution, API, RAG, artifact, STIX, performance, security, deployment and advisory contracts are present and consistent with V1. The mandatory `docs/design/system-workflow-reference.md` remains absent and its contents were not invented. |
+| Repository and CI | **Complete for V1** | Tracked repository, protected `main`, branch-neutral required checks, locked dependencies, package/image builds, dependency audits, Trivy gates and commit-specific CycloneDX evidence. Final Task 37 commit still requires its hosted run. |
+| Data model and provenance | **Complete** | Actors, aliases, sources, raw evidence, observations, behaviors, techniques, campaigns, relationships, resolution audit, jobs, embeddings, artifacts, advisories and publication visibility are migrated and tested. Evidence remains traceable through reads and exports. |
+| Ingestion and integrations | **Complete for approved V1 scope** | MITRE ATT&CK is the runnable fixed-source connector. MISP Galaxy, CISA, Microsoft Threat Intelligence, Google TAG and Unit 42 are accurately presented as the next source wave; Malpedia, Securelist, ESET and selected news remain later. Planned sources expose no false run control. |
+| Normalization and actor resolution | **Complete** | Deterministic parse/normalize/validate/deduplicate/persist behavior, alias resolution, ambiguity handling and immutable resolution audit are tested. Fuzzy similarity never auto-links actors. |
+| Search and actor research | **Complete for local V1** | Published actor, alias, indicator, CVE, campaign, behavior, technique, observation and source context is searchable with stable pagination. Actor dossiers include aliases, observed/assessed timeline evidence, techniques and evolution. Production-scale relevance and latency evidence remain V2. |
+| Living intelligence | **Complete** | Current and historic published revisions, typed OBSERVED/ASSESSED sections, entity/evidence links and ordered updates are implemented in API and UI. Withdrawal/redaction policy remains a later editorial decision. |
+| Technical views | **Complete** | ATT&CK, Sigma and STIX 2.1 surfaces preserve the approved narrow technical contracts and provenance. Unsupported semantics are omitted rather than inferred. |
+| Async jobs | **Complete** | PostgreSQL-backed durable state, UUID-only Redis messages, replay safety, leases, retry/backoff, recovery, backpressure and queue metrics are tested. |
+| Frontend | **Complete pending owner acceptance** | SvelteKit/TypeScript implements Home, Intelligence, Actors, Evolution, Research, Technical, Search, platform updates, actor/advisory detail and the local integration register. The real Docker journey passed at 320, 768 and 1440 px with no document overflow. |
+| Accessibility | **Complete for acceptance candidate** | Automated axe checks, one-main/one-h1/contentinfo landmarks, skip link, visible keyboard focus, dialog focus management, keyboard evidence disclosure, reduced motion and responsive checks pass. Effective 200%-zoom reflow was reviewed at half the desktop CSS width without clipped controls. |
+| Visual contract | **Complete for acceptance candidate** | Rendered review confirms the approved dark research atmosphere, restrained cyan/violet accents, compact technical hierarchy and evidence-first presentation. No copied CyberNetSec.io logo, wording, illustration or page composition; no unsupported metrics, continuous glow or generic enterprise card grid. |
+| UI security | **Complete for local V1** | Web CSP denies framing and objects; frame denial, content-type protection and referrer policy are present. External evidence links use safe attributes. Built assets/rendered content expose no operator token, operator header, database URL or private API origin. No raw HTML injection or browser credential storage is used. |
+| Backend tests and migrations | **Complete** | Ruff and formatting pass across 175 files; Pyright reports zero errors/warnings; Alembic is at sole head `f6a1c2d3e4b5` with no drift; 121 tests pass and one disposable-S3 test remains explicitly environment-gated. |
+| Frontend tests | **Complete** | Prettier, ESLint, Svelte/TypeScript and production build pass; 16 unit files/69 tests and 14 production-browser acceptance tests pass. Browser console review returned zero errors. |
+| Local performance evidence | **Complete for local V1** | The deterministic-stack baseline records 20 sequential samples per principal route, including environment, response sizes and min/median/p95/max. It makes no production SLO or capacity claim. See `docs/performance/v1-ui-baseline.md`. |
+| Local containers | **Complete** | Compose config/build/up pass. PostgreSQL, Redis, API and web are healthy; the worker runs; all four published ports bind to `127.0.0.1`. The idempotent demo graph reports the exact expected 25 records. |
+| RAG execution | **Partial by design** | Grounding, citations, filtering and insufficient-evidence behavior are tested with deterministic providers. No approved live model, embedding backfill or data-egress/budget decision exists, so the live endpoint correctly remains unavailable. |
+| AWS deployment and operations | **Deferred to V2** | Validation-only templates and private staging/recovery runbooks exist, but no AWS resources, public edge, production identity, backup recovery, monitoring or operational proof has been authorized or claimed. |
+| Documentation | **Complete for V1** | README, SETUP, product scopes, design/security contracts, local performance evidence and execution plans describe the proved local/private boundary. The originally referenced `docs/design/system-workflow-reference.md` was never supplied and has not been reconstructed. |
 
-Production-capability result count: **12 complete, 8 partial, 1 missing, 1
-blocked**. For V1 sequencing, the missing frontend is the active product gap;
-the deployment partial/blocked items are V2 gates.
+## Demonstrated V1 journey
 
-## Gap and remediation register
+The seeded `watchtower_demo/v1` graph supports this reproducible flow:
 
-| ID | Area | Exact gap | Risk | Smallest remediation task | Dependency | Priority |
-| --- | --- | --- | --- | --- | --- | --- |
-| G01 | Repository | Remediated by Tasks 19–20: the reviewed repository is tracked on protected `main`, branch-neutral CI runs on every push/PR, and the three required checks are enforced without bypass. | Repository history and checks still require normal maintenance. | Keep action/dependency updates reviewed and preserve the protected workflow. | Repository ownership. | **Complete** |
-| G02 | Publication | Remediated by Task 21: public actor and cross-entity search reads require explicit per-record publication and default all existing/new canonical records to internal. | A publication operation without identity or review could still make a wrong record public. | Implement an authenticated, attributable editorial workflow only after G03 identity and withdrawal policy are approved. | Operator identity and editorial/withdrawal policy. | **P0 read boundary complete; operations pending** |
-| G03 | Operator identity | Task 25 implemented Cognito-compatible access-token verification, explicit `operator`/`publisher` roles, stable auth errors, structured subject audit fields and authenticated advisory attribution. Task 27 adds validation-only Cognito IaC with admin-only users, mandatory MFA, deletion protection, short access tokens and exact application outputs, plus a lifecycle/acceptance runbook. No user pool, user, group assignment or revocation exercise is deployed. | The repository prevents caller-forged attribution and encodes identity controls, but production identity assurance does not exist until the boundary and operational ownership are proven in the target account. | Review and execute the template change set, assign lifecycle/revocation owners, provision test operators and run the documented token, role, attribution and disablement acceptance checks. | Authorized AWS deployment, identity/security owner. | **P0 repository boundary complete; deployment proof pending** |
-| G04 | Production edge | Task 25 implemented trusted-host/proxy handling. Task 27 adds validation-only ALB/ACM/WAF IaC with HTTPS redirect/listener, private-target SG reference, hardened header attributes, retained access logs, managed WAF protections, required measured public/operator limits and redacted WAF logs. No edge, DNS record, certificate association, target proof or alert is deployed. | Direct public exposure still permits abuse and transport-policy failures until target isolation, TLS, forwarding behavior, shared limits, logs and alerts are proven in the target environment. | Review and execute the template change set, create the approved DNS alias, then run and record all nine edge acceptance checks and rollback. | Authorized AWS deployment, network/DNS/certificate and monitoring owners. | **P0 repository boundary complete; deployment proof pending** |
-| G05 | Raw storage | Task 26 implements the S3 adapter, fail-closed production selection, immutable writes, integrity audit, KMS/versioning/Object Lock template, 365-day governance retention and no-delete runtime role. No target bucket or disposable S3 endpoint has been exercised. | Repository controls do not prove the target account policy, credentials, audit trail or recovery path. A future connector can still violate an unreviewed source policy. | Deploy the approved template, run the opt-in S3 integration contract, inspect effective IAM/bucket controls, and require retention/licensing review before enabling each new connector. | Authorized AWS account, recovery/records owner and connector policy owner. | **P0 repository boundary complete; deployment proof pending** |
-| G06 | Data operations | Task 26 defines private encrypted Multi-AZ RDS PostgreSQL 17, verified TLS, separate runtime/migration roles, 35-day PITR, daily 90-day governed backup, a read-only integrity audit and coordinated restore runbook. No AWS resources or recovery points were created and no external restore was rehearsed. | A host/database/storage failure can still cause an untested outage until the target services and measured recovery evidence exist. | Provision the reviewed services and roles, then execute the runbook with actual backup IDs, integrity output, measured RPO/RTO and reviewer sign-off. | Authorized AWS provisioning, operations owner and restore-test window. | **P0 repository boundary complete; restore evidence pending** |
-| G07 | Deployment | The private staging workflow/runbook has not run against an approved EC2 environment. | Shell, Compose, migration and rollback assumptions remain locally validated only. | Provision private staging, configure protected environment secrets/reviewers, deploy one immutable SHA, verify API/worker/migration, then rehearse application rollback. | G01 plus approved AWS host and secrets. | **P1** |
-| G08 | CI/release | Hosted CI, required checks and retained commit-specific SBOM evidence are active. No durable registry image or signed provenance attestation exists. | A deployer cannot yet verify that a registry image was produced by the reviewed workflow. | Select the release registry/policy, publish by immutable digest, and attest the durable image subject and SBOM. | Registry and release policy. | **P1 partially remediated** |
-| G09 | Observability | No deployed service/database/host metrics, dashboards, actionable alerts, central log policy or incident exercise exists. | Failures, queue backlog, storage pressure and backup expiry may remain unnoticed. | Define a minimum signal/owner/runbook set and deploy alerts for readiness, error/slow rate, pool saturation, queue depth/age, disk and backup age. | Monitoring/log platform and on-call ownership. | **P1** |
-| G10 | Performance | Measurements are local synthetic baselines without production hardware, network, representative corpus or release SLO. | Capacity and latency claims cannot support a public service. | Re-run API and pipeline benchmarks in staging with a licensed representative dataset; set initial SLOs and resource limits from results. | G07, representative data and expected traffic. | **P1** |
-| G11 | RAG execution | No provider/data-egress/budget decision, live adapter, ingestion embedding hook or vector index is approved. | Advertising live research would yield 503; a rushed provider could leak source data or create unbounded cost. | Decide local versus external provider and permitted data/budget, then implement one adapter, controlled backfill and measured retrieval evaluation before enabling the endpoint. | Explicit AI provider, privacy and budget approval. | **P2** |
-| G12 | Search/API | Remediated by Task 24: search uses an opaque scoped keyset cursor over score, entity-type priority, case-folded title and UUID, with no-gap/no-duplicate regression coverage. | Clients can enumerate matching published results without offset drift; live mutations can still change later pages, as expected without snapshot transactions. | Preserve sort-key and cursor compatibility when ranking changes; version any future cursor shape. | Stable visibility contract from G02. | **Complete** |
-| G13 | Advisory policy | Published revisions have no withdrawal/redaction state and remain readable forever. | Later legal or source-policy removal cannot be represented without an unsafe destructive edit. | Approve and model an audited withdrawal state with explicit public behavior; preserve revision history for authorized review. | Editorial/legal policy. | **P2** |
-| G14 | Authoritative docs | `docs/design/system-workflow-reference.md` is absent. | Future work may diverge from an unknown authoritative workflow. | Supply the document or record an explicit decision that the approved V1 scope and current design set replace it. | Project owner. | **P2** |
-| G15 | Test tooling | Remediated by Task 23: `httpx2` is locked as a development dependency, Starlette TestClient selects it, and pytest makes all warnings fatal. Production connectors retain their separate `httpx` runtime dependency. | Future dependency incompatibilities now fail the suite rather than appearing as non-blocking warnings. | Keep the two client roles explicit and review dependency updates through the locked CI suite. | Upstream FastAPI/Starlette/httpx2 compatibility. | **Complete** |
-| G16 | Frontend | The V1 UI is approved and its proposed experience/API contract plus complete Tasks 30-36 development plan are documented, but no frontend tree or tested user flow exists. | The backend is accessible only through direct API clients and Swagger, so the intended researcher cannot use WATCHTOWER as a complete product. | Review the contract and master plan, then execute the fixed task sequence through final local/private UI acceptance. | Stable V1 APIs and owner review of the UI plan. | **V1 P0 — missing** |
+1. Open Home and the platform-update archive.
+2. Search `Frost Lantern`, `telemetry-cdn.example` or `CVE-2026-45123`.
+3. Open the related actor dossier, evolution, techniques and cited evidence.
+4. Read the current living advisory, its archived first revision and ordered
+   update.
+5. Review Technical and the local/private integration roadmap.
 
-## Recommended task sequence
+The integration register is server rendered. The local operator token remains
+on the server and is attached only to an exact allowlist of operator requests.
+This static-token bridge is forbidden in production.
 
-Do not combine these into one implementation task. Each item should retain a
-separate review checkpoint.
+## Named V1 limitations
 
-V1:
-
-1. **P0 — Approve the UI experience and API contract:** define the information
-   architecture, responsive screens, API/error/loading states, local operator
-   boundary, accessibility target and visual direction without changing backend
-   semantics.
-2. **P0 — Implement and validate the frontend:** add the SvelteKit/TypeScript
-   foundation, API client, core researcher flow, approved operator flow,
-   frontend CI and local run documentation in separately reviewable tasks.
-
-V2 productionization:
-
-1. Deploy and prove the approved production security boundary: G03 and G04.
-2. Deploy and prove durable evidence/data operations: G05 and G06.
-3. Exercise private staging and rollback: G07.
-4. Add operational monitoring and production-like capacity evidence: G09/G10.
-5. Publish and attest an immutable release image: G08.
-
-Optional product decisions remain separately gated: live RAG (G11), advisory
-withdrawal (G13), and the missing workflow authority (G14).
-
-G12 and G15 are complete as of Tasks 24 and 23 and are no longer in the
-remaining task list.
+- Local/private use only; no internet-facing or AWS operational proof.
+- Public/editorial intelligence is read-only in the browser; there is no
+  publishing console or production browser sign-in.
+- Actor evolution is an evidence-led timeline, not a complete-series chart.
+- Live RAG is disabled pending a provider, privacy/egress and budget decision.
+- Only MITRE ATT&CK is runnable; other approved sources are accurately marked
+  as planned rather than simulated.
+- The demo dataset is fictional and intentionally small. The local timing
+  baseline cannot be extrapolated to production data or traffic.
+- Advisory withdrawal/redaction, production monitoring and release-image
+  attestation remain later decisions/work.
 
 ## Validation evidence
 
-Task 17 was verified before this audit started:
+Local final-state evidence on 2026-11-21:
 
-- `.venv\Scripts\pytest.exe -q` with the local PostgreSQL URL: **85 passed**;
-  one existing Starlette TestClient deprecation warning.
-- `.venv\Scripts\ruff.exe check .`: passed.
-- `.venv\Scripts\ruff.exe format --check .`: 125 files formatted.
-- `.venv\Scripts\pyright.exe`: 0 errors, 0 warnings.
-- `.venv\Scripts\alembic.exe heads`: `0218f83cad8e (head)`.
-- `.venv\Scripts\alembic.exe current`: `0218f83cad8e (head)`.
-- `.venv\Scripts\alembic.exe check`: no new upgrade operations.
-- Live `/health`: `ok`; live `/ready`: `ready`.
+- Backend: Ruff lint/format passed; Pyright 0 errors/0 warnings; Alembic sole
+  head/current `f6a1c2d3e4b5` and no drift; 121 passed, 1 environment-gated S3
+  test skipped.
+- Frontend: formatting, lint and Svelte checks passed; 69 unit tests and 14
+  production-browser tests passed; production adapter build passed.
+- Real stack: Compose configuration/build/start passed; API and web health
+  passed; demo status returned `complete` with 25 exact records.
+- Responsive/manual review: Home, Search, actor dossier, advisory, Technical
+  and Integrations were inspected at 320, 768 and 1440 px. A root `min-width`
+  defect found at 320 px was removed, regression assertions were strengthened,
+  and the full build/browser suite passed afterward.
+- Security: web CSP/frame/content-type/referrer headers passed; client asset
+  and source scans returned zero credential/private-origin/raw-HTML/browser-
+  storage matches; safe evidence-link attributes were confirmed.
+- Local timing: every sampled route returned 200; see the separate baseline
+  for methodology and exact measurements.
 
-Audit-specific checks:
+Skipped or unavailable checks are not counted as passed. The disposable S3
+test is the only local suite skip. Package build, dependency audit, both image
+scans and CycloneDX generation are required from hosted CI on the exact final
+commit.
 
-- Read `AGENTS.md`, the complete approved V1 scope, relevant design,
-  security, performance and deployment documents, all active execution-plan
-  acceptance records, workflow definitions, source/test inventory and API route
-  inventory.
-- Confirmed `docs/design/system-workflow-reference.md` is missing.
-- `git ls-files`: 0 tracked paths; `git rev-parse --verify HEAD`: no HEAD;
-  `git status --short`: 22 untracked top-level entries.
+## Remaining acceptance gate
 
-## Acceptance record
+1. Push the exact Task 37 commit and obtain a fully passing GitHub Actions run.
+2. Obtain owner approval of the live desktop/mobile local/private flow.
+3. Record both results in the Task 37 plan and close its Jira issue.
 
-- Evidence-based status for every requested audit area: **pass**.
-- Complete/partial/missing/blocked vocabulary used: **pass**.
-- Exact gap, risk, smallest remediation, dependency and priority for every
-  partial/blocked area: **pass**.
-- Recommended final task list produced: **pass**.
-- Approved V1 scope preserved without promoting V2/R&D ideas: **pass**.
-- No missing feature implemented and no application contract changed: **pass**.
-- Missing workflow reference stated explicitly rather than reconstructed:
-  **pass**.
+Only after all three are recorded may the local/private V1 UI program be marked
+accepted and V2 productionization become the next program.
 
-## Transition verification
+## V2 and optional follow-up
 
-### Post-audit remediation update (2026-10-01)
+V2 productionization remains separately gated:
 
-G01 is complete: the reviewed repository is tracked on `main`, preserves the
-pre-existing remote `LICENSE` history, and is published at
-`https://github.com/krutarth92/WatchTower`. Hosted CI run
-[#9](https://github.com/krutarth92/WatchTower/actions/runs/36821521653) passed
-the backend, dependency-audit and container jobs. This resolves the hosted-run
-portion of G08. Task 20 added enforced branch-neutral required checks. Task 21
-added fail-closed canonical publication visibility. Task 22 added a verified,
-checksum-bound CycloneDX SBOM retained for 30 days from the exact scanned image.
-Durable image publication and provenance attestation remain open under G08, so
-the audit's production-readiness verdict is unchanged.
+1. Deploy and prove Cognito/OIDC plus ALB/ACM/WAF and target isolation.
+2. Deploy and prove S3/RDS/backup/restore data operations.
+3. Exercise private staging deployment and rollback.
+4. Add operational monitoring and production-like capacity evidence.
+5. Publish and attest immutable release images.
 
-The user approved the audit on 2026-10-01. Before remediation began, the report
-was inspected in full and checked for all required sections, 21 classified audit
-rows, 15 gap records and trailing whitespace. Every requested area was present,
-the evidence paths existed, and the recorded Git finding was reconfirmed: zero
-tracked paths and no local HEAD before fetching the remote. Task 18 changed only
-documentation, so application checks were not repeated for this transition; its
-recorded 85-test/static/Alembic validation remains applicable to the unchanged
-application state.
+Optional product decisions remain separate: live RAG, advisory withdrawal,
+additional ingestion connectors, richer evolution visualization and a future
+authenticated editorial workflow.

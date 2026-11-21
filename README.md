@@ -10,11 +10,13 @@ versioned living intelligence advisories.
 
 ## Current status
 
-The backend is complete for local development and private evaluation. The V1
-web interface includes public intelligence, actor research and a local/private
-operator integration register built on centralized design tokens. The
+The local/private V1 candidate is implemented for acceptance. It includes the
+backend, public intelligence and living advisories, actor/indicator/CVE search,
+actor research and evolution, technical views, platform updates, and a
+local/private operator integration register. The UI uses centralized design
+tokens and a server-only API/token boundary. The
 [V1 readiness audit](docs/exec-plans/active/v1-readiness.md) records the exact
-boundary and remaining UI work.
+evidence, limitations and final acceptance gate.
 
 Production templates define private S3 evidence storage, encrypted Multi-AZ RDS
 PostgreSQL, governed backups, Cognito operator identity, and an ALB/WAF HTTPS
@@ -98,6 +100,12 @@ uv run --locked ruff format --check .
 uv run --locked pyright
 uv run --locked pytest
 uv run --locked alembic check
+pnpm --dir apps/web format:check
+pnpm --dir apps/web lint
+pnpm --dir apps/web check
+pnpm --dir apps/web test:unit
+pnpm --dir apps/web build
+pnpm --dir apps/web test:e2e
 ```
 
 PostgreSQL-backed tests require `WATCHTOWER_TEST_DATABASE_URL`. GitHub Actions
@@ -116,6 +124,7 @@ audits dependencies, and scans the container for high-severity vulnerabilities.
 - [Durable data recovery](docs/operations/durable-data-recovery.md)
 - [Private staging deployment](docs/deployment/ubuntu-ec2-staging.md)
 - [Living intelligence contract](docs/design/living-intelligence-advisories.md)
+- [V1 local UI timing baseline](docs/performance/v1-ui-baseline.md)
 
 ## License
 
