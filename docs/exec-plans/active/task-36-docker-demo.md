@@ -1,6 +1,6 @@
 # Task 36 — deterministic demo data and Docker integration
 
-Status: implementation and hosted CI validated; owner review pending, updated
+Status: complete; implementation, hosted CI and owner review passed, updated
 2026-11-21.
 
 ## Prior-task verification
@@ -156,5 +156,14 @@ passed the backend, frontend, Python dependency-audit and container jobs at
 commit `cea5fe9`. The container job rebuilt both images, confirmed the web
 runtime is non-root and has no npm executable, served the read-only smoke
 container, passed both HIGH/CRITICAL Trivy gates, and retained the backend
-CycloneDX SBOM evidence. Only owner browser-flow acceptance remains before
-Task 37.
+CycloneDX SBOM evidence. This left only the owner browser-flow checkpoint,
+which is recorded below.
+
+### Owner acceptance
+
+PASS: on 2026-11-21, after the final validation results and the current local
+Docker unavailability were reported, the owner directed work to continue to
+the next task. This satisfies the Task 36 human-review checkpoint. The local
+machine still requires Docker Desktop to be restored before the browser stack
+can be reopened; that environment issue does not change the previously passed
+Compose, real-browser and hosted container evidence.
