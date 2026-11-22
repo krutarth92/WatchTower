@@ -19,15 +19,20 @@
 	const relatedActorContextHref = $derived(
 		result.related_actors[0] ? relatedActorHref(result.related_actors[0].id) : null
 	);
-	const entityLabel = $derived(result.entity_type.replace('_', ' ').toUpperCase());
-	const matchLabel = $derived(result.match_kind === 'exact' ? 'EXACT MATCH' : 'FULL TEXT');
+	const entityLabel = $derived(
+		result.entity_type.replace('_', ' ').replace(/^./, (value) => value.toUpperCase())
+	);
+	const matchLabel = $derived(result.match_kind === 'exact' ? 'Exact match' : 'Related match');
 </script>
 
 <article>
-	<div class="result-index" aria-hidden="true"></div>
 	<header>
 		<div class="labels">
-			<span class="entity">{entityLabel}</span>
+			<span
+				class="entity"
+				class:threat-entity={result.entity_type === 'indicator' ||
+					result.entity_type === 'vulnerability'}>{entityLabel}</span
+			>
 			<span class="match">{matchLabel}</span>
 			{#if result.intelligence_type}
 				<StatusChip
@@ -50,43 +55,45 @@
 	<dl>
 		{#if result.external_id}
 			<div>
-				<dt>EXTERNAL ID</dt>
+				<dt>External ID</dt>
 				<dd><code><HighlightedText text={result.external_id} {query} /></code></dd>
 			</div>
 		{/if}
 		{#if result.indicator_type}
 			<div>
-				<dt>INDICATOR TYPE</dt>
+				<dt>Indicator type</dt>
 				<dd>{result.indicator_type}</dd>
 			</div>
 		{/if}
 		{#if result.indicator_value}
 			<div>
-				<dt>INDICATOR VALUE</dt>
+				<dt>Indicator value</dt>
 				<dd><code><HighlightedText text={result.indicator_value} {query} /></code></dd>
 			</div>
 		{/if}
 		{#if result.severity}
 			<div>
-				<dt>SEVERITY</dt>
-				<dd>{result.severity}{result.cvss_score !== null ? ` / CVSS ${result.cvss_score}` : ''}</dd>
+				<dt>Severity</dt>
+				<dd class:critical-severity={result.severity.toLowerCase() === 'critical'}>
+					{result.severity}{result.cvss_score !== null ? ` / CVSS ${result.cvss_score}` : ''}
+				</dd>
 			</div>
 		{/if}
 		{#if result.source_id}
 			<div>
-				<dt>SOURCE REF</dt>
+				<dt>Source reference</dt>
 				<dd><code>{result.source_id}</code></dd>
 			</div>
 		{/if}
 		{#if result.observed_at}
 			<div>
-				<dt>OBSERVED</dt>
+				<dt>Observed</dt>
 				<dd><UtcDate value={result.observed_at} /></dd>
 			</div>
 		{/if}
 		{#if result.origin}
 			<div>
-				<dt>ORIGIN</dt>
+				<dt>Origin</dt>
 				<dd>{result.origin}</dd>
 			</div>
 		{/if}
@@ -94,7 +101,7 @@
 
 	{#if result.related_actors.length}
 		<section class="related" aria-label="Related threat actors">
-			<h3>RELATED THREAT ACTORS</h3>
+			<h3>Related threat actors</h3>
 			{#each result.related_actors as actor (actor.id)}
 				<div class="actor-context">
 					<a href={relatedActorHref(actor.id)}
@@ -113,41 +120,28 @@
 	{/if}
 
 	<footer>
-		<span>RELEVANCE {result.score.toFixed(3)}</span>
 		{#if actorHref}
-			<a href={actorHref}>Open actor context <span aria-hidden="true">→</span></a>
+			<a href={actorHref}>View actor profile</a>
 		{:else if relatedActorContextHref}
-			<a href={relatedActorContextHref}
-				>Open related actor context <span aria-hidden="true">→</span></a
-			>
+			<a href={relatedActorContextHref}>View related actor</a>
 		{:else}
-			<span class="self-contained">No public detail route</span>
+			<span class="self-contained">Search result summary</span>
 		{/if}
 	</footer>
 </article>
 
 <style>
 	article {
-		position: relative;
 		display: grid;
 		gap: var(--space-4);
-		padding: var(--space-5) var(--space-5) var(--space-5) var(--space-6);
-		border-top: var(--border-width) solid var(--color-border);
+		padding: var(--space-6) var(--space-5);
+		border-bottom: var(--border-width) solid var(--color-border);
 		background: transparent;
 		transition: background var(--motion-fast) var(--easing-standard);
 	}
 
 	article:hover {
-		background: var(--color-primary-faint);
-	}
-
-	.result-index {
-		position: absolute;
-		top: var(--space-5);
-		bottom: var(--space-5);
-		left: 0;
-		width: 0.1875rem;
-		background: var(--gradient-brand);
+		background: var(--color-threat-faint);
 	}
 
 	header {
@@ -164,16 +158,18 @@
 
 	.entity,
 	.match,
-	footer,
 	dt {
-		font-family: var(--font-mono);
-		font-size: var(--font-size-xs);
-		letter-spacing: var(--letter-spacing-label);
+		font-size: var(--font-size-sm);
 	}
 
 	.entity {
 		color: var(--color-primary);
 		font-weight: 700;
+	}
+
+	.entity.threat-entity,
+	.critical-severity {
+		color: var(--color-threat);
 	}
 
 	.match {
@@ -209,9 +205,7 @@
 	}
 	.related h3,
 	.related small {
-		font-family: var(--font-mono);
-		font-size: var(--font-size-xs);
-		letter-spacing: var(--letter-spacing-label);
+		font-size: var(--font-size-sm);
 	}
 	.related h3 {
 		margin: 0;
@@ -224,7 +218,10 @@
 	.actor-context a {
 		width: fit-content;
 		color: var(--color-ink);
-		font-weight: 750;
+		font-family: var(--font-display);
+		font-size: var(--font-size-lg);
+		font-weight: 700;
+		letter-spacing: var(--letter-spacing-heading);
 		text-underline-offset: var(--space-1);
 	}
 	.actor-context p {
@@ -267,7 +264,7 @@
 	footer {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
+		justify-content: flex-end;
 		gap: var(--space-3);
 		color: var(--color-ink-subtle);
 	}
@@ -275,7 +272,7 @@
 	footer a {
 		color: var(--color-primary);
 		font-weight: 700;
-		text-decoration: none;
+		text-underline-offset: var(--space-2);
 	}
 
 	.self-contained {

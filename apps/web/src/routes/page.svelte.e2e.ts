@@ -26,7 +26,7 @@ test('loads the public home with real module navigation and platform update', as
 	await expect(page.getByText('Indicators and CVEs now reveal related actors')).toBeVisible();
 	await expect(page.getByRole('heading', { level: 2, name: 'Latest intelligence' })).toBeVisible();
 	await expect(
-		page.getByRole('link', { name: 'Credential access activity evolves' })
+		page.getByRole('link', { name: 'Credential access activity evolves' }).first()
 	).toBeVisible();
 	for (const destination of [
 		'Home',
@@ -44,19 +44,50 @@ test('loads the public home with real module navigation and platform update', as
 	}
 	await expect(page.getByText('LOCAL / PRIVATE')).toBeVisible();
 
-	const loadedPresentation = await page.evaluate(() => ({
-		primaryColor: getComputedStyle(document.documentElement)
-			.getPropertyValue('--color-primary')
-			.trim(),
-		stylesheets: document.styleSheets.length,
-		javascriptResources: performance
-			.getEntriesByType('resource')
-			.filter((entry) => entry.name.includes('/_app/') && entry.name.endsWith('.js')).length
-	}));
+	const heroPresentation = await page.evaluate(() => {
+		const hero = document.querySelector('.hero')?.getBoundingClientRect();
+		const heading = document.querySelector('.hero h1')?.getBoundingClientRect();
+		const image = document.querySelector<HTMLImageElement>('.hero img');
+		return {
+			innerSpacing: hero && heading ? heading.left - hero.left : 0,
+			imageLoaded: Boolean(image?.complete && image.naturalWidth > 0)
+		};
+	});
+	expect(heroPresentation.innerSpacing).toBeGreaterThanOrEqual(24);
+	expect(heroPresentation.imageLoaded).toBe(true);
+
+	const loadedPresentation = await page.evaluate(async () => {
+		const [bodyFaces, headingFaces, labelFaces] = await Promise.all([
+			document.fonts.load('400 16px "IBM Plex Sans Variable"', 'Intelligence'),
+			document.fonts.load('600 32px "Barlow Condensed"', 'WATCHTOWER'),
+			document.fonts.load('500 13px "IBM Plex Mono"', 'CVE-2026-45123')
+		]);
+		return {
+			primaryColor: getComputedStyle(document.documentElement)
+				.getPropertyValue('--color-primary')
+				.trim(),
+			bodyFont: getComputedStyle(document.body).fontFamily,
+			headingFont: getComputedStyle(document.querySelector('.hero h1')!).fontFamily,
+			labelFont: getComputedStyle(document.querySelector('.hero .eyebrow')!).fontFamily,
+			fontsReady: {
+				body: bodyFaces.length > 0,
+				heading: headingFaces.length > 0,
+				label: labelFaces.length > 0
+			},
+			stylesheets: document.styleSheets.length,
+			javascriptResources: performance
+				.getEntriesByType('resource')
+				.filter((entry) => entry.name.includes('/_app/') && entry.name.endsWith('.js')).length
+		};
+	});
 	expect(failedAssets).toEqual([]);
 	expect(pageErrors).toEqual([]);
 	expect(consoleErrors).toEqual([]);
 	expect(loadedPresentation.primaryColor).not.toBe('');
+	expect(loadedPresentation.bodyFont).toContain('IBM Plex Sans Variable');
+	expect(loadedPresentation.headingFont).toContain('Barlow Condensed');
+	expect(loadedPresentation.labelFont).toContain('IBM Plex Mono');
+	expect(loadedPresentation.fontsReady).toEqual({ body: true, heading: true, label: true });
 	expect(loadedPresentation.stylesheets).toBeGreaterThan(0);
 	expect(loadedPresentation.javascriptResources).toBeGreaterThan(0);
 	const contentSecurityPolicy = navigation?.headers()['content-security-policy'];
@@ -257,8 +288,8 @@ test('discovers actors and resolves indicators and CVEs to actor context', async
 		})
 	).toBeVisible();
 	await expect(page.locator('.result-list article h2 mark')).toHaveText('malicious-update.example');
-	await expect(page.getByText('INDICATOR TYPE')).toBeVisible();
-	await expect(page.getByText('RELATED THREAT ACTORS')).toBeVisible();
+	await expect(page.getByText('Indicator type')).toBeVisible();
+	await expect(page.getByText('Related threat actors')).toBeVisible();
 	await expect(
 		page.getByText('Published adversary identity with source-linked evolution.')
 	).toBeVisible();

@@ -99,16 +99,14 @@
 	<div class="workspace-inner">
 		<header class="intel-banner">
 			<div class="title-lockup">
-				<div class="scope-mark" aria-hidden="true"><span></span></div>
 				<div>
-					<p>PUBLISHED INTELLIGENCE INDEX</p>
+					<p>Published intelligence</p>
 					<h1 id="search-title">Research search</h1>
-					<span>Deterministic discovery across reviewed adversary intelligence</span>
+					<span>Find the actor and evidence behind an indicator, CVE, technique or campaign.</span>
 				</div>
 			</div>
 			<div class="boundary-state">
-				<span class="signal" aria-hidden="true"></span>
-				<div><small>VISIBILITY BOUNDARY</small><strong>PUBLISHED ONLY</strong></div>
+				<div><small>Review status</small><strong>Published records</strong></div>
 			</div>
 		</header>
 
@@ -120,12 +118,11 @@
 			aria-label="Published intelligence search"
 		>
 			<div class="console-label">
-				<span>QUERY CONSOLE</span>
-				<small>MIN 2 CHARACTERS / MAX 200</small>
+				<span>Search the intelligence index</span>
+				<small>Reviewed public records only</small>
 			</div>
 			<div class="search-row">
 				<label class="query-shell" for="search-query">
-					<span class="prompt" aria-hidden="true">WT://</span>
 					<input
 						id="search-query"
 						aria-label="Search published intelligence"
@@ -140,38 +137,38 @@
 					/>
 				</label>
 				<SearchFilters state={searchState} />
-				<button class="search-button" type="submit"
-					><span aria-hidden="true">⌕</span> Run search</button
-				>
+				<button class="search-button" type="submit">Search</button>
 			</div>
 			<div class="active-scope">
 				<span
-					>ENTITY: {searchState.entityTypes.length
+					>Types: {searchState.entityTypes.length
 						? searchState.entityTypes.join(' + ')
-						: 'ALL'}</span
+						: 'all published intelligence'}</span
 				>
-				<span>INTEL: {searchState.intelligenceType || 'ANY'}</span>
-				<span>WINDOW: {searchState.dateFrom || 'OPEN'} → {searchState.dateTo || 'OPEN'}</span>
+				{#if searchState.intelligenceType}<span>Assessment: {searchState.intelligenceType}</span
+					>{/if}
+				{#if searchState.dateFrom || searchState.dateTo}<span
+						>Dates: {searchState.dateFrom || 'earliest'} to {searchState.dateTo || 'latest'}</span
+					>{/if}
 				{#if hasFilters}<a
 						href={searchState.query
 							? `/search?q=${encodeURIComponent(searchState.query)}`
-							: '/search'}>RESET SCOPE</a
+							: '/search'}>Clear filters</a
 					>{/if}
 			</div>
 		</form>
 
 		<div class="research-contract" aria-label="Search behavior">
 			<div>
-				<span>01</span><strong>INDICATOR FIRST</strong><small>Domains, IPs, URLs and hashes</small>
+				<strong>Start with what you know</strong><small>Domains, IPs, URLs and hashes</small>
 			</div>
 			<div>
-				<span>02</span><strong>CVE CONTEXT</strong><small>Vulnerability to actor links</small>
+				<strong>Follow the vulnerability</strong><small>See CVEs in their actor context</small>
 			</div>
 			<div>
-				<span>03</span><strong>RELATED ACTORS</strong><small>Identity and context included</small>
-			</div>
-			<div>
-				<span>04</span><strong>PUBLISHED ONLY</strong><small>Reviewed records per request</small>
+				<strong>Understand the adversary</strong><small
+					>Identity, aliases and behavior included</small
+				>
 			</div>
 		</div>
 
@@ -224,12 +221,10 @@
 			{:else}
 				<header class="results-header">
 					<div>
-						<p class="state-code">QUERY COMPLETE / {results.length} RECORDS LOADED</p>
+						<p class="state-code">{results.length} published results for</p>
 						<h2 id="results-heading">{data.response?.query ?? searchState.query}</h2>
 					</div>
-					<span class="publication-mark"
-						><span class="signal" aria-hidden="true"></span> PUBLICATION FILTERED</span
-					>
+					<span class="publication-mark">Reviewed intelligence</span>
 				</header>
 
 				<div class="result-list">
@@ -241,7 +236,7 @@
 				{#if loadMoreError}
 					<div class="load-error" role="alert">
 						<div>
-							<strong>CURRENT RECORDS RETAINED</strong>
+							<strong>Current results remain available</strong>
 							<span>{loadMoreError.message}</span>
 							{#if loadMoreError.requestId}<code>REQUEST {loadMoreError.requestId}</code>{/if}
 						</div>
@@ -254,10 +249,9 @@
 						<button type="button" onclick={loadMore} disabled={loadingMore}>
 							{loadingMore ? 'Loading next page…' : 'Load more results'}
 						</button>
-						<span>APPENDS IN BACKEND RELEVANCE ORDER</span>
 					</div>
 				{:else}
-					<p class="end-marker">— END OF PUBLISHED RESULTS —</p>
+					<p class="end-marker">You have reached the end of the published results.</p>
 				{/if}
 			{/if}
 		</section>
@@ -269,10 +263,11 @@
 		position: relative;
 		min-height: calc(100vh - var(--header-height));
 		background-color: var(--color-canvas);
-		background-image: var(--gradient-ambient), var(--texture-grid);
-		background-size:
-			auto,
-			var(--grid-size) var(--grid-size);
+		background-image: radial-gradient(
+			circle at 82% 8%,
+			var(--color-primary-faint),
+			transparent 28rem
+		);
 	}
 
 	.search-workspace::before {
@@ -284,9 +279,9 @@
 	}
 
 	.workspace-inner {
-		max-width: var(--content-width);
+		max-width: 76rem;
 		margin: 0 auto;
-		padding: var(--space-7) var(--space-5) var(--space-8);
+		padding: var(--space-8) var(--space-5);
 	}
 
 	.intel-banner {
@@ -294,7 +289,7 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-6);
-		padding-bottom: var(--space-6);
+		padding-bottom: var(--space-7);
 	}
 
 	.title-lockup,
@@ -306,18 +301,15 @@
 	}
 
 	.title-lockup {
-		gap: var(--space-4);
+		gap: var(--space-5);
 	}
 	.title-lockup p,
 	.state-code,
 	.console-label,
 	.active-scope,
 	.publication-mark,
-	.end-marker,
-	.load-more span {
-		font-family: var(--font-mono);
-		font-size: var(--font-size-xs);
-		letter-spacing: var(--letter-spacing-label);
+	.end-marker {
+		font-size: var(--font-size-sm);
 	}
 
 	.title-lockup p,
@@ -328,9 +320,9 @@
 	}
 
 	.title-lockup h1 {
-		margin: var(--space-1) 0;
-		font-size: clamp(1.8rem, 4vw, 3rem);
-		line-height: 1;
+		margin: var(--space-2) 0 var(--space-3);
+		font-size: clamp(2.6rem, 5vw, 4.5rem);
+		line-height: 1.02;
 		letter-spacing: -0.035em;
 	}
 
@@ -338,42 +330,12 @@
 		color: var(--color-ink-muted);
 	}
 
-	.scope-mark {
-		position: relative;
-		display: grid;
-		width: 4rem;
-		height: 4rem;
-		place-items: center;
-		transform: rotate(45deg);
-		box-shadow: 0 0 var(--space-5) var(--color-primary-glow);
-	}
-
-	.scope-mark::before,
-	.scope-mark::after,
-	.scope-mark span {
-		position: absolute;
-		background: var(--color-primary);
-		content: '';
-	}
-
-	.scope-mark::before {
-		width: 60%;
-		height: var(--border-width);
-	}
-	.scope-mark::after {
-		width: var(--border-width);
-		height: 60%;
-	}
-	.scope-mark span {
-		width: var(--space-2);
-		height: var(--space-2);
-		border-radius: 50%;
-		box-shadow: 0 0 var(--space-3) currentColor;
-	}
-
 	.boundary-state {
 		gap: var(--space-3);
-		padding: var(--space-2) 0;
+		padding: var(--space-3) var(--space-4);
+		border: var(--border-width) solid var(--color-border);
+		border-radius: 999px;
+		background: var(--color-surface);
 		color: var(--color-observed);
 	}
 
@@ -390,19 +352,19 @@
 		display: grid;
 	}
 	.boundary-state small {
-		font-family: var(--font-mono);
-		font-size: 0.625rem;
-		letter-spacing: var(--letter-spacing-label);
+		color: var(--color-ink-subtle);
+		font-size: var(--font-size-xs);
 	}
 	.boundary-state strong {
 		font-size: var(--font-size-sm);
 	}
 
 	.search-console {
-		margin-top: var(--space-5);
-		padding-block: var(--space-3);
-		border-top: var(--border-width) solid var(--color-primary);
-		border-bottom: var(--border-width) solid var(--color-border-strong);
+		padding: var(--space-5);
+		border: var(--border-width) solid var(--color-border);
+		border-radius: var(--radius-lg);
+		background: var(--color-surface);
+		box-shadow: var(--shadow-panel);
 	}
 
 	.console-label,
@@ -411,12 +373,13 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-3);
-		padding: var(--space-2) 0;
-		color: var(--color-primary);
+		padding: 0;
+		color: var(--color-ink);
 	}
 
 	.console-label span {
-		font-weight: 700;
+		font-size: var(--font-size-lg);
+		font-weight: 750;
 	}
 	.console-label small {
 		color: var(--color-ink-subtle);
@@ -426,7 +389,7 @@
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) auto auto;
 		gap: var(--space-3);
-		padding: var(--space-2) 0 var(--space-3);
+		padding: var(--space-4) 0;
 	}
 
 	.query-shell {
@@ -435,19 +398,15 @@
 		min-height: 3rem;
 		align-items: center;
 		gap: var(--space-3);
-		padding: 0 var(--space-1);
-		border-bottom: var(--border-width) solid var(--color-border-strong);
+		padding: 0 var(--space-4);
+		border: var(--border-width) solid var(--color-border-strong);
+		border-radius: var(--radius-md);
+		background: var(--color-canvas-soft);
 	}
 
 	.query-shell:focus-within {
 		border-color: var(--color-focus);
-		box-shadow: 0 var(--space-1) var(--space-3) calc(-1 * var(--space-2)) var(--color-primary-glow);
-	}
-	.prompt {
-		color: var(--color-secondary);
-		font-family: var(--font-mono);
-		font-size: var(--font-size-sm);
-		font-weight: 700;
+		box-shadow: var(--shadow-focus);
 	}
 	.query-shell input {
 		width: 100%;
@@ -466,12 +425,10 @@
 	.load-error button {
 		border: var(--border-width) solid var(--color-primary);
 		border-radius: var(--radius-sm);
-		background: var(--color-primary-soft);
-		color: var(--color-primary);
+		background: var(--color-primary);
+		color: var(--color-canvas);
 		cursor: pointer;
-		font-family: var(--font-mono);
 		font-weight: 750;
-		text-transform: uppercase;
 	}
 
 	.search-button {
@@ -481,18 +438,20 @@
 	.search-button:hover,
 	.load-more button:hover,
 	.load-error button:hover {
-		background: var(--color-primary-faint);
-		box-shadow: 0 0 var(--space-4) var(--color-primary-glow);
+		background: var(--color-focus);
+		box-shadow: none;
 	}
 
 	.active-scope {
 		justify-content: flex-start;
 		flex-wrap: wrap;
-		color: var(--color-ink-subtle);
+		gap: var(--space-2);
+		color: var(--color-ink-muted);
 	}
 	.active-scope span {
-		padding-right: var(--space-3);
-		border-right: var(--border-width) solid var(--color-border);
+		padding: var(--space-1) var(--space-3);
+		border: var(--border-width) solid var(--color-border);
+		border-radius: 999px;
 	}
 	.active-scope a {
 		margin-left: auto;
@@ -501,30 +460,23 @@
 
 	.research-contract {
 		display: grid;
-		grid-template-columns: repeat(4, 1fr);
-		margin-top: var(--space-4);
-		border-bottom: var(--border-width) solid var(--color-border);
+		grid-template-columns: repeat(3, 1fr);
+		gap: var(--space-5);
+		margin-top: var(--space-6);
 	}
 
 	.research-contract div {
 		display: grid;
-		grid-template-columns: auto 1fr;
-		gap: 0 var(--space-3);
-		padding: var(--space-3) var(--space-4) var(--space-3) 0;
+		gap: var(--space-1);
+		padding-left: var(--space-4);
+		border-left: 0.1875rem solid var(--color-border-strong);
 	}
 	.research-contract div:first-child {
 		border-left: 0;
 	}
-	.research-contract span {
-		grid-row: 1 / 3;
-		color: var(--color-secondary);
-		font-family: var(--font-mono);
-		font-size: var(--font-size-xs);
-	}
 	.research-contract strong {
 		color: var(--color-ink);
-		font-size: var(--font-size-xs);
-		letter-spacing: var(--letter-spacing-label);
+		font-size: var(--font-size-base);
 	}
 	.research-contract small {
 		color: var(--color-ink-subtle);
@@ -541,7 +493,7 @@
 	}
 
 	.result-surface {
-		margin-top: var(--space-6);
+		margin-top: var(--space-8);
 	}
 	.invalid-state {
 		display: grid;
@@ -570,12 +522,14 @@
 		align-items: flex-end;
 		justify-content: space-between;
 		gap: var(--space-5);
-		margin-bottom: var(--space-4);
-		padding-bottom: var(--space-3);
+		margin-bottom: var(--space-5);
+		padding-bottom: var(--space-5);
 		border-bottom: var(--border-width) solid var(--color-border-strong);
 	}
 	.publication-mark {
-		gap: var(--space-2);
+		padding: var(--space-2) var(--space-3);
+		border-radius: 999px;
+		background: var(--color-observed-soft);
 		color: var(--color-observed);
 		font-weight: 700;
 	}
@@ -599,7 +553,6 @@
 		cursor: wait;
 		opacity: 0.7;
 	}
-	.load-more span,
 	.end-marker {
 		color: var(--color-ink-subtle);
 	}
@@ -642,14 +595,17 @@
 
 	@media (max-width: 58rem) {
 		.research-contract {
-			grid-template-columns: repeat(2, 1fr);
+			grid-template-columns: 1fr;
 		}
-		.research-contract div:nth-child(3) {
+		.research-contract div {
+			padding-top: var(--space-4);
+			padding-left: 0;
+			border-top: var(--border-width) solid var(--color-border);
 			border-left: 0;
-			border-top: var(--border-width) solid var(--color-border);
 		}
-		.research-contract div:nth-child(4) {
-			border-top: var(--border-width) solid var(--color-border);
+		.research-contract div:first-child {
+			padding-top: 0;
+			border-top: 0;
 		}
 		.search-row {
 			grid-template-columns: minmax(0, 1fr) auto;
@@ -666,10 +622,6 @@
 		.intel-banner {
 			align-items: flex-start;
 			flex-direction: column;
-		}
-		.scope-mark {
-			width: 3rem;
-			height: 3rem;
 		}
 		.boundary-state {
 			width: 100%;
@@ -694,14 +646,6 @@
 		}
 		.research-contract {
 			grid-template-columns: 1fr;
-		}
-		.research-contract div,
-		.research-contract div:nth-child(4) {
-			border-top: var(--border-width) solid var(--color-border);
-			border-left: 0;
-		}
-		.research-contract div:first-child {
-			border-top: 0;
 		}
 		.results-header,
 		.load-error {

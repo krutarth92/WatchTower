@@ -20,14 +20,14 @@
 </script>
 
 <button class="filter-trigger" type="button" onclick={openFilters}>
-	<span aria-hidden="true">⌁</span> Filters
+	Filters
 	{#if activeCount}<span class="count">{activeCount}</span>{/if}
 </button>
 
 <dialog bind:this={dialog} aria-labelledby="filter-title">
 	<div class="dialog-bar">
 		<div>
-			<p>SEARCH SCOPE</p>
+			<p>Search scope</p>
 			<h2 id="filter-title">Filter published intelligence</h2>
 		</div>
 		<button class="close" type="button" aria-label="Close filters" onclick={() => dialog.close()}
@@ -109,8 +109,8 @@
 		align-items: center;
 		gap: var(--space-2);
 		padding: 0 var(--space-4);
-		font-family: var(--font-mono);
 		font-size: var(--font-size-sm);
+		font-weight: 700;
 	}
 
 	.filter-trigger:hover,
@@ -163,7 +163,6 @@
 	legend {
 		margin: 0;
 		color: var(--color-primary);
-		font-family: var(--font-mono);
 		font-size: var(--font-size-xs);
 		font-weight: 700;
 		letter-spacing: var(--letter-spacing-label);
@@ -226,7 +225,6 @@
 		border-radius: var(--radius-sm);
 		color: var(--color-ink-muted);
 		cursor: pointer;
-		font-family: var(--font-mono);
 		font-size: var(--font-size-sm);
 		text-transform: capitalize;
 	}

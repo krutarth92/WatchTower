@@ -11,7 +11,7 @@
 		<strong>{update.title}</strong>
 		<span><UtcDate value={update.publishedAt} /></span>
 	</div>
-	<a href={update.href}>{update.linkLabel}<span aria-hidden="true"> →</span></a>
+	<a href={update.href}>{update.linkLabel}</a>
 	<a class="archive-link" href="/updates">All updates</a>
 </aside>
 
@@ -29,7 +29,7 @@
 		display: inline-flex;
 		align-items: center;
 		gap: var(--space-2);
-		color: var(--color-observed);
+		color: var(--color-threat);
 		font-family: var(--font-mono);
 		font-size: var(--font-size-xs);
 		font-weight: 700;
@@ -54,6 +54,9 @@
 
 	.update-copy strong {
 		overflow: hidden;
+		font-family: var(--font-display);
+		font-size: var(--font-size-lg);
+		letter-spacing: var(--letter-spacing-heading);
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}

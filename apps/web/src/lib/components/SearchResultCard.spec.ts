@@ -36,8 +36,8 @@ describe('search result card', () => {
 			'<script>unsafe technique</script>'
 		);
 		expect(container.querySelector('mark')?.textContent).toBe('unsafe');
-		expect(screen.getByText('No public detail route')).toBeTruthy();
-		expect(screen.getAllByText('OBSERVED')).toHaveLength(2);
+		expect(screen.getByText('Search result summary')).toBeTruthy();
+		expect(screen.getAllByText('OBSERVED')).toHaveLength(1);
 		expect(container.querySelector('script')).toBeNull();
 		expect(container.querySelector('a')).toBeNull();
 	});
@@ -77,9 +77,7 @@ describe('search result card', () => {
 		});
 
 		expect(screen.getByText('Disruptive operations actor.')).toBeTruthy();
-		expect(
-			screen.getByRole('link', { name: /Open related actor context/ }).getAttribute('href')
-		).toBe(
+		expect(screen.getByRole('link', { name: 'View related actor' }).getAttribute('href')).toBe(
 			'/actors/30000000-0000-4000-8000-000000000001?fromSearch=%2Fsearch%3Fq%3Dmalicious-update.example'
 		);
 	});

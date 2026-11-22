@@ -1,7 +1,7 @@
 # Task 37 — V1 UI acceptance and readiness closure
 
-Status: in progress; local and hosted acceptance evidence passed, owner review
-pending, 2026-11-21.
+Status: in progress; owner visual review reopened the presentation layer and a
+redesigned Docker preview is awaiting acceptance, 2026-11-22.
 
 Tracking: Jira `SCRUM-24`; branch `codex/task-37-v1-acceptance`.
 
@@ -66,19 +66,19 @@ acceptance without introducing a new product feature or production claim.
 
 ## Evidence matrix
 
-| Area                 | Required evidence                                                   | Current state                                      |
-| -------------------- | ------------------------------------------------------------------- | -------------------------------------------------- |
-| Real journey         | Deterministic Compose data and real API across every V1 module      | PASS                                               |
-| Automated UI         | Production build, unit suite, Playwright journey and axe scans      | PASS: 69 unit and 14 browser tests                 |
-| Manual accessibility | Keyboard, focus, zoom, landmarks and reduced motion                 | PASS                                               |
-| Responsive           | 320/768/1440 and 200% zoom, no page overflow                        | PASS after 320 px root-overflow fix                |
-| Visual contract      | Directional qualities present, prohibited copying absent            | PASS                                               |
-| Security             | Headers, links, plain text, storage, HTML/assets and secret scan    | PASS                                               |
-| Performance          | Documented local dataset/environment and navigation/resource timing | PASS: local-only baseline recorded                 |
-| Backend              | Ruff, format, Pyright, Alembic, pytest and package build            | PASS                                               |
-| Supply chain         | Dependency audit, both image builds/scans and CycloneDX evidence    | PASS                                               |
-| Documentation        | README, SETUP and readiness report match evidence and limitations   | PASS                                               |
-| Owner review         | Desktop/mobile rendered flow accepted for local/private V1          | Pending                                            |
+| Area                 | Required evidence                                                   | Current state                       |
+| -------------------- | ------------------------------------------------------------------- | ----------------------------------- |
+| Real journey         | Deterministic Compose data and real API across every V1 module      | PASS                                |
+| Automated UI         | Production build, unit suite, Playwright journey and axe scans      | PASS: 69 unit and 14 browser tests  |
+| Manual accessibility | Keyboard, focus, zoom, landmarks and reduced motion                 | PASS                                |
+| Responsive           | 320/768/1440 and 200% zoom, no page overflow                        | PASS after 320 px root-overflow fix |
+| Visual contract      | Directional qualities present, prohibited copying absent            | REVIEW REQUESTED after redesign     |
+| Security             | Headers, links, plain text, storage, HTML/assets and secret scan    | PASS                                |
+| Performance          | Documented local dataset/environment and navigation/resource timing | PASS: local-only baseline recorded  |
+| Backend              | Ruff, format, Pyright, Alembic, pytest and package build            | PASS                                |
+| Supply chain         | Dependency audit, both image builds/scans and CycloneDX evidence    | PASS                                |
+| Documentation        | README, SETUP and readiness report match evidence and limitations   | PASS                                |
+| Owner review         | Desktop/mobile rendered flow accepted for local/private V1          | Pending                             |
 
 ## Validation commands
 
@@ -124,8 +124,9 @@ such and never reported as passed.
 ## Remaining gates
 
 There is no implementation or validation blocker. The stack is healthy and
-remains available at `http://127.0.0.1:3000` with deterministic data for owner
-review. Owner acceptance is the remaining Task 37 gate.
+remains available at `http://127.0.0.1:3000` with deterministic data and the
+2026-11-22 editorial redesign. The owner accepted the visual direction on
+2026-11-22; an exact final-state hosted workflow remains the final Task 37 gate.
 
 ## Acceptance gate
 
@@ -223,6 +224,103 @@ program close and V2 productionization become the next program.
   substitute and the required supply-chain proof without changing application
   behavior.
 
-Remaining work is owner acceptance of the live desktop/mobile flow. The
-documentation-only CI-evidence commit will also receive the required hosted
-workflow before it is presented as the exact final state.
+At this point in the record, the remaining work was owner acceptance of the
+live desktop/mobile flow and a hosted workflow on the exact final state. The
+owner-acceptance gate is resolved below.
+
+### 2026-11-22 owner-review redesign
+
+- OWNER REVIEW FAILED THE PRIOR VISUAL: homepage copy was flush against its
+  visual surface and the product read as a testing/console interface rather
+  than an approachable intelligence publication. Task 37 remained open and no
+  next task was started.
+- IMPLEMENTED FOR REVIEW: a contained editorial hero with real internal
+  spacing, an original project-bound global-intelligence image, readable
+  plain-language navigation and search copy, separator-led intelligence feeds,
+  less console/debug chrome, a narrow-screen menu, and a less boxed search
+  results surface. Color, scrim and state values remain centralized in design
+  tokens.
+- PASS: Prettier on all changed frontend files; ESLint; Svelte/TypeScript with
+  zero errors and zero warnings; all 69 unit tests; production adapter build;
+  and all 14 Playwright tests. The browser suite includes axe checks and
+  320/768/1440 responsive coverage. A new regression assertion requires at
+  least 24 px between the hero boundary and its heading and confirms the hero
+  artwork loads.
+- PASS: the rebuilt Docker web service is healthy. Live review covered the
+  desktop homepage, 390 x 844 mobile homepage and populated CVE search results.
+  The first mobile pass exposed a horizontal navigation scrollbar; it was
+  replaced by a native menu, the affected and complete checks were rerun, and
+  the final Docker preview was shown again.
+- RESOLVED ON 2026-11-22: owner continued after reviewing the redesigned
+  desktop/mobile/search preview, accepting this direction for the final gate.
+
+### 2026-11-22 threat-focused theme revision
+
+- OWNER REVIEW REQUESTED ANOTHER REVISION: the cyan/teal presentation was
+  visually calm and did not communicate the threat-intelligence focus strongly
+  enough. Task 37 remained open.
+- IMPLEMENTED FOR REVIEW: near-black canvas and surfaces, electric cyan for
+  interaction, incident red for adversary/threat signals, amber for matches and
+  assessed risk, and green reserved for observed/healthy state. Indicator and
+  vulnerability result labels plus critical severity now use the threat token.
+  All foundational values remain centralized in `tokens.css`.
+- PASS: Prettier, ESLint, Svelte/TypeScript with zero errors and warnings, all
+  69 unit tests, the production build, and all 14 Playwright tests including
+  axe and responsive checks. The Docker web service was rebuilt and returned
+  healthy; the final homepage and populated CVE-search theme were reviewed in
+  the live browser.
+- RESOLVED ON 2026-11-22: the accepted review candidate includes this
+  threat-focused theme.
+
+### 2026-11-22 typography and visual-language revision
+
+- OWNER REVIEW REQUESTED A FONT-FAMILY CHANGE and a considered pass on what a
+  purpose-built WATCHTOWER interface should communicate. Task 37 remained open;
+  this is a refinement of the review candidate, not a new task.
+- IMPLEMENTED FOR REVIEW: a three-role, self-hosted typography system. Barlow
+  Condensed gives the wordmark, intelligence headlines, actor names and
+  advisory titles an urgent editorial voice; IBM Plex Sans Variable handles
+  navigation, controls and reading copy; IBM Plex Mono identifies CVEs,
+  techniques, timestamps and evidence metadata. The families and heading
+  tracking are defined once in `tokens.css`/`layout.css`, while only the Latin
+  faces and required static weights are imported. Fontsource dependencies are
+  pinned to 5.3.0 and require no runtime font CDN.
+- IMPLEMENTED FOR REVIEW: the hierarchy was extended through platform-update,
+  featured-assessment, feed, actor and module titles instead of applying the
+  display face indiscriminately. Body text remains neutral and readable;
+  technical data retains tabular numerals and slashed-zero support. No new
+  unsupported metric, route or product claim was introduced.
+- PASS: Prettier, ESLint, Svelte/TypeScript with zero errors and zero warnings,
+  all 69 unit tests and the production adapter build. The build emitted the
+  expected local WOFF/WOFF2 assets.
+- PASS: all 14 Playwright tests, including axe and 320/768/1440 responsive
+  coverage. The homepage regression now checks the computed font roles and
+  explicitly loads each font face. Its first version used `FontFaceSet.check`
+  before optional faces were requested and correctly failed; the assertion was
+  changed to `FontFaceSet.load`, then the complete suite passed.
+- PASS: the Docker image built from the frozen lockfile with pnpm 12.14.0, the
+  web container was recreated and is healthy on `127.0.0.1:3000`. Live browser
+  review covered the full homepage hero/feed and a populated CVE result page;
+  headline wrapping, metadata hierarchy, font rendering and asset loading were
+  visually sound.
+- OWNER ACCEPTED ON 2026-11-22: after the live typography review, the owner
+  instructed the task to continue. The accepted candidate now proceeds to its
+  exact-final-state commit and hosted workflow gate.
+
+### 2026-11-22 accepted-candidate pre-commit gate
+
+- PASS: inspected the actual working tree and diff on
+  `codex/task-37-v1-acceptance`; all changed files belong to the reviewed
+  homepage/search redesign, theme, typography, tests, lockfile, original hero
+  artwork and this execution record. `git diff --check` passed.
+- PASS: Prettier over the complete web workspace and this execution plan;
+  ESLint; Svelte/TypeScript with zero errors and zero warnings; and all 69 unit
+  tests on the accepted candidate.
+- STILL APPLICABLE: the production adapter build, 14-test Playwright suite,
+  Docker frozen-lockfile build, live browser review and healthy-container check
+  recorded immediately above. After those checks, only this Markdown execution
+  record changed; no application, test, dependency or container input changed.
+  Application checks were therefore not misrepresented as rerun after the
+  documentation-only acceptance update.
+- PENDING: commit the accepted candidate, push it and require the hosted
+  workflow on that exact commit. Task 37 does not close until that gate passes.

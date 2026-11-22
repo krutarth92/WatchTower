@@ -21,7 +21,7 @@
 			<span class="wordmark">WATCH<span> TOWER</span></span>
 		</a>
 
-		<nav aria-label="Primary navigation">
+		<nav class="desktop-navigation" aria-label="Primary navigation">
 			{#each primaryNavigation as destination (destination.href)}
 				<a
 					class:active={destination.match(currentPath)}
@@ -40,7 +40,7 @@
 					href="/admin/integrations"
 					aria-label="Admin integrations"
 				>
-					<span aria-hidden="true">◇</span><span class="admin-label">Admin</span>
+					<span class="admin-label">Admin</span>
 				</a>
 			{/if}
 			<a
@@ -48,10 +48,25 @@
 				href="/updates"
 				aria-label="Platform updates"
 			>
-				<span aria-hidden="true">↗</span><span class="updates-label">Updates</span>
+				<span class="updates-label">Updates</span>
 			</a>
 			<span class="environment-label"><span aria-hidden="true"></span>{environmentLabel}</span>
 		</div>
+
+		<details class="mobile-navigation">
+			<summary>Menu</summary>
+			<nav aria-label="Mobile navigation">
+				{#each primaryNavigation as destination (destination.href)}
+					<a
+						class:active={destination.match(currentPath)}
+						aria-current={destination.match(currentPath) ? 'page' : undefined}
+						href={destination.href}
+					>
+						{destination.label}
+					</a>
+				{/each}
+			</nav>
+		</details>
 	</div>
 </header>
 
@@ -62,7 +77,7 @@
 		z-index: 10;
 		min-height: var(--header-height);
 		border-bottom: var(--border-width) solid var(--color-border);
-		background: var(--color-scrim);
+		background: var(--color-header-glass);
 		backdrop-filter: blur(var(--space-3));
 	}
 
@@ -81,8 +96,9 @@
 		display: inline-flex;
 		align-items: center;
 		gap: var(--space-2);
+		font-family: var(--font-display);
 		font-weight: 800;
-		letter-spacing: var(--letter-spacing-label);
+		letter-spacing: 0.045em;
 		text-decoration: none;
 		white-space: nowrap;
 	}
@@ -98,21 +114,23 @@
 	}
 
 	.wordmark {
-		font-size: var(--font-size-sm);
+		font-size: var(--font-size-lg);
+		line-height: 1;
 	}
 
 	.wordmark span {
-		color: var(--color-primary);
+		color: var(--color-threat);
 	}
 
-	nav {
+	.desktop-navigation {
 		display: flex;
 		min-width: 0;
 		justify-content: center;
 		gap: clamp(var(--space-2), 1.7vw, var(--space-5));
 	}
 
-	nav a,
+	.desktop-navigation a,
+	.mobile-navigation a,
 	.header-meta a {
 		position: relative;
 		display: inline-flex;
@@ -124,14 +142,16 @@
 		white-space: nowrap;
 	}
 
-	nav a:hover,
-	nav a.active,
+	.desktop-navigation a:hover,
+	.desktop-navigation a.active,
+	.mobile-navigation a:hover,
+	.mobile-navigation a.active,
 	.header-meta a:hover,
 	.header-meta a.active {
 		color: var(--color-primary);
 	}
 
-	nav a.active::after {
+	.desktop-navigation a.active::after {
 		position: absolute;
 		right: 0;
 		bottom: 0;
@@ -147,11 +167,13 @@
 		gap: var(--space-3);
 	}
 
+	.mobile-navigation {
+		display: none;
+	}
+
 	.header-meta a {
 		gap: var(--space-1);
-		font-family: var(--font-mono);
-		font-size: var(--font-size-xs);
-		text-transform: uppercase;
+		font-size: var(--font-size-sm);
 	}
 
 	.environment-label {
@@ -180,7 +202,7 @@
 			padding-block: var(--space-2);
 		}
 
-		nav {
+		.desktop-navigation {
 			grid-column: 1 / -1;
 			grid-row: 2;
 			justify-content: flex-start;
@@ -190,14 +212,70 @@
 	}
 
 	@media (max-width: 34rem) {
-		.environment-label,
-		.updates-label,
-		.admin-label {
+		.environment-label {
+			display: none;
+		}
+
+		.header-inner {
+			grid-template-columns: auto minmax(0, 1fr) auto;
+			gap: var(--space-2);
+			padding-inline: var(--space-4);
+		}
+
+		.desktop-navigation {
 			display: none;
 		}
 
 		.header-meta {
+			justify-self: end;
 			gap: var(--space-2);
+		}
+
+		.header-meta a {
+			font-size: var(--font-size-xs);
+		}
+
+		.mobile-navigation {
+			position: relative;
+			display: block;
+		}
+
+		.mobile-navigation summary {
+			min-height: 2.5rem;
+			padding: var(--space-2) var(--space-3);
+			border: var(--border-width) solid var(--color-border-strong);
+			border-radius: var(--radius-sm);
+			color: var(--color-ink);
+			cursor: pointer;
+			font-size: var(--font-size-xs);
+			font-weight: 700;
+			list-style: none;
+		}
+
+		.mobile-navigation summary::-webkit-details-marker {
+			display: none;
+		}
+
+		.mobile-navigation nav {
+			position: absolute;
+			top: calc(100% + var(--space-2));
+			right: 0;
+			display: grid;
+			width: min(17rem, calc(100vw - 2rem));
+			padding: var(--space-3);
+			border: var(--border-width) solid var(--color-border-strong);
+			border-radius: var(--radius-md);
+			background: var(--color-surface-raised);
+			box-shadow: var(--shadow-panel);
+		}
+
+		.mobile-navigation a {
+			padding-inline: var(--space-3);
+			border-bottom: var(--border-width) solid var(--color-border);
+		}
+
+		.mobile-navigation a:last-child {
+			border-bottom: 0;
 		}
 	}
 </style>

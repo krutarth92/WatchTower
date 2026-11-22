@@ -2,37 +2,44 @@
 	color-scheme: dark;
 
 	/* Color is defined here once. Components use semantic variables only. */
-	--color-canvas: #060a13;
-	--color-surface: #0e1625;
-	--color-surface-raised: #131d2e;
-	--color-surface-hover: #18263a;
-	--color-surface-glass: rgb(10 18 31 / 88%);
-	--color-ink: #e6edf7;
-	--color-ink-muted: #98a7ba;
-	--color-ink-subtle: #6e7f94;
-	--color-border: #2c3a50;
-	--color-border-strong: #405570;
-	--color-primary: #29d3e6;
-	--color-primary-soft: #133843;
-	--color-primary-faint: rgb(41 211 230 / 10%);
-	--color-primary-glow: rgb(41 211 230 / 24%);
-	--color-secondary: #b56bea;
-	--color-secondary-faint: rgb(181 107 234 / 12%);
-	--color-highlight: #ec6bb6;
-	--color-observed: #4ecb9b;
-	--color-assessed: #f0b35a;
-	--color-critical: #ff626e;
-	--color-focus: #73e7f3;
-	--color-scrim: rgb(3 7 15 / 72%);
-	--color-grid-primary: rgb(41 211 230 / 6%);
-	--color-grid-secondary: rgb(181 107 234 / 5%);
-	--color-panel-highlight: rgb(255 255 255 / 4%);
-	--color-shadow: rgb(0 0 0 / 38%);
+	--color-canvas: #02060a;
+	--color-canvas-soft: #070c12;
+	--color-surface: #0a1018;
+	--color-surface-raised: #101822;
+	--color-surface-hover: #172330;
+	--color-surface-glass: rgb(7 11 16 / 92%);
+	--color-header-glass: rgb(3 7 11 / 95%);
+	--color-ink: #f5f7fa;
+	--color-ink-muted: #c1c8d2;
+	--color-ink-subtle: #8793a1;
+	--color-border: #26323e;
+	--color-border-strong: #4a5a69;
+	--color-primary: #43ddff;
+	--color-primary-soft: #0a3440;
+	--color-primary-faint: rgb(67 221 255 / 9%);
+	--color-primary-glow: rgb(67 221 255 / 22%);
+	--color-secondary: #ff5a76;
+	--color-secondary-faint: rgb(255 90 118 / 11%);
+	--color-threat: #ff4664;
+	--color-threat-soft: #3c111b;
+	--color-threat-faint: rgb(255 70 100 / 10%);
+	--color-threat-glow: rgb(255 70 100 / 23%);
+	--color-highlight: #ffb34d;
+	--color-observed: #2fe0a0;
+	--color-observed-soft: rgb(47 224 160 / 11%);
+	--color-assessed: #ffbb52;
+	--color-critical: #ff334e;
+	--color-focus: #84edff;
+	--color-scrim: rgb(1 3 7 / 78%);
+	--color-grid-primary: rgb(67 221 255 / 5%);
+	--color-grid-secondary: rgb(255 70 100 / 5%);
+	--color-panel-highlight: rgb(255 255 255 / 5%);
+	--color-shadow: rgb(0 0 0 / 52%);
 
 	--gradient-brand: linear-gradient(
 		105deg,
 		var(--color-primary) 0%,
-		var(--color-secondary) 62%,
+		var(--color-threat) 56%,
 		var(--color-highlight) 100%
 	);
 	--gradient-surface: linear-gradient(
@@ -42,22 +49,29 @@
 		var(--color-primary-faint)
 	);
 	--gradient-ambient:
-		radial-gradient(circle at 82% 18%, var(--color-secondary-faint), transparent 28rem),
-		radial-gradient(circle at 16% 78%, var(--color-primary-faint), transparent 30rem);
+		radial-gradient(circle at 82% 18%, var(--color-threat-faint), transparent 25rem),
+		radial-gradient(circle at 16% 78%, var(--color-primary-faint), transparent 28rem);
+	--gradient-hero-shade:
+		radial-gradient(circle at 83% 37%, var(--color-threat-glow), transparent 24rem),
+		linear-gradient(90deg, var(--color-surface) 0, transparent 22%),
+		linear-gradient(0deg, rgb(2 5 9 / 94%) 0, transparent 50%);
 	--texture-grid:
 		linear-gradient(var(--color-grid-primary) 1px, transparent 1px),
 		linear-gradient(90deg, var(--color-grid-secondary) 1px, transparent 1px);
 
+	--font-display: 'Barlow Condensed', 'Arial Narrow', 'Roboto Condensed', sans-serif;
 	--font-sans:
-		Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-	--font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
-	--font-size-xs: 0.75rem;
-	--font-size-sm: 0.875rem;
+		'IBM Plex Sans Variable', 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system,
+		BlinkMacSystemFont, 'Segoe UI', sans-serif;
+	--font-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+	--font-size-xs: 0.8125rem;
+	--font-size-sm: 0.9375rem;
 	--font-size-base: 1rem;
 	--font-size-lg: 1.125rem;
 	--font-size-xl: clamp(1.75rem, 5vw, 3.75rem);
 	--line-height-tight: 1.08;
 	--line-height-base: 1.6;
+	--letter-spacing-heading: 0.012em;
 	--letter-spacing-label: 0.08em;
 
 	--space-1: 0.25rem;
@@ -71,18 +85,18 @@
 
 	--radius-sm: 0.375rem;
 	--radius-md: 0.625rem;
-	--radius-lg: 0.875rem;
+	--radius-lg: 1rem;
 	--border-width: 1px;
 	--shadow-panel: 0 1.25rem 3.5rem var(--color-shadow);
 	--shadow-glow: 0 0 4rem var(--color-primary-glow);
-	--shadow-focus: 0 0 0 0.1875rem rgb(115 231 243 / 32%);
+	--shadow-focus: 0 0 0 0.1875rem rgb(132 237 255 / 34%);
 
 	--motion-fast: 120ms;
 	--motion-standard: 150ms;
 	--motion-ambient: 6s;
 	--easing-standard: cubic-bezier(0.2, 0, 0, 1);
 
-	--content-width: 80rem;
+	--content-width: 84rem;
 	--header-height: 4.5rem;
 	--grid-size: 2.5rem;
 }

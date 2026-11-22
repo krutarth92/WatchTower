@@ -62,10 +62,8 @@
 	}
 
 	.boundary {
-		font-family: var(--font-mono);
 		font-size: var(--font-size-xs);
 		text-align: right;
-		text-transform: uppercase;
 	}
 
 	@media (max-width: 52rem) {

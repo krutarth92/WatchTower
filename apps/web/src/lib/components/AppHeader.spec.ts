@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/svelte';
+import { render, screen, within } from '@testing-library/svelte';
 import { describe, expect, it } from 'vitest';
 import AppHeader from './AppHeader.svelte';
 
@@ -10,12 +10,15 @@ describe('AppHeader', () => {
 			adminEnabled: false
 		});
 
-		expect(screen.getByRole('link', { name: 'WATCHTOWER home' }).getAttribute('href')).toBe('/');
-		expect(screen.getByRole('link', { name: 'Research' }).getAttribute('aria-current')).toBe(
-			'page'
+		const primaryNavigation = within(
+			screen.getByRole('navigation', { name: 'Primary navigation' })
 		);
+		expect(screen.getByRole('link', { name: 'WATCHTOWER home' }).getAttribute('href')).toBe('/');
+		expect(
+			primaryNavigation.getByRole('link', { name: 'Research' }).getAttribute('aria-current')
+		).toBe('page');
 		for (const label of ['Home', 'Intelligence', 'Actors', 'Evolution', 'Technical']) {
-			expect(screen.getByRole('link', { name: label })).toBeTruthy();
+			expect(primaryNavigation.getByRole('link', { name: label })).toBeTruthy();
 		}
 		expect(screen.getByRole('link', { name: 'Platform updates' })).toBeTruthy();
 		expect(screen.queryByRole('link', { name: 'Admin integrations' })).toBeNull();

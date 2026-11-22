@@ -1,3 +1,11 @@
+@import '@fontsource/barlow-condensed/latin-500.css';
+@import '@fontsource/barlow-condensed/latin-600.css';
+@import '@fontsource/barlow-condensed/latin-700.css';
+@import '@fontsource/barlow-condensed/latin-800.css';
+@import '@fontsource-variable/ibm-plex-sans';
+@import '@fontsource/ibm-plex-mono/latin-400.css';
+@import '@fontsource/ibm-plex-mono/latin-500.css';
+@import '@fontsource/ibm-plex-mono/latin-600.css';
 @import 'tailwindcss';
 @import '../lib/styles/tokens.css';
 
@@ -26,6 +34,15 @@ body {
 	line-height: var(--line-height-base);
 }
 
+h1,
+h2,
+h3,
+h4 {
+	font-family: var(--font-display);
+	font-kerning: normal;
+	letter-spacing: var(--letter-spacing-heading);
+}
+
 a {
 	color: inherit;
 }
@@ -35,6 +52,15 @@ input,
 select,
 textarea {
 	font: inherit;
+}
+
+code,
+kbd,
+pre,
+samp,
+time {
+	font-family: var(--font-mono);
+	font-variant-numeric: tabular-nums slashed-zero;
 }
 
 :focus-visible {
