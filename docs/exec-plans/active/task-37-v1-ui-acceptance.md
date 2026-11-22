@@ -322,5 +322,12 @@ owner-acceptance gate is resolved below.
   record changed; no application, test, dependency or container input changed.
   Application checks were therefore not misrepresented as rerun after the
   documentation-only acceptance update.
-- PENDING: commit the accepted candidate, push it and require the hosted
-  workflow on that exact commit. Task 37 does not close until that gate passes.
+- PASS: accepted implementation commit
+  `adac261ab5db5720fd6e5dd42895a62402d068ac` was pushed and GitHub Actions CI
+  run `44999753887` completed successfully. Frontend checks, backend checks,
+  Python dependency audit, and container build/security scan all passed on that
+  exact commit.
+- FINALIZATION: this documentation-only evidence update receives the same
+  hosted workflow after it is committed and pushed. Task 37 closes only when
+  that exact branch tip is green; its run is reported in the final handoff
+  without creating a self-referential sequence of additional evidence commits.
