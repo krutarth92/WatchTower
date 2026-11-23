@@ -1,7 +1,7 @@
 # Task 37 — V1 UI acceptance and readiness closure
 
-Status: in progress; owner visual review reopened the presentation layer and a
-redesigned Docker preview is awaiting acceptance, 2026-11-22.
+Status: complete; owner acceptance, local validation, exact-tip hosted CI and
+Jira closure passed, 2026-11-23.
 
 Tracking: Jira `SCRUM-24`; branch `codex/task-37-v1-acceptance`.
 
@@ -123,18 +123,19 @@ such and never reported as passed.
 
 ## Remaining gates
 
-There is no implementation or validation blocker. The stack is healthy and
-remains available at `http://127.0.0.1:3000` with deterministic data and the
-2026-11-22 editorial redesign. The owner accepted the visual direction on
-2026-11-22; an exact final-state hosted workflow remains the final Task 37 gate.
+There are no remaining local/private V1 gates. The stack is healthy and remains
+available at `http://127.0.0.1:3000` with deterministic data and the accepted
+2026-11-22 editorial redesign. AWS deployment and operational proof remain a
+separately authorized V2 program.
 
 ## Acceptance gate
 
-All required automated and manual evidence passes on the final state; README,
-SETUP and the V1 readiness audit accurately describe local/private V1 and its
-limitations; hosted CI passes the exact final commit; and the owner accepts the
-rendered desktop and mobile flow. Only then may Tasks 29/30–37 and the V1 UI
-program close and V2 productionization become the next program.
+SATISFIED: all required automated and manual evidence passed; README, SETUP and
+the V1 readiness audit describe the local/private boundary and limitations;
+hosted CI passed the reviewed implementation and evidence commits; the owner
+accepted the rendered desktop/mobile/search flow; and Jira `SCRUM-24` is Done.
+Tasks 29/30–37 and the V1 UI program are closed. V2 productionization remains a
+separately authorized program.
 
 ## Verification record
 
@@ -327,7 +328,11 @@ owner-acceptance gate is resolved below.
   run `44999753887` completed successfully. Frontend checks, backend checks,
   Python dependency audit, and container build/security scan all passed on that
   exact commit.
-- FINALIZATION: this documentation-only evidence update receives the same
-  hosted workflow after it is committed and pushed. Task 37 closes only when
-  that exact branch tip is green; its run is reported in the final handoff
-  without creating a self-referential sequence of additional evidence commits.
+- PASS: evidence commit `5a5a3c94e01c72ffa011229d1bf8b913709b86ea`
+  passed exact-tip GitHub Actions run `45000024529`; all four required jobs
+  succeeded.
+- PASS: a final acceptance comment was added to Jira `SCRUM-24`, and transition
+  `41` moved the issue from In Progress to Done on 2026-11-23.
+- FINALIZATION: this closure-only documentation commit receives the same hosted
+  workflow. Its exact result is reported in the final handoff without creating
+  a self-referential sequence of additional evidence commits.

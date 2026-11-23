@@ -10,13 +10,13 @@ versioned living intelligence advisories.
 
 ## Current status
 
-The local/private V1 candidate is implemented for acceptance. It includes the
-backend, public intelligence and living advisories, actor/indicator/CVE search,
-actor research and evolution, technical views, platform updates, and a
+The local/private V1 is implemented, validated and owner-accepted. It includes
+the backend, public intelligence and living advisories, actor/indicator/CVE
+search, actor research and evolution, technical views, platform updates, and a
 local/private operator integration register. The UI uses centralized design
 tokens and a server-only API/token boundary. The
 [V1 readiness audit](docs/exec-plans/active/v1-readiness.md) records the exact
-evidence, limitations and final acceptance gate.
+evidence, acceptance outcome and limitations.
 
 Production templates define private S3 evidence storage, encrypted Multi-AZ RDS
 PostgreSQL, governed backups, Cognito operator identity, and an ALB/WAF HTTPS
