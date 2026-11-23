@@ -1,6 +1,6 @@
 # Task 38 — approved source integration wave
 
-Status: implementation complete; hosted CI and owner review pending.
+Status: implementation and validation complete; owner review pending.
 Date started: 2026-11-23.
 Branch: `codex/task-38-source-integrations`.
 Tracking: Jira `SCRUM-26`.
@@ -187,5 +187,6 @@ Fixture/parser live smokes also returned 953 MISP objects, 1,790 CISA entries,
 10 Microsoft items, 15 Unit 42 items and 50 The Hacker News items. These counts
 are observations from the validation date, not stable acceptance constants.
 
-Hosted GitHub Actions and owner review remain pending. No pending or skipped
-check is represented as passed.
+GitHub Actions run `45173286547` passed on exact implementation commit
+`e70d491a596820fa8ec46ac2e03523b52860d782`. Owner review remains pending. No
+pending or skipped check is represented as passed.
