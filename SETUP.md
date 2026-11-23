@@ -140,9 +140,17 @@ navigation destination is hidden. Keep this static-token browser bridge
 disabled in production; a production UI requires the existing OIDC boundary to
 be extended with a browser sign-in flow.
 
-The page truthfully reports the approved source waves. MITRE ATT&CK is the only
-runnable connector. Planned connectors expose no run or enable control, and
-credential values cannot be edited or read from the page.
+The page truthfully reports the approved source waves. MITRE ATT&CK, MISP
+Galaxy, CISA KEV, Microsoft Threat Intelligence, Unit 42 and The Hacker News
+have replay-safe manual refresh actions. These public sources require no API
+keys. Planned connectors expose no run or enable control, and credential values
+cannot be edited or read from the page.
+
+Imported source records remain internal. A successful refresh proves retrieval,
+raw-evidence retention and normalization; it does not automatically publish
+external claims to the public research surface. Microsoft, Unit 42 and The
+Hacker News store feed metadata and inert summaries only, never complete
+article bodies.
 
 All foundational color, typography, spacing, radius, shadow, motion and layout
 values live in `apps/web/src/lib/styles/tokens.css`. Components consume semantic

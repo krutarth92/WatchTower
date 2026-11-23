@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from watchtower.api.v1.job_schemas import IngestionJobRead, IngestionJobSubmission
+from watchtower.db.models import IngestionJobKind
 from watchtower.integrations.catalog import (
     EnrichmentDefinition,
     EnrichmentWave,
@@ -22,6 +23,7 @@ class IntegrationRead(BaseModel):
     implemented: bool
     configured: bool
     can_sync: bool
+    job_kind: IngestionJobKind | None
     required_settings: list[str]
     enrichments: list[str]
     latest_job: IngestionJobRead | None
@@ -66,6 +68,7 @@ def integration_read(
         implemented=definition.implemented,
         configured=definition.configured,
         can_sync=definition.can_sync,
+        job_kind=definition.job_kind,
         required_settings=list(definition.required_settings),
         enrichments=list(definition.enrichments),
         latest_job=latest_job,

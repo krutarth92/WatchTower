@@ -51,25 +51,31 @@ INTEGRATION_CATALOG: tuple[IntegrationDefinition, ...] = (
     IntegrationDefinition(
         key="misp-galaxy",
         name="MISP Galaxy",
-        wave="first_wave",
+        wave="implemented",
         description="Versioned galaxy clusters, synonyms and source attribution.",
+        implemented=True,
+        job_kind=IngestionJobKind.MISP_GALAXY_REFRESH,
         enrichments=("alias resolution", "historical correlation"),
     ),
     IntegrationDefinition(
         key="cisa",
-        name="CISA",
-        wave="first_wave",
+        name="CISA KEV",
+        wave="implemented",
         description=(
             "Authoritative CISA intelligence beginning with Known Exploited Vulnerabilities."
         ),
+        implemented=True,
+        job_kind=IngestionJobKind.CISA_KEV_REFRESH,
         enrichments=("historical correlation",),
     ),
     IntegrationDefinition(
         key="microsoft-threat-intelligence",
         name="Microsoft Threat Intelligence",
-        wave="first_wave",
-        description="Official Microsoft threat publications with actor and campaign attribution.",
-        enrichments=("ATT&CK mappings", "alias resolution", "historical correlation"),
+        wave="implemented",
+        description="Official Microsoft threat-publication metadata with retained source links.",
+        implemented=True,
+        job_kind=IngestionJobKind.MICROSOFT_THREAT_INTELLIGENCE_REFRESH,
+        enrichments=("historical correlation",),
     ),
     IntegrationDefinition(
         key="google-tag",
@@ -81,9 +87,22 @@ INTEGRATION_CATALOG: tuple[IntegrationDefinition, ...] = (
     IntegrationDefinition(
         key="unit-42",
         name="Unit 42",
-        wave="first_wave",
-        description="Unit 42 research with actor, campaign and technique context.",
-        enrichments=("ATT&CK mappings", "alias resolution", "historical correlation"),
+        wave="implemented",
+        description="Unit 42 publication metadata with retained categories and source links.",
+        implemented=True,
+        job_kind=IngestionJobKind.UNIT_42_REFRESH,
+        enrichments=("historical correlation",),
+    ),
+    IntegrationDefinition(
+        key="the-hacker-news",
+        name="The Hacker News",
+        wave="implemented",
+        description=(
+            "Selected secondary cyber-news reporting retained as metadata and source links."
+        ),
+        implemented=True,
+        job_kind=IngestionJobKind.THE_HACKER_NEWS_REFRESH,
+        enrichments=("historical correlation",),
     ),
     IntegrationDefinition(
         key="malpedia",

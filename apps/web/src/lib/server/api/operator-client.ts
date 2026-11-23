@@ -1,12 +1,26 @@
 import { runtimeConfig } from '#lib/server/config/runtime.ts';
 import type {
 	IntegrationCatalogResponse,
-	IntegrationSyncResponse
+	IntegrationSyncResponse,
+	IngestionJobKind
 } from '#lib/integrations/contracts.ts';
 
 const timeoutMs = 10_000;
 const catalogPath = '/api/v1/operations/integrations';
-const mitreSyncPath = '/api/v1/operations/integrations/mitre-attack/sync';
+const syncJobs = {
+	'mitre-attack': 'mitre_attack_refresh',
+	'misp-galaxy': 'misp_galaxy_refresh',
+	cisa: 'cisa_kev_refresh',
+	'microsoft-threat-intelligence': 'microsoft_threat_intelligence_refresh',
+	'unit-42': 'unit_42_refresh',
+	'the-hacker-news': 'the_hacker_news_refresh'
+} as const satisfies Record<string, IngestionJobKind>;
+
+export type SyncIntegrationKey = keyof typeof syncJobs;
+
+function syncPath(integrationKey: SyncIntegrationKey) {
+	return `/api/v1/operations/integrations/${integrationKey}/sync`;
+}
 
 export interface OperatorApiClientOptions {
 	fetch?: typeof globalThis.fetch;
@@ -79,9 +93,12 @@ export function createOperatorApiClient(options: OperatorApiClientOptions = {}) 
 				requestId: null
 			});
 		}
+		const allowedSyncPaths = new Set(
+			Object.keys(syncJobs).map((key) => syncPath(key as SyncIntegrationKey))
+		);
 		if (
 			(path !== catalogPath || method !== 'GET') &&
-			(path !== mitreSyncPath || method !== 'POST')
+			(!allowedSyncPaths.has(path) || method !== 'POST')
 		) {
 			throw new TypeError('The operator API request is not allowlisted.');
 		}
@@ -111,10 +128,10 @@ export function createOperatorApiClient(options: OperatorApiClientOptions = {}) 
 
 	return Object.freeze({
 		catalog: () => request<IntegrationCatalogResponse>(catalogPath, 'GET'),
-		syncMitre: (idempotencyKey: string) =>
-			request<IntegrationSyncResponse>(mitreSyncPath, 'POST', {
-				integration_key: 'mitre-attack',
-				job_kind: 'mitre_attack_refresh',
+		sync: (integrationKey: SyncIntegrationKey, idempotencyKey: string) =>
+			request<IntegrationSyncResponse>(syncPath(integrationKey), 'POST', {
+				integration_key: integrationKey,
+				job_kind: syncJobs[integrationKey],
 				idempotency_key: idempotencyKey
 			})
 	});

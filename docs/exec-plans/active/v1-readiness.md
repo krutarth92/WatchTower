@@ -19,6 +19,16 @@ AWS deployment proof, public service, production identity flow, shared durable
 storage exercise, monitored staging environment, capacity SLO or live RAG
 provider. Those remain V2 or separately approved product decisions.
 
+## Post-V1 source work
+
+Task 38 began after this V1 acceptance and does not rewrite its historical
+evidence. The current branch adds implementation candidates for MISP Galaxy,
+CISA KEV, Microsoft Threat Intelligence, Unit 42 and The Hacker News alongside
+the accepted MITRE connector. Each uses immutable raw evidence and a durable
+job, and all newly imported records remain internal pending explicit
+publication. Task 38 is not complete until its own validation, hosted CI and
+owner-review gates pass.
+
 ## Release boundary
 
 - **V1:** local/private Docker Compose product; read-only public intelligence
@@ -74,8 +84,8 @@ This static-token bridge is forbidden in production.
   publishing console or production browser sign-in.
 - Actor evolution is an evidence-led timeline, not a complete-series chart.
 - Live RAG is disabled pending a provider, privacy/egress and budget decision.
-- Only MITRE ATT&CK is runnable; other approved sources are accurately marked
-  as planned rather than simulated.
+- At the V1 acceptance point only MITRE ATT&CK was runnable. Task 38 is the
+  separately tracked post-V1 source-integration change described above.
 - The demo dataset is fictional and intentionally small. The local timing
   baseline cannot be extrapolated to production data or traffic.
 - Advisory withdrawal/redaction, production monitoring and release-image

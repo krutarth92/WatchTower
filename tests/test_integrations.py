@@ -49,9 +49,18 @@ def test_operator_catalog_is_truthful_and_does_not_disclose_secrets(
     assert sources["mitre-attack"]["status"] == "available"
     assert sources["mitre-attack"]["configured"] is True
     assert sources["mitre-attack"]["can_sync"] is True
-    assert sources["misp-galaxy"]["status"] == "planned"
-    assert sources["misp-galaxy"]["configured"] is False
-    assert sources["misp-galaxy"]["can_sync"] is False
+    for key in (
+        "mitre-attack",
+        "misp-galaxy",
+        "cisa",
+        "microsoft-threat-intelligence",
+        "unit-42",
+        "the-hacker-news",
+    ):
+        assert sources[key]["status"] == "available"
+        assert sources[key]["configured"] is True
+        assert sources[key]["can_sync"] is True
+        assert sources[key]["job_kind"]
     assert sources["malpedia"]["required_settings"] == ["WATCHTOWER_MALPEDIA_API_KEY"]
     assert {
         "misp-galaxy",
@@ -59,6 +68,7 @@ def test_operator_catalog_is_truthful_and_does_not_disclose_secrets(
         "microsoft-threat-intelligence",
         "google-tag",
         "unit-42",
+        "the-hacker-news",
     } <= set(sources)
     assert {"malpedia", "securelist", "eset-research", "selected-news"} <= set(sources)
     assert "twitter" not in sources
@@ -103,9 +113,31 @@ def test_operator_can_submit_only_supported_replay_safe_sync(
             json=payload,
             headers=headers,
         )
+        additional = []
+        for integration_key, job_kind in (
+            ("misp-galaxy", "misp_galaxy_refresh"),
+            ("cisa", "cisa_kev_refresh"),
+            (
+                "microsoft-threat-intelligence",
+                "microsoft_threat_intelligence_refresh",
+            ),
+            ("unit-42", "unit_42_refresh"),
+            ("the-hacker-news", "the_hacker_news_refresh"),
+        ):
+            additional.append(
+                client.post(
+                    f"/api/v1/operations/integrations/{integration_key}/sync",
+                    json={
+                        "integration_key": integration_key,
+                        "job_kind": job_kind,
+                        "idempotency_key": f"{key}-{integration_key}",
+                    },
+                    headers=headers,
+                )
+            )
         planned = client.post(
-            "/api/v1/operations/integrations/misp-galaxy/sync",
-            json={**payload, "integration_key": "misp-galaxy"},
+            "/api/v1/operations/integrations/google-tag/sync",
+            json={**payload, "integration_key": "google-tag"},
             headers=headers,
         )
         catalog = client.get(
@@ -118,11 +150,14 @@ def test_operator_can_submit_only_supported_replay_safe_sync(
     assert duplicate.status_code == 202
     assert duplicate.json()["data"]["duplicate"] is True
     assert duplicate.json()["data"]["job"]["id"] == accepted.json()["data"]["job"]["id"]
+    assert all(response.status_code == 202 for response in additional)
     assert planned.status_code == 404
     assert planned.json()["error"]["code"] == "integration_not_available"
     mitre = next(item for item in catalog.json()["data"] if item["key"] == "mitre-attack")
     assert mitre["latest_job"]["id"] == accepted.json()["data"]["job"]["id"]
-    assert queue.messages == [
+    expected = [
         (UUID(accepted.json()["data"]["job"]["id"]), 0),
         (UUID(accepted.json()["data"]["job"]["id"]), 0),
     ]
+    expected.extend((UUID(response.json()["data"]["job"]["id"]), 0) for response in additional)
+    assert queue.messages == expected

@@ -1,5 +1,9 @@
 import { error, fail } from '@sveltejs/kit';
-import { operatorApi, OperatorApiError } from '#lib/server/api/operator-client.ts';
+import {
+	operatorApi,
+	OperatorApiError,
+	type SyncIntegrationKey
+} from '#lib/server/api/operator-client.ts';
 import { runtimeConfig } from '#lib/server/config/runtime.ts';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -37,8 +41,17 @@ export const actions: Actions = {
 		const form = await request.formData();
 		const integrationKey = form.get('integration_key');
 		const idempotencyKey = form.get('idempotency_key');
+		const syncable = {
+			'mitre-attack': 'MITRE ATT&CK',
+			'misp-galaxy': 'MISP Galaxy',
+			cisa: 'CISA KEV',
+			'microsoft-threat-intelligence': 'Microsoft Threat Intelligence',
+			'unit-42': 'Unit 42',
+			'the-hacker-news': 'The Hacker News'
+		} as const satisfies Record<SyncIntegrationKey, string>;
 		if (
-			integrationKey !== 'mitre-attack' ||
+			typeof integrationKey !== 'string' ||
+			!(integrationKey in syncable) ||
 			typeof idempotencyKey !== 'string' ||
 			!/^watchtower-ui-[0-9a-f-]{36}$/.test(idempotencyKey)
 		) {
@@ -50,15 +63,16 @@ export const actions: Actions = {
 		}
 
 		try {
-			const response = await operatorApi.syncMitre(idempotencyKey);
+			const response = await operatorApi.sync(integrationKey as SyncIntegrationKey, idempotencyKey);
+			const sourceName = syncable[integrationKey as SyncIntegrationKey];
 			return {
 				ok: true,
 				duplicate: response.data.duplicate,
 				state: response.data.job.state,
 				requestId: null,
 				message: response.data.duplicate
-					? 'The existing MITRE ATT&CK refresh is already queued.'
-					: 'MITRE ATT&CK refresh queued.'
+					? `The existing ${sourceName} refresh is already queued.`
+					: `${sourceName} refresh queued.`
 			};
 		} catch (caught) {
 			const detail =

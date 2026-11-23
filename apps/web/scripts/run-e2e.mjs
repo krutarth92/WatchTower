@@ -205,16 +205,38 @@ const integrationCatalog = () => ({
 			implemented: true,
 			configured: true,
 			can_sync: true,
+			job_kind: 'mitre_attack_refresh',
 			required_settings: [],
 			enrichments: ['ATT&CK mappings', 'alias resolution', 'historical correlation'],
 			latest_job: latestIntegrationJob
 		},
 		...[
-			['misp-galaxy', 'MISP Galaxy', 'first_wave', []],
-			['cisa', 'CISA', 'first_wave', []],
-			['microsoft-threat-intelligence', 'Microsoft Threat Intelligence', 'first_wave', []],
+			['misp-galaxy', 'MISP Galaxy', 'implemented', 'misp_galaxy_refresh'],
+			['cisa', 'CISA KEV', 'implemented', 'cisa_kev_refresh'],
+			[
+				'microsoft-threat-intelligence',
+				'Microsoft Threat Intelligence',
+				'implemented',
+				'microsoft_threat_intelligence_refresh'
+			],
+			['unit-42', 'Unit 42', 'implemented', 'unit_42_refresh'],
+			['the-hacker-news', 'The Hacker News', 'implemented', 'the_hacker_news_refresh']
+		].map(([key, name, wave, jobKind]) => ({
+			key,
+			name,
+			wave,
+			description: `${name} is available through a bounded source connector.`,
+			status: 'available',
+			implemented: true,
+			configured: true,
+			can_sync: true,
+			job_kind: jobKind,
+			required_settings: [],
+			enrichments: ['historical correlation'],
+			latest_job: null
+		})),
+		...[
 			['google-tag', 'Google Threat Analysis Group', 'first_wave', []],
-			['unit-42', 'Unit 42', 'first_wave', []],
 			['malpedia', 'Malpedia', 'second_wave', ['WATCHTOWER_MALPEDIA_API_KEY']],
 			['securelist', 'Securelist', 'second_wave', []],
 			['eset-research', 'ESET Research', 'second_wave', []],
@@ -228,6 +250,7 @@ const integrationCatalog = () => ({
 			implemented: false,
 			configured: false,
 			can_sync: false,
+			job_kind: null,
 			required_settings: requiredSettings,
 			enrichments: ['historical correlation'],
 			latest_job: null

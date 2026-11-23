@@ -31,7 +31,7 @@ from watchtower.ingestion.jobs import (
     IngestionJobNotFoundError,
     IngestionJobService,
 )
-from watchtower.ingestion.mitre_attack import register_mitre_attack_source
+from watchtower.ingestion.sources import register_job_source
 
 logger = logging.getLogger("watchtower.api.ingestion")
 router = APIRouter(
@@ -81,7 +81,7 @@ def submit_approved_ingestion_job(
     service: IngestionJobService,
     queue: JobQueue,
 ) -> IngestionJobSubmissionResponse:
-    source = register_mitre_attack_source(session)
+    source = register_job_source(session, submission.job_kind)
     try:
         result = service.submit(
             session,

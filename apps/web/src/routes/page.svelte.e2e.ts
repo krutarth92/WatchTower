@@ -147,7 +147,7 @@ test('operates the private integration register without exposing server credenti
 		expect(results.violations, `${width}px integration accessibility violations`).toEqual([]);
 	}
 
-	await page.getByRole('button', { name: 'Queue ATT&CK refresh' }).click();
+	await page.getByRole('button', { name: 'Queue MITRE ATT&CK Enterprise refresh' }).click();
 	expect(adminPostOrigin).toBe(new URL(page.url()).origin);
 	await expect(page.getByText('MITRE ATT&CK refresh queued.')).toBeVisible();
 	await expect(page.getByText('QUEUED ·')).toBeVisible();

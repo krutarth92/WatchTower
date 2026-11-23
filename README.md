@@ -4,9 +4,10 @@ WATCHTOWER is an adversary-first cyber threat intelligence product for studying
 threat actors, their behavior over time, and the evidence behind each claim.
 
 It provides a FastAPI service, PostgreSQL intelligence model, deterministic
-MITRE ATT&CK ingestion, actor timelines, search, evidence-grounded research
-contracts, STIX 2.1 export, technical artifact storage, asynchronous jobs, and
-versioned living intelligence advisories.
+ingestion for MITRE ATT&CK, MISP Galaxy, CISA KEV and selected publication
+feeds, actor timelines, search, evidence-grounded research contracts, STIX 2.1
+export, technical artifact storage, asynchronous jobs, and versioned living
+intelligence advisories.
 
 ## Current status
 
@@ -17,6 +18,12 @@ local/private operator integration register. The UI uses centralized design
 tokens and a server-only API/token boundary. The
 [V1 readiness audit](docs/exec-plans/active/v1-readiness.md) records the exact
 evidence, acceptance outcome and limitations.
+
+The operator register now has replay-safe connectors for MITRE ATT&CK, MISP
+Galaxy, CISA KEV, Microsoft Threat Intelligence, Unit 42 and The Hacker News.
+Publication feeds retain metadata, summaries and source links—not copied
+article bodies—and all newly imported records remain internal until explicitly
+published.
 
 Production templates define private S3 evidence storage, encrypted Multi-AZ RDS
 PostgreSQL, governed backups, Cognito operator identity, and an ALB/WAF HTTPS

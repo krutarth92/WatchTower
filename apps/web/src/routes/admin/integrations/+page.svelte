@@ -105,12 +105,12 @@
 								{/if}
 							</div>
 
-							{#if integration.can_sync && integration.key === 'mitre-attack'}
+							{#if integration.can_sync && integration.job_kind}
 								<form method="POST" action="?/sync">
-									<input type="hidden" name="integration_key" value="mitre-attack" />
+									<input type="hidden" name="integration_key" value={integration.key} />
 									<input type="hidden" name="idempotency_key" value={data.idempotencyKey} />
 									<button type="submit"
-										>Queue ATT&CK refresh <span aria-hidden="true">→</span></button
+										>Queue {integration.name} refresh <span aria-hidden="true">→</span></button
 									>
 								</form>
 							{/if}

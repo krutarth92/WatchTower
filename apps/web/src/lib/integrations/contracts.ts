@@ -3,10 +3,17 @@ import type { IsoDateTime, Uuid } from '#lib/api/contracts.ts';
 export type IntegrationWave = 'implemented' | 'first_wave' | 'second_wave' | 'candidate';
 export type EnrichmentWave = 'implemented' | 'first_wave' | 'later';
 export type IngestionJobState = 'queued' | 'processing' | 'succeeded' | 'failed';
+export type IngestionJobKind =
+	| 'mitre_attack_refresh'
+	| 'misp_galaxy_refresh'
+	| 'cisa_kev_refresh'
+	| 'microsoft_threat_intelligence_refresh'
+	| 'unit_42_refresh'
+	| 'the_hacker_news_refresh';
 
 export interface IngestionJobRead {
 	id: Uuid;
-	job_kind: 'mitre_attack_refresh';
+	job_kind: IngestionJobKind;
 	source_id: Uuid;
 	raw_evidence_id: Uuid | null;
 	state: IngestionJobState;
@@ -31,6 +38,7 @@ export interface IntegrationRead {
 	implemented: boolean;
 	configured: boolean;
 	can_sync: boolean;
+	job_kind: IngestionJobKind | null;
 	required_settings: string[];
 	enrichments: string[];
 	latest_job: IngestionJobRead | null;

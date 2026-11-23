@@ -5,7 +5,6 @@ import logging
 import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from enum import StrEnum
 from time import monotonic
 from typing import Any
 from uuid import UUID
@@ -14,6 +13,12 @@ import httpx
 from sqlalchemy.orm import Session
 
 from watchtower.db.models import ProcessingState, Source
+from watchtower.ingestion.connector import (
+    ConnectorIssue,
+    ConnectorMetrics,
+    ConnectorRunResult,
+    ConnectorRunStatus,
+)
 from watchtower.ingestion.contracts import RawEvidenceSubmission, SourceRegistration
 from watchtower.ingestion.normalization import NormalizationEmitter, NormalizationRecord
 from watchtower.ingestion.raw_evidence import RawEvidenceIntake
@@ -36,13 +41,6 @@ BUNDLE_ID = re.compile(r"^bundle--[0-9a-fA-F-]{36}$")
 STIX_ID = re.compile(r"^[a-z][a-z0-9-]{0,99}--[0-9a-fA-F-]{36}$")
 
 
-class ConnectorRunStatus(StrEnum):
-    SUCCEEDED = "succeeded"
-    FAILED = "failed"
-    SKIPPED = "skipped"
-    SOURCE_UNAVAILABLE = "source_unavailable"
-
-
 class MitreAttackFetchError(RuntimeError):
     """The fixed upstream could not provide an acceptable response."""
 
@@ -58,33 +56,6 @@ class FetchResult:
     media_type: str
     etag: str | None = None
     last_modified: str | None = None
-
-
-@dataclass(frozen=True, slots=True)
-class ConnectorIssue:
-    object_index: int | None
-    source_native_id: str | None
-    error_type: str
-    detail: str
-
-
-@dataclass(frozen=True, slots=True)
-class ConnectorMetrics:
-    bytes_retrieved: int
-    objects_seen: int
-    objects_emitted: int
-    objects_failed: int
-    duration_ms: int
-
-
-@dataclass(frozen=True, slots=True)
-class ConnectorRunResult:
-    status: ConnectorRunStatus
-    source_id: UUID
-    raw_evidence_id: UUID | None
-    duplicate: bool
-    metrics: ConnectorMetrics
-    issues: tuple[ConnectorIssue, ...] = ()
 
 
 def register_mitre_attack_source(

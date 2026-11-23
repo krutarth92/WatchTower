@@ -92,6 +92,11 @@ class ResolutionMethod(StrEnum):
 
 class IngestionJobKind(StrEnum):
     MITRE_ATTACK_REFRESH = "mitre_attack_refresh"
+    MISP_GALAXY_REFRESH = "misp_galaxy_refresh"
+    CISA_KEV_REFRESH = "cisa_kev_refresh"
+    MICROSOFT_THREAT_INTELLIGENCE_REFRESH = "microsoft_threat_intelligence_refresh"
+    UNIT_42_REFRESH = "unit_42_refresh"
+    THE_HACKER_NEWS_REFRESH = "the_hacker_news_refresh"
 
 
 class IngestionJobState(StrEnum):

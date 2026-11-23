@@ -30,7 +30,7 @@ describe('operator API client', () => {
 			token: 'test-operator-token'
 		});
 
-		const error = await client.syncMitre('key-123').catch((caught) => caught);
+		const error = await client.sync('mitre-attack', 'key-123').catch((caught) => caught);
 		expect(error).toBeInstanceOf(OperatorApiError);
 		expect(fetcher).toHaveBeenCalledOnce();
 		const request = fetcher.mock.calls[0];
